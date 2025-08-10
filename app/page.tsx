@@ -11,6 +11,7 @@ import { GoalDetail } from "@/components/goal-detail"
 import { useTheme } from "next-themes"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import Link from "next/link"
+import { ScheduleCalendar } from "@/components/schedule-calendar"
 
 
 
@@ -22,14 +23,20 @@ export default function GoalManagementApp() {
   const [loading, setLoading] = useState(false)
   const { theme, setTheme } = useTheme()
    const [error, setError] = useState<string | null>(null)
+   const [selectedDate, setSelectedDate] = useState(new Date())
+   const [isCalendarOpen, setIsCalendarOpen] = useState(false)
 
-  const fetchGoals = async () => {
+  const fetchGoals = async (date: Date) => {
     setLoading(true)
     setError(null)
     try {
-      const fixedDate = "2025-08-03";
-      const data = await getGoals(1,fixedDate) // userId 1 고정 호출
-      console.log("API 응답:", data);
+      // 로컬 타임존 기준으로 YYYY-MM-DD 포맷 만들기
+      const year = date.getFullYear()
+      const month = String(date.getMonth() + 1).padStart(2, "0")
+      const day = String(date.getDate()).padStart(2, "0")
+      const formattedDate = `${year}-${month}-${day}`
+
+      const data = await getGoals(1, formattedDate)
       setGoals(data)
     } catch (err) {
       setError("목표를 불러오는데 실패했습니다.")
@@ -39,8 +46,6 @@ export default function GoalManagementApp() {
     }
   }
 
-
-  
   const createGoal = async (goalData: Omit<Goal, "goalId" | "completed" | "subGoals" | "createdAt" | "updatedAt">) => {
     // Mock API call
     const newGoal: Goal = {
@@ -81,9 +86,10 @@ export default function GoalManagementApp() {
     )
   }
 
+  // 날짜가 바뀔 때마다 fetchGoals 호출
   useEffect(() => {
-    fetchGoals()
-  }, [])
+    fetchGoals(selectedDate)
+  }, [selectedDate])
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
@@ -124,8 +130,16 @@ export default function GoalManagementApp() {
     return (completed / goal.subGoals.length) * 100
   }
 
-  const completedGoals = goals.filter((goal) => goal.completed).length
+  // 날짜 비교 함수 (연,월,일만 비교)
+  const isSameDay = (date1: Date, date2: Date) =>
+    date1.getFullYear() === date2.getFullYear() &&
+    date1.getMonth() === date2.getMonth() &&
+    date1.getDate() === date2.getDate()
+
+  // 실제로 화면에 보이는 목표만 필터링
+  // const visibleGoals = goals.filter(goal => isSameDay(new Date(goal.startDate), selectedDate))
   const totalGoals = goals.length
+  const completedGoals = goals.filter(goal => goal.completed).length
 
   if (selectedGoal) {
     return (
@@ -149,7 +163,7 @@ export default function GoalManagementApp() {
             <h1 className="text-3xl font-semibold text-slate-900 dark:text-slate-100 mb-2">Goals</h1>
             <p className="text-slate-600 dark:text-slate-400">Track and achieve your objectives</p>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 relative">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
@@ -189,6 +203,27 @@ export default function GoalManagementApp() {
                 Schedule
               </Button>
             </Link>
+            <Button
+              variant="outline"
+              className="border-slate-300 hover:bg-slate-50 dark:border-slate-600 dark:hover:bg-slate-800 bg-transparent"
+              onClick={() => setIsCalendarOpen((prev) => !prev)}
+            >
+              <Calendar className="h-4 w-4 mr-2" />
+              {selectedDate.toLocaleDateString("ko-KR", { year: "numeric", month: "2-digit", day: "2-digit" })}
+            </Button>
+            {isCalendarOpen && (
+              <div className="absolute right-0 top-12 z-50 bg-white dark:bg-slate-900 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700">
+                <ScheduleCalendar
+                  selectedDate={selectedDate}
+                  onDateSelect={(date) => {
+                    setSelectedDate(date)
+                    setIsCalendarOpen(false)
+                  }}
+                  schedules={[]} // 필요시 일정 데이터 전달
+                  onClose={() => setIsCalendarOpen(false)}
+                />
+              </div>
+            )}
             <Button
               onClick={() => {
                 setEditingGoal(null)
@@ -299,126 +334,126 @@ export default function GoalManagementApp() {
           </Card>
         ) : (
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {goals.map((goal) => {
-              const progress = getProgressPercentage(goal)
-              return (
-                <Card
-                  key={goal.goalId}
-                  className={`group cursor-pointer transition-all duration-200 hover:shadow-md border-0 shadow-sm ${
-                    goal.completed ? "bg-slate-50 dark:bg-slate-800" : "bg-white dark:bg-slate-900"
-                  }`}
-                  onClick={() => setSelectedGoal(goal)}
-                >
-                  <CardHeader className="pb-4">
-                    <div className="flex items-start justify-between mb-3">
-                      <CardTitle
-                        className={`text-lg font-medium leading-tight ${
-                          goal.completed
-                            ? "line-through text-slate-500 dark:text-slate-400"
-                            : "text-slate-900 dark:text-slate-100"
-                        }`}
-                      >
-                        {goal.title}
-                      </CardTitle>
-                      <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-8 w-8 p-0 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-md"
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            setEditingGoal(goal)
-                            setIsFormOpen(true)
-                          }}
+            {goals.map(goal => {
+                const progress = getProgressPercentage(goal)
+                return (
+                  <Card
+                    key={goal.goalId}
+                    className={`group cursor-pointer transition-all duration-200 hover:shadow-md border-0 shadow-sm ${
+                      goal.completed ? "bg-slate-50 dark:bg-slate-800" : "bg-white dark:bg-slate-900"
+                    }`}
+                    onClick={() => setSelectedGoal(goal)}
+                  >
+                    <CardHeader className="pb-4">
+                      <div className="flex items-start justify-between mb-3">
+                        <CardTitle
+                          className={`text-lg font-medium leading-tight ${
+                            goal.completed
+                              ? "line-through text-slate-500 dark:text-slate-400"
+                              : "text-slate-900 dark:text-slate-100"
+                          }`}
                         >
-                          <Edit className="h-4 w-4 text-slate-600 dark:text-slate-400" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-8 w-8 p-0 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-md"
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            deleteGoal(goal.goalId)
-                          }}
-                        >
-                          <Trash2 className="h-4 w-4 text-slate-600 dark:text-slate-400" />
-                        </Button>
+                          {goal.title}
+                        </CardTitle>
+                        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 p-0 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-md"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setEditingGoal(goal)
+                              setIsFormOpen(true)
+                            }}
+                          >
+                            <Edit className="h-4 w-4 text-slate-600 dark:text-slate-400" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 p-0 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-md"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              deleteGoal(goal.goalId)
+                            }}
+                          >
+                            <Trash2 className="h-4 w-4 text-slate-600 dark:text-slate-400" />
+                          </Button>
+                        </div>
                       </div>
-                    </div>
 
-                    <div className="flex items-center gap-2 mb-4">
-                      <span className={`px-2 py-1 rounded text-xs font-medium ${getPriorityColor(goal.priority)}`}>
-                        {getPriorityText(goal.priority)}
-                      </span>
-                      {goal.completed && (
-                        <span className="px-2 py-1 rounded text-xs font-medium bg-slate-900 text-white">Done</span>
-                      )}
-                    </div>
-
-                    {/* Progress Bar */}
-                    <div className="mb-4">
-                      <div className="flex justify-between text-xs text-slate-600 dark:text-slate-400 mb-2">
-                        <span>Progress</span>
-                        <span>{Math.round(progress)}%</span>
-                      </div>
-                      <div className="w-full bg-slate-200 rounded-full h-1.5 dark:bg-slate-700">
-                        <div
-                          className="bg-slate-900 h-1.5 rounded-full transition-all duration-300 dark:bg-slate-100"
-                          style={{ width: `${progress}%` }}
-                        />
-                      </div>
-                    </div>
-                  </CardHeader>
-
-                  <CardContent className="space-y-4">
-                    <div className="space-y-2 text-sm text-slate-600 dark:text-slate-400">
-                      <div className="flex items-center gap-2">
-                        <Calendar className="h-4 w-4" />
-                        <span>
-                          {formatDate(goal.startDate)} - {formatDate(goal.endDate)}
+                      <div className="flex items-center gap-2 mb-4">
+                        <span className={`px-2 py-1 rounded text-xs font-medium ${getPriorityColor(goal.priority)}`}>
+                          {getPriorityText(goal.priority)}
                         </span>
+                        {goal.completed && (
+                          <span className="px-2 py-1 rounded text-xs font-medium bg-slate-900 text-white">Done</span>
+                        )}
                       </div>
-                      <div className="flex items-center gap-2">
-                        <Clock className="h-4 w-4" />
-                        <span>{goal.duration} days</span>
+
+                      {/* Progress Bar */}
+                      <div className="mb-4">
+                        <div className="flex justify-between text-xs text-slate-600 dark:text-slate-400 mb-2">
+                          <span>Progress</span>
+                          <span>{Math.round(progress)}%</span>
+                        </div>
+                        <div className="w-full bg-slate-200 rounded-full h-1.5 dark:bg-slate-700">
+                          <div
+                            className="bg-slate-900 h-1.5 rounded-full transition-all duration-300 dark:bg-slate-100"
+                            style={{ width: `${progress}%` }}
+                          />
+                        </div>
                       </div>
-                      {goal.subGoals.length > 0 && (
+                    </CardHeader>
+
+                    <CardContent className="space-y-4">
+                      <div className="space-y-2 text-sm text-slate-600 dark:text-slate-400">
                         <div className="flex items-center gap-2">
-                          <Target className="h-4 w-4" />
+                          <Calendar className="h-4 w-4" />
                           <span>
-                            {goal.subGoals.filter((sg) => sg.completed).length}/{goal.subGoals.length} subtasks
+                            {formatDate(goal.startDate)} - {formatDate(goal.endDate)}
                           </span>
                         </div>
-                      )}
-                    </div>
+                        <div className="flex items-center gap-2">
+                          <Clock className="h-4 w-4" />
+                          <span>{goal.duration} days</span>
+                        </div>
+                        {goal.subGoals.length > 0 && (
+                          <div className="flex items-center gap-2">
+                            <Target className="h-4 w-4" />
+                            <span>
+                              {goal.subGoals.filter((sg) => sg.completed).length}/{goal.subGoals.length} subtasks
+                            </span>
+                          </div>
+                        )}
+                      </div>
 
-                    <Button
-                      variant={goal.completed ? "secondary" : "default"}
-                      size="sm"
-                      className={`w-full font-medium ${
-                        goal.completed
-                          ? "bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-700 dark:hover:bg-slate-600 dark:text-slate-300"
-                          : "bg-slate-900 hover:bg-slate-800 text-white dark:bg-slate-100 dark:hover:bg-slate-200 dark:text-slate-900"
-                      }`}
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        toggleGoalCompletion(goal.goalId)
-                      }}
-                    >
-                      {goal.completed ? (
-                        <>
-                          <CheckCircle2 className="h-4 w-4 mr-2" />
-                          Completed
-                        </>
-                      ) : (
-                        "Mark Complete"
-                      )}
-                    </Button>
-                  </CardContent>
-                </Card>
-              )
-            })}
+                      <Button
+                        variant={goal.completed ? "secondary" : "default"}
+                        size="sm"
+                        className={`w-full font-medium ${
+                          goal.completed
+                            ? "bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-700 dark:hover:bg-slate-600 dark:text-slate-300"
+                            : "bg-slate-900 hover:bg-slate-800 text-white dark:bg-slate-100 dark:hover:bg-slate-200 dark:text-slate-900"
+                        }`}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          toggleGoalCompletion(goal.goalId)
+                        }}
+                      >
+                        {goal.completed ? (
+                          <>
+                            <CheckCircle2 className="h-4 w-4 mr-2" />
+                            Completed
+                          </>
+                        ) : (
+                          "Mark Complete"
+                        )}
+                      </Button>
+                    </CardContent>
+                  </Card>
+                )
+              })}
           </div>
         )}
       </div>
