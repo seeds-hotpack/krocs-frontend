@@ -23,7 +23,6 @@ export default function GoalManagementApp() {
   const { theme, setTheme } = useTheme()
    const [error, setError] = useState<string | null>(null)
 
-  //Mock API functions - replace with actual API calls
   const fetchGoals = async () => {
     setLoading(true)
     setError(null)
@@ -42,9 +41,6 @@ export default function GoalManagementApp() {
 
 
   
-
-
-
   const createGoal = async (goalData: Omit<Goal, "goalId" | "completed" | "subGoals" | "createdAt" | "updatedAt">) => {
     // Mock API call
     const newGoal: Goal = {
