@@ -1,5 +1,7 @@
 "use client"
 
+import { getGoals, Goal } from '../api/goals';
+
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -10,24 +12,7 @@ import { useTheme } from "next-themes"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import Link from "next/link"
 
-interface SubGoal {
-  subGoalId: number
-  title: string
-  completed: boolean
-}
 
-interface Goal {
-  goalId: number
-  title: string
-  priority: "LOW" | "MEDIUM" | "HIGH"
-  startDate: string
-  endDate: string
-  duration: number
-  completed: boolean
-  subGoals: SubGoal[]
-  createdAt: string
-  updatedAt: string
-}
 
 export default function GoalManagementApp() {
   const [goals, setGoals] = useState<Goal[]>([])
@@ -36,61 +21,29 @@ export default function GoalManagementApp() {
   const [editingGoal, setEditingGoal] = useState<Goal | null>(null)
   const [loading, setLoading] = useState(false)
   const { theme, setTheme } = useTheme()
+   const [error, setError] = useState<string | null>(null)
 
-  // Mock API functions - replace with actual API calls
+  //Mock API functions - replace with actual API calls
   const fetchGoals = async () => {
     setLoading(true)
-    // Mock data for demonstration
-    const mockGoals: Goal[] = [
-      {
-        goalId: 1,
-        title: "프로젝트 완료하기",
-        priority: "HIGH",
-        startDate: "2025-08-03",
-        endDate: "2025-08-31",
-        duration: 28,
-        completed: false,
-        subGoals: [
-          { subGoalId: 1, title: "요구사항 분석", completed: true },
-          { subGoalId: 2, title: "UI/UX 디자인", completed: false },
-        ],
-        createdAt: "2025-08-03T05:56:23.681Z",
-        updatedAt: "2025-08-03T05:56:23.681Z",
-      },
-      {
-        goalId: 2,
-        title: "운동 루틴 만들기",
-        priority: "MEDIUM",
-        startDate: "2025-08-01",
-        endDate: "2025-08-15",
-        duration: 14,
-        completed: false,
-        subGoals: [],
-        createdAt: "2025-08-01T05:56:23.681Z",
-        updatedAt: "2025-08-01T05:56:23.681Z",
-      },
-      {
-        goalId: 3,
-        title: "독서 습관 만들기",
-        priority: "LOW",
-        startDate: "2025-08-01",
-        endDate: "2025-09-01",
-        duration: 31,
-        completed: true,
-        subGoals: [
-          { subGoalId: 3, title: "매일 30분 읽기", completed: true },
-          { subGoalId: 4, title: "독서 노트 작성", completed: true },
-        ],
-        createdAt: "2025-08-01T05:56:23.681Z",
-        updatedAt: "2025-08-01T05:56:23.681Z",
-      },
-    ]
-
-    setTimeout(() => {
-      setGoals(mockGoals)
+    setError(null)
+    try {
+      const fixedDate = "2025-08-03";
+      const data = await getGoals(1,fixedDate) // userId 1 고정 호출
+      console.log("API 응답:", data);
+      setGoals(data)
+    } catch (err) {
+      setError("목표를 불러오는데 실패했습니다.")
+      console.error(err)
+    } finally {
       setLoading(false)
-    }, 1000)
+    }
   }
+
+
+  
+
+
 
   const createGoal = async (goalData: Omit<Goal, "goalId" | "completed" | "subGoals" | "createdAt" | "updatedAt">) => {
     // Mock API call
