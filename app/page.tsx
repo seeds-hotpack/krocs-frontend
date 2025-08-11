@@ -1,6 +1,7 @@
 "use client"
 
 import { getGoals, Goal } from '../api/goals';
+import { update_Goal as updateGoalApi } from '../api/updateGoal'
 
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
@@ -62,13 +63,41 @@ export default function GoalManagementApp() {
   }
 
   const updateGoal = async (goalId: number, goalData: Partial<Goal>) => {
-    setGoals((prev) =>
-      prev.map((goal) =>
-        goal.goalId === goalId ? { ...goal, ...goalData, updatedAt: new Date().toISOString() } : goal,
-      ),
-    )
-    setEditingGoal(null)
-    setIsFormOpen(false)
+    setLoading(true)
+    try {
+      const updateData = {
+        title: goalData.title ?? "",
+        priority: goalData.priority ?? "MEDIUM",
+        startDate: goalData.startDate ?? "",
+        endDate: goalData.endDate ?? "",
+        isCompleted: goalData.completed ?? false,
+      }
+      // userId 1로 고정
+      const res = await updateGoalApi(goalId, 1, updateData)
+      setGoals((prev) =>
+        prev.map((goal) =>
+          goal.goalId === goalId
+            ? {
+                ...goal,
+                ...res.result,
+                completed: res.result.isCompleted,
+                subGoals: res.result.subGoals.map((sg) => ({
+                  subGoalId: sg.subGoalId,
+                  title: sg.title,
+                  completed: sg.isCompleted,
+                })),
+              }
+            : goal
+        )
+      )
+      setEditingGoal(null)
+      setIsFormOpen(false)
+    } catch (err) {
+      setError("목표 수정에 실패했습니다.")
+      console.error(err)
+    } finally {
+      setLoading(false)
+    }
   }
 
   const deleteGoal = async (goalId: number) => {
