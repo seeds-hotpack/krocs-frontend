@@ -2,6 +2,7 @@
 
 import { getGoals, Goal } from '../api/goals';
 import { update_Goal as updateGoalApi } from '../api/updateGoal'
+import { createGoal as createGoalApi } from '../api/createGoal'
 
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
@@ -14,8 +15,6 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import Link from "next/link"
 import { ScheduleCalendar } from "@/components/schedule-calendar"
 
-
-
 export default function GoalManagementApp() {
   const [goals, setGoals] = useState<Goal[]>([])
   const [selectedGoal, setSelectedGoal] = useState<Goal | null>(null)
@@ -23,15 +22,14 @@ export default function GoalManagementApp() {
   const [editingGoal, setEditingGoal] = useState<Goal | null>(null)
   const [loading, setLoading] = useState(false)
   const { theme, setTheme } = useTheme()
-   const [error, setError] = useState<string | null>(null)
-   const [selectedDate, setSelectedDate] = useState(new Date())
-   const [isCalendarOpen, setIsCalendarOpen] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [selectedDate, setSelectedDate] = useState(new Date())
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false)
 
   const fetchGoals = async (date: Date) => {
     setLoading(true)
     setError(null)
     try {
-      // 로컬 타임존 기준으로 YYYY-MM-DD 포맷 만들기
       const year = date.getFullYear()
       const month = String(date.getMonth() + 1).padStart(2, "0")
       const day = String(date.getDate()).padStart(2, "0")
@@ -39,8 +37,8 @@ export default function GoalManagementApp() {
 
       const data = await getGoals(1, formattedDate)
       setGoals(data)
-    } catch (err) {
-      setError("목표를 불러오는데 실패했습니다.")
+    } catch (err: any) {
+      setError(err?.response?.data?.message || "목표를 불러오는데 실패했습니다.")
       console.error(err)
     } finally {
       setLoading(false)
@@ -48,18 +46,23 @@ export default function GoalManagementApp() {
   }
 
   const createGoal = async (goalData: Omit<Goal, "goalId" | "completed" | "subGoals" | "createdAt" | "updatedAt">) => {
-    // Mock API call
-    const newGoal: Goal = {
-      ...goalData,
-      goalId: Date.now(),
-      completed: false,
-      subGoals: [],
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
+    setLoading(true)
+    try {
+      const apiData = {
+        title: goalData.title,
+        priority: goalData.priority,
+        startDate: goalData.startDate,
+        endDate: goalData.endDate,
+      }
+      await createGoalApi(1, apiData)
+      await fetchGoals(selectedDate)
+      setIsFormOpen(false)
+    } catch (err: any) {
+      setError(err?.response?.data?.message || "목표 생성에 실패했습니다.")
+      console.error(err)
+    } finally {
+      setLoading(false)
     }
-
-    setGoals((prev) => [...prev, newGoal])
-    setIsFormOpen(false)
   }
 
   const updateGoal = async (goalId: number, goalData: Partial<Goal>) => {
@@ -72,14 +75,12 @@ export default function GoalManagementApp() {
         endDate: goalData.endDate ?? "",
         isCompleted: goalData.completed ?? false,
       }
-      // userId 1로 고정
       await updateGoalApi(goalId, 1, updateData)
-      // 수정 후 최신 데이터 다시 불러오기
       await fetchGoals(selectedDate)
       setEditingGoal(null)
       setIsFormOpen(false)
-    } catch (err) {
-      setError("목표 수정에 실패했습니다.")
+    } catch (err: any) {
+      setError(err?.response?.data?.message || "목표 수정에 실패했습니다.")
       console.error(err)
     } finally {
       setLoading(false)
@@ -101,7 +102,6 @@ export default function GoalManagementApp() {
     )
   }
 
-  // 날짜가 바뀔 때마다 fetchGoals 호출
   useEffect(() => {
     fetchGoals(selectedDate)
   }, [selectedDate])
@@ -145,14 +145,11 @@ export default function GoalManagementApp() {
     return (completed / goal.subGoals.length) * 100
   }
 
-  // 날짜 비교 함수 (연,월,일만 비교)
   const isSameDay = (date1: Date, date2: Date) =>
     date1.getFullYear() === date2.getFullYear() &&
     date1.getMonth() === date2.getMonth() &&
     date1.getDate() === date2.getDate()
 
-  // 실제로 화면에 보이는 목표만 필터링
-  // const visibleGoals = goals.filter(goal => isSameDay(new Date(goal.startDate), selectedDate))
   const totalGoals = goals.length
   const completedGoals = goals.filter(goal => goal.completed).length
 
@@ -172,7 +169,6 @@ export default function GoalManagementApp() {
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900 p-6">
       <div className="max-w-6xl mx-auto">
-        {/* Header */}
         <div className="flex items-center justify-between mb-12">
           <div>
             <h1 className="text-3xl font-semibold text-slate-900 dark:text-slate-100 mb-2">Goals</h1>
@@ -234,7 +230,7 @@ export default function GoalManagementApp() {
                     setSelectedDate(date)
                     setIsCalendarOpen(false)
                   }}
-                  schedules={[]} // 필요시 일정 데이터 전달
+                  schedules={[]}
                   onClose={() => setIsCalendarOpen(false)}
                 />
               </div>
@@ -252,7 +248,6 @@ export default function GoalManagementApp() {
           </div>
         </div>
 
-        {/* Stats */}
         <div className="grid grid-cols-3 gap-6 mb-8">
           <Card className="border-0 shadow-sm dark:bg-slate-800">
             <CardContent className="p-6">
@@ -406,7 +401,6 @@ export default function GoalManagementApp() {
                         )}
                       </div>
 
-                      {/* Progress Bar */}
                       <div className="mb-4">
                         <div className="flex justify-between text-xs text-slate-600 dark:text-slate-400 mb-2">
                           <span>Progress</span>
