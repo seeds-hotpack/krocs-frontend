@@ -73,23 +73,9 @@ export default function GoalManagementApp() {
         isCompleted: goalData.completed ?? false,
       }
       // userId 1로 고정
-      const res = await updateGoalApi(goalId, 1, updateData)
-      setGoals((prev) =>
-        prev.map((goal) =>
-          goal.goalId === goalId
-            ? {
-                ...goal,
-                ...res.result,
-                completed: res.result.isCompleted,
-                subGoals: res.result.subGoals.map((sg) => ({
-                  subGoalId: sg.subGoalId,
-                  title: sg.title,
-                  completed: sg.isCompleted,
-                })),
-              }
-            : goal
-        )
-      )
+      await updateGoalApi(goalId, 1, updateData)
+      // 수정 후 최신 데이터 다시 불러오기
+      await fetchGoals(selectedDate)
       setEditingGoal(null)
       setIsFormOpen(false)
     } catch (err) {
