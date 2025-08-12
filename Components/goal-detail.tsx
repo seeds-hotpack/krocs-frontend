@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Checkbox } from "@/components/ui/checkbox"
 import { ArrowLeft, Plus, Trash2, Calendar, Clock, Target } from "lucide-react"
-import { createSubGoal, getSubGoals, SubGoal as APISubGoal } from "../api/subgoals"
+import { createSubGoal, getSubGoals, deleteSubGoal, SubGoal as APISubGoal } from "../api/subgoals"
 
 interface SubGoal {
   subGoalId: number
@@ -94,10 +94,24 @@ export function GoalDetail({ goal, onBack, onUpdate }: GoalDetailProps) {
     onUpdate({ subGoals: updatedSubGoals })
   }
 
-  const deleteSubGoal = (subGoalId: number) => {
-    const updatedSubGoals = subGoals.filter((sg) => sg.subGoalId !== subGoalId)
-    setSubGoals(updatedSubGoals)
-    onUpdate({ subGoals: updatedSubGoals })
+  const handleDeleteSubGoal = async (subGoalId: number) => {
+    setLoadingSubGoals(true)
+    setError(null)
+    try {
+      await deleteSubGoal(subGoalId)
+      const res = await getSubGoals(goal.goalId)
+      setSubGoals(
+        res.result.subGoals.map((sg: APISubGoal) => ({
+          subGoalId: sg.subGoalId,
+          title: sg.title,
+          completed: sg.isCompleted,
+        })),
+      )
+    } catch (e: any) {
+      setError(e.message)
+    } finally {
+      setLoadingSubGoals(false)
+    }
   }
 
   const toggleGoalCompletion = () => {
@@ -313,7 +327,7 @@ export function GoalDetail({ goal, onBack, onUpdate }: GoalDetailProps) {
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => deleteSubGoal(subGoal.subGoalId)}
+                      onClick={() => handleDeleteSubGoal(subGoal.subGoalId)}
                       className="opacity-0 group-hover:opacity-100 h-8 w-8 p-0 hover:bg-slate-100 rounded-md transition-all duration-200"
                     >
                       <Trash2 className="h-4 w-4 text-slate-600" />

@@ -76,3 +76,24 @@ export const createSubGoal = async (
     throw error;
   }
 };
+//----------------------------------소목표 삭제 api---------------------------------
+export interface DeleteSubGoalResponse {
+  isSuccess: boolean;
+  code: string;
+  message: string;
+  result?: string; 
+}
+
+export const deleteSubGoal = async (
+  subGoalId: number
+): Promise<DeleteSubGoalResponse> => {
+  try {
+    const response = await axiosInstance.delete<DeleteSubGoalResponse>(
+      `/subgoals/${subGoalId}`
+    );
+    return response.data;
+  } catch (error: any) {
+    console.error('소목표 삭제 실패:', error.response?.data || error.message);
+    throw error;
+  }
+};
