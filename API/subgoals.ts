@@ -1,5 +1,5 @@
 import axiosInstance from './axiosinstance';
-
+//---------------------------------소목표 호출 api---------------------------------
 export interface SubGoal {
   subGoalId: number;
   title: string;
@@ -35,5 +35,44 @@ export const getSubGoals = async (
     }
     
     throw new Error(msg || "소목표를 불러오지 못했습니다.");
+  }
+};
+//---------------------------------소목표 생성 api---------------------------------
+export interface CreateSubGoalRequest {
+  title: string;
+}
+
+export interface CreatedSubGoal {
+  subGoalId: number;
+  title: string;
+  isCompleted: boolean;
+}
+
+export interface CreateSubGoalResponse {
+  isSuccess: boolean;
+  code: string;
+  message: string;
+  result: {
+    goal_id: number;
+    created_sub_goals: CreatedSubGoal[];
+  };
+}
+
+export const createSubGoal = async (
+  goalId: number,
+  subGoalData: CreateSubGoalRequest
+): Promise<CreateSubGoalResponse> => {
+  try {
+    console.log("createSubGoal 호출:", goalId, subGoalData);
+    const response = await axiosInstance.post<CreateSubGoalResponse>(
+      `/goals/${goalId}/subgoals`,
+      {
+        sub_goals: [subGoalData], // ✅ 요청 바디를 배열로 감싸서 보내야 함
+      }
+    );
+    return response.data;
+  } catch (error: any) {
+    console.error('소목표 생성 실패:', error.response?.data || error.message);
+    throw error;
   }
 };

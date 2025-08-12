@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Checkbox } from "@/components/ui/checkbox"
 import { ArrowLeft, Plus, Trash2, Calendar, Clock, Target } from "lucide-react"
-import { getSubGoals, SubGoal as APISubGoal } from "../api/subgoals"
+import { createSubGoal, getSubGoals, SubGoal as APISubGoal } from "../api/subgoals"
 
 interface SubGoal {
   subGoalId: number
@@ -37,11 +37,13 @@ export function GoalDetail({ goal, onBack, onUpdate }: GoalDetailProps) {
   const [newSubGoalTitle, setNewSubGoalTitle] = useState("")
   const [subGoals, setSubGoals] = useState<SubGoal[]>(goal.subGoals)
   const [loadingSubGoals, setLoadingSubGoals] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   // 소목표 DB에서 불러오기
   useEffect(() => {
     const fetchSubGoals = async () => {
       setLoadingSubGoals(true)
+      setError(null)
       try {
         const res = await getSubGoals(goal.goalId)
         setSubGoals(
@@ -51,8 +53,8 @@ export function GoalDetail({ goal, onBack, onUpdate }: GoalDetailProps) {
             completed: sg.isCompleted,
           })),
         )
-      } catch (e) {
-        // 에러 처리 필요시 추가
+      } catch (e: any) {
+        setError(e.message)
       } finally {
         setLoadingSubGoals(false)
       }
@@ -60,17 +62,27 @@ export function GoalDetail({ goal, onBack, onUpdate }: GoalDetailProps) {
     fetchSubGoals()
   }, [goal.goalId])
 
-  const addSubGoal = () => {
-    if (newSubGoalTitle.trim()) {
-      const newSubGoal: SubGoal = {
-        subGoalId: Date.now(),
-        title: newSubGoalTitle.trim(),
-        completed: false,
-      }
-      const updatedSubGoals = [...subGoals, newSubGoal]
-      setSubGoals(updatedSubGoals)
-      onUpdate({ subGoals: updatedSubGoals })
+  // 소목표 추가: DB에 저장
+  const addSubGoal = async () => {
+    if (!newSubGoalTitle.trim()) return
+    setLoadingSubGoals(true)
+    setError(null)
+    try {
+      await createSubGoal(goal.goalId, { title: newSubGoalTitle.trim() })
+      // 추가 후 목록 새로고침
+      const res = await getSubGoals(goal.goalId)
+      setSubGoals(
+        res.result.subGoals.map((sg: APISubGoal) => ({
+          subGoalId: sg.subGoalId,
+          title: sg.title,
+          completed: sg.isCompleted,
+        })),
+      )
       setNewSubGoalTitle("")
+    } catch (e: any) {
+      setError(e.message)
+    } finally {
+      setLoadingSubGoals(false)
     }
   }
 
