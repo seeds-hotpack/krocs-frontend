@@ -157,7 +157,10 @@ export default function GoalManagementApp() {
     return (
       <GoalDetail
         goal={selectedGoal}
-        onBack={() => setSelectedGoal(null)}
+        onBack={() => {
+          setSelectedGoal(null)
+          fetchGoals(selectedDate) // "Back to Goals" 시점에 목록 새로고침
+        }}
         onUpdate={(updatedGoal) => {
           updateGoal(selectedGoal.goalId, updatedGoal)
           setSelectedGoal({ ...selectedGoal, ...updatedGoal })

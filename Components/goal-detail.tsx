@@ -1,11 +1,12 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Checkbox } from "@/components/ui/checkbox"
 import { ArrowLeft, Plus, Trash2, Calendar, Clock, Target } from "lucide-react"
+import { createSubGoal, getSubGoals, deleteSubGoal, SubGoal as APISubGoal } from "../api/subgoals"
 
 interface SubGoal {
   subGoalId: number
@@ -35,18 +36,53 @@ interface GoalDetailProps {
 export function GoalDetail({ goal, onBack, onUpdate }: GoalDetailProps) {
   const [newSubGoalTitle, setNewSubGoalTitle] = useState("")
   const [subGoals, setSubGoals] = useState<SubGoal[]>(goal.subGoals)
+  const [loadingSubGoals, setLoadingSubGoals] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
-  const addSubGoal = () => {
-    if (newSubGoalTitle.trim()) {
-      const newSubGoal: SubGoal = {
-        subGoalId: Date.now(),
-        title: newSubGoalTitle.trim(),
-        completed: false,
+  // 소목표 DB에서 불러오기
+  useEffect(() => {
+    const fetchSubGoals = async () => {
+      setLoadingSubGoals(true)
+      setError(null)
+      try {
+        const res = await getSubGoals(goal.goalId)
+        setSubGoals(
+          res.result.subGoals.map((sg: APISubGoal) => ({
+            subGoalId: sg.subGoalId,
+            title: sg.title,
+            completed: sg.isCompleted,
+          })),
+        )
+      } catch (e: any) {
+        setError(e.message)
+      } finally {
+        setLoadingSubGoals(false)
       }
-      const updatedSubGoals = [...subGoals, newSubGoal]
-      setSubGoals(updatedSubGoals)
-      onUpdate({ subGoals: updatedSubGoals })
+    }
+    fetchSubGoals()
+  }, [goal.goalId])
+
+  // 소목표 추가: DB에 저장
+  const addSubGoal = async () => {
+    if (!newSubGoalTitle.trim()) return
+    setLoadingSubGoals(true)
+    setError(null)
+    try {
+      await createSubGoal(goal.goalId, { title: newSubGoalTitle.trim() })
+      // 추가 후 목록 새로고침
+      const res = await getSubGoals(goal.goalId)
+      setSubGoals(
+        res.result.subGoals.map((sg: APISubGoal) => ({
+          subGoalId: sg.subGoalId,
+          title: sg.title,
+          completed: sg.isCompleted,
+        })),
+      )
       setNewSubGoalTitle("")
+    } catch (e: any) {
+      setError(e.message)
+    } finally {
+      setLoadingSubGoals(false)
     }
   }
 
@@ -58,10 +94,24 @@ export function GoalDetail({ goal, onBack, onUpdate }: GoalDetailProps) {
     onUpdate({ subGoals: updatedSubGoals })
   }
 
-  const deleteSubGoal = (subGoalId: number) => {
-    const updatedSubGoals = subGoals.filter((sg) => sg.subGoalId !== subGoalId)
-    setSubGoals(updatedSubGoals)
-    onUpdate({ subGoals: updatedSubGoals })
+  const handleDeleteSubGoal = async (subGoalId: number) => {
+    setLoadingSubGoals(true)
+    setError(null)
+    try {
+      await deleteSubGoal(subGoalId)
+      const res = await getSubGoals(goal.goalId)
+      setSubGoals(
+        res.result.subGoals.map((sg: APISubGoal) => ({
+          subGoalId: sg.subGoalId,
+          title: sg.title,
+          completed: sg.isCompleted,
+        })),
+      )
+    } catch (e: any) {
+      setError(e.message)
+    } finally {
+      setLoadingSubGoals(false)
+    }
   }
 
   const toggleGoalCompletion = () => {
@@ -231,7 +281,9 @@ export function GoalDetail({ goal, onBack, onUpdate }: GoalDetailProps) {
               </Button>
             </div>
 
-            {subGoals.length === 0 ? (
+            {loadingSubGoals ? (
+              <div className="text-center py-12 text-slate-500">소목표를 불러오는 중...</div>
+            ) : subGoals.length === 0 ? (
               <div className="text-center py-12">
                 <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
                   <Target className="h-8 w-8 text-slate-400" />
@@ -275,7 +327,7 @@ export function GoalDetail({ goal, onBack, onUpdate }: GoalDetailProps) {
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => deleteSubGoal(subGoal.subGoalId)}
+                      onClick={() => handleDeleteSubGoal(subGoal.subGoalId)}
                       className="opacity-0 group-hover:opacity-100 h-8 w-8 p-0 hover:bg-slate-100 rounded-md transition-all duration-200"
                     >
                       <Trash2 className="h-4 w-4 text-slate-600" />
