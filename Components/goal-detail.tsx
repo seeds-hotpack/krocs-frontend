@@ -1,11 +1,12 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Checkbox } from "@/components/ui/checkbox"
 import { ArrowLeft, Plus, Trash2, Calendar, Clock, Target } from "lucide-react"
+import { getSubGoals, SubGoal as APISubGoal } from "../api/subgoals"
 
 interface SubGoal {
   subGoalId: number
@@ -35,6 +36,29 @@ interface GoalDetailProps {
 export function GoalDetail({ goal, onBack, onUpdate }: GoalDetailProps) {
   const [newSubGoalTitle, setNewSubGoalTitle] = useState("")
   const [subGoals, setSubGoals] = useState<SubGoal[]>(goal.subGoals)
+  const [loadingSubGoals, setLoadingSubGoals] = useState(false)
+
+  // 소목표 DB에서 불러오기
+  useEffect(() => {
+    const fetchSubGoals = async () => {
+      setLoadingSubGoals(true)
+      try {
+        const res = await getSubGoals(goal.goalId)
+        setSubGoals(
+          res.result.subGoals.map((sg: APISubGoal) => ({
+            subGoalId: sg.subGoalId,
+            title: sg.title,
+            completed: sg.isCompleted,
+          })),
+        )
+      } catch (e) {
+        // 에러 처리 필요시 추가
+      } finally {
+        setLoadingSubGoals(false)
+      }
+    }
+    fetchSubGoals()
+  }, [goal.goalId])
 
   const addSubGoal = () => {
     if (newSubGoalTitle.trim()) {
@@ -231,7 +255,9 @@ export function GoalDetail({ goal, onBack, onUpdate }: GoalDetailProps) {
               </Button>
             </div>
 
-            {subGoals.length === 0 ? (
+            {loadingSubGoals ? (
+              <div className="text-center py-12 text-slate-500">소목표를 불러오는 중...</div>
+            ) : subGoals.length === 0 ? (
               <div className="text-center py-12">
                 <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
                   <Target className="h-8 w-8 text-slate-400" />
