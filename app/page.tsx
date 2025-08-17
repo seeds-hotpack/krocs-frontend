@@ -7,12 +7,12 @@ import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Plus, Edit, Trash2, Calendar, Clock, Target, TrendingUp, CheckCircle2, Sun, Moon, Monitor } from "lucide-react"
-import { GoalForm } from "@/Components/goal-form"
-import { GoalDetail } from "@/Components/goal-detail"
+import { GoalForm } from "@/components/goal-form"
+import { GoalDetail } from "@/components/goal-detail"
 import { useTheme } from "next-themes"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/Components/ui/dropdown-menu"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import Link from "next/link"
-import { ScheduleCalendar } from "@/Components/schedule-calendar"
+import { ScheduleCalendar } from "@/components/schedule-calendar"
 
 export default function GoalManagementApp() {
   const [goals, setGoals] = useState<Goal[]>([])
@@ -86,11 +86,11 @@ export default function GoalManagementApp() {
     }
   }
 
-  const deleteGoal = async (goalId: number) => {
+  const deleteGoal = async (goalId: number, userId: 1) => {
     setLoading(true)
     setError(null)
     try {
-      await deleteGoalApi(goalId)
+      await deleteGoalApi(goalId, userId)
       await fetchGoals(selectedDate) // 삭제 후 목록 새로고침
       if (selectedGoal?.goalId === goalId) {
         setSelectedGoal(null)
@@ -396,7 +396,7 @@ export default function GoalManagementApp() {
                             className="h-8 w-8 p-0 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-md"
                             onClick={(e) => {
                               e.stopPropagation()
-                              deleteGoal(goal.goalId)
+                              deleteGoal(goal.goalId, 1)
                             }}
                           >
                             <Trash2 className="h-4 w-4 text-slate-600 dark:text-slate-400" />
