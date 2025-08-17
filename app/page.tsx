@@ -3,17 +3,16 @@
 import { getGoals, Goal, deleteBigGoal as deleteGoalApi } from '../api/goals';
 import { update_Goal as updateGoalApi } from '../api/updateGoal'
 import { createGoal as createGoalApi } from '../api/createGoal'
-
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Plus, Edit, Trash2, Calendar, Clock, Target, TrendingUp, CheckCircle2, Sun, Moon, Monitor } from "lucide-react"
-import { GoalForm } from "@/components/goal-form"
-import { GoalDetail } from "@/components/goal-detail"
+import { GoalForm } from "@/Components/goal-form"
+import { GoalDetail } from "@/Components/goal-detail"
 import { useTheme } from "next-themes"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/Components/ui/dropdown-menu"
 import Link from "next/link"
-import { ScheduleCalendar } from "@/components/schedule-calendar"
+import { ScheduleCalendar } from "@/Components/schedule-calendar"
 
 export default function GoalManagementApp() {
   const [goals, setGoals] = useState<Goal[]>([])
