@@ -34,7 +34,7 @@ export default function GoalManagementApp() {
       const day = String(date.getDate()).padStart(2, "0")
       const formattedDate = `${year}-${month}-${day}`
 
-      const data = await getGoals(1, formattedDate)
+      const data = await getGoals(formattedDate)
       setGoals(data)
     } catch (err: any) {
       setError(err?.response?.data?.message || "목표를 불러오는데 실패했습니다.")
@@ -86,11 +86,11 @@ export default function GoalManagementApp() {
     }
   }
 
-  const deleteGoal = async (goalId: number, userId: 1) => {
+  const deleteGoal = async (goalId: number) => {
     setLoading(true)
     setError(null)
     try {
-      await deleteGoalApi(goalId, userId)
+      await deleteGoalApi(goalId)
       await fetchGoals(selectedDate) // 삭제 후 목록 새로고침
       if (selectedGoal?.goalId === goalId) {
         setSelectedGoal(null)
@@ -396,7 +396,7 @@ export default function GoalManagementApp() {
                             className="h-8 w-8 p-0 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-md"
                             onClick={(e) => {
                               e.stopPropagation()
-                              deleteGoal(goal.goalId, 1)
+                              deleteGoal(goal.goalId)
                             }}
                           >
                             <Trash2 className="h-4 w-4 text-slate-600 dark:text-slate-400" />

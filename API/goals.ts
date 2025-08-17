@@ -20,8 +20,8 @@ export interface Goal {
   updatedAt: string;
 }
 
-export const getGoals = async (userId: number, date: string): Promise<Goal[]> => {
-  const params = { user_id: userId, date };  // date 필수
+export const getGoals = async (date: string): Promise<Goal[]> => {
+  const params = { date };  // date 필수
   const response = await axiosInstance.get('/goals', { params });
   const apiGoals = response.data.result;
 
@@ -51,11 +51,10 @@ interface DeleteGoalResponse {
   result: string;
 }
 
-export const deleteBigGoal = async (goalId: number, userId: number): Promise<DeleteGoalResponse> => {
+export const deleteBigGoal = async (goalId: number): Promise<DeleteGoalResponse> => {
   try {
-    const response = await axiosInstance.delete<DeleteGoalResponse>(`/goals/${goalId}`, {
-      params: { user_id: userId },
-    });
+    // 👇 두 번째 인자로 전달되던 params 객체를 삭제했습니다.
+    const response = await axiosInstance.delete<DeleteGoalResponse>(`/goals/${goalId}`);
 
     return response.data;
   } catch (error: any) {

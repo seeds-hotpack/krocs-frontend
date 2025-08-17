@@ -36,7 +36,7 @@ export const createGoal = async (
 ): Promise<CreateGoalResponse> => {
   try {
     const response = await axiosInstance.post<CreateGoalResponse>(
-      `/goals?user_id=${userId}`,
+      `/goals`,
       goalData
     );
     return response.data;
