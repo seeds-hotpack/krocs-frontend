@@ -42,3 +42,25 @@ export const getGoals = async (userId: number, date: string): Promise<Goal[]> =>
     updatedAt: g.updatedAt,
   }));
 };
+
+//----------------------------------대목표 삭제 api---------------------------------
+interface DeleteGoalResponse {
+  isSuccess: boolean;
+  code: string;
+  message: string;
+  result: string;
+}
+
+export const deleteBigGoal = async (goalId: number, userId: number): Promise<DeleteGoalResponse> => {
+  try {
+    const response = await axiosInstance.delete<DeleteGoalResponse>(`/goals/${goalId}`, {
+      params: { user_id: userId },
+    });
+
+    return response.data;
+  } catch (error: any) {
+    console.error('대목표 삭제 중 오류 발생:', error);
+
+    throw error;
+  }
+};

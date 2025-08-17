@@ -1,6 +1,6 @@
 "use client"
 
-import { getGoals, Goal } from '../api/goals';
+import { getGoals, Goal, deleteBigGoal as deleteGoalApi } from '../api/goals';
 import { update_Goal as updateGoalApi } from '../api/updateGoal'
 import { createGoal as createGoalApi } from '../api/createGoal'
 
@@ -88,9 +88,19 @@ export default function GoalManagementApp() {
   }
 
   const deleteGoal = async (goalId: number) => {
-    setGoals((prev) => prev.filter((goal) => goal.goalId !== goalId))
-    if (selectedGoal?.goalId === goalId) {
-      setSelectedGoal(null)
+    setLoading(true)
+    setError(null)
+    try {
+      await deleteGoalApi(goalId)
+      await fetchGoals(selectedDate) // 삭제 후 목록 새로고침
+      if (selectedGoal?.goalId === goalId) {
+        setSelectedGoal(null)
+      }
+    } catch (err: any) {
+      setError(err?.response?.data?.message || "목표 삭제에 실패했습니다.")
+      console.error(err)
+    } finally {
+      setLoading(false)
     }
   }
 
