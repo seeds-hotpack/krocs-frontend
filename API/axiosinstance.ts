@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-// axios 인스턴스 생성
+
 const axiosInstance = axios.create({
   baseURL: 'http://localhost:8080/api/v1',
   timeout: 5000,
@@ -9,7 +9,7 @@ const axiosInstance = axios.create({
   },
 });
 
-// 요청 인터셉터 추가
+
 axiosInstance.interceptors.request.use(
   (config) => {
     // 👇 임의의 토큰 'test-token'을 직접 할당합니다.
