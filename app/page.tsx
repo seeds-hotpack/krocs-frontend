@@ -1,9 +1,8 @@
 "use client"
 
-import { getGoals, Goal } from '../api/goals';
+import { getGoals, Goal, deleteBigGoal as deleteGoalApi } from '../api/goals';
 import { update_Goal as updateGoalApi } from '../api/updateGoal'
 import { createGoal as createGoalApi } from '../api/createGoal'
-
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -87,10 +86,20 @@ export default function GoalManagementApp() {
     }
   }
 
-  const deleteGoal = async (goalId: number) => {
-    setGoals((prev) => prev.filter((goal) => goal.goalId !== goalId))
-    if (selectedGoal?.goalId === goalId) {
-      setSelectedGoal(null)
+  const deleteGoal = async (goalId: number, userId: 1) => {
+    setLoading(true)
+    setError(null)
+    try {
+      await deleteGoalApi(goalId, userId)
+      await fetchGoals(selectedDate) // 삭제 후 목록 새로고침
+      if (selectedGoal?.goalId === goalId) {
+        setSelectedGoal(null)
+      }
+    } catch (err: any) {
+      setError(err?.response?.data?.message || "목표 삭제에 실패했습니다.")
+      console.error(err)
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -387,7 +396,7 @@ export default function GoalManagementApp() {
                             className="h-8 w-8 p-0 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-md"
                             onClick={(e) => {
                               e.stopPropagation()
-                              deleteGoal(goal.goalId)
+                              deleteGoal(goal.goalId, 1)
                             }}
                           >
                             <Trash2 className="h-4 w-4 text-slate-600 dark:text-slate-400" />
