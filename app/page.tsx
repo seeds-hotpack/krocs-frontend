@@ -1,8 +1,8 @@
 "use client"
 
-import { getGoals, Goal, deleteBigGoal as deleteGoalApi } from '../api/goals';
-import { update_Goal as updateGoalApi } from '../api/updateGoal'
-import { createGoal as createGoalApi } from '../api/createGoal'
+import { getGoals, Goal, deleteBigGoal as deleteGoalApi } from '../tempAPI/goals';
+import { update_Goal as updateGoalApi } from '../tempAPI/updateGoal'
+import { createGoal as createGoalApi } from '../tempAPI/createGoal'
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"

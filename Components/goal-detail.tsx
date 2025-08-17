@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Checkbox } from "@/components/ui/checkbox"
 import { ArrowLeft, Plus, Trash2, Calendar, Clock, Target } from "lucide-react"
-import { createSubGoal, getSubGoals, deleteSubGoal, SubGoal as APISubGoal } from "../api/subgoals"
+import { createSubGoal, getSubGoals, deleteSubGoal, SubGoal as APISubGoal } from "../tempAPI/subgoals"
 
 interface SubGoal {
   subGoalId: number
