@@ -97,3 +97,44 @@ export const deleteSubGoal = async (
     throw error;
   }
 };
+//------------------------------------소목표 수정 api---------------------------------
+export interface UpdateSubGoalRequest {
+  title: string;
+  is_completed: boolean;
+}
+
+// 응답 Result 타입 정의
+export interface SubGoalResponse {
+  title: string;
+  sub_goal_id: number;
+  goal_id: number;
+  is_completed: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+// 최종 응답 구조
+export interface ApiResponse<T> {
+  isSuccess: boolean;
+  code: string;
+  message: string;
+  result: T;
+}
+
+// 서브골 수정 API
+export const updateSubGoal = async (
+  subGoalId: number,
+  data: UpdateSubGoalRequest
+): Promise<SubGoalResponse> => {
+  try {
+    const response = await axiosInstance.patch<ApiResponse<SubGoalResponse>>(
+      `/subgoals/${subGoalId}`,
+      data
+    );
+
+    return response.data.result; // result만 리턴
+  } catch (error: any) {
+    console.error("서브골 수정 실패:", error.response?.data || error.message);
+    throw error;
+  }
+};

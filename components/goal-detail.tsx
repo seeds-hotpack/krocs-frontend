@@ -5,8 +5,8 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Checkbox } from "@/components/ui/checkbox"
-import { ArrowLeft, Plus, Trash2, Calendar, Clock, Target } from "lucide-react"
-import { createSubGoal, getSubGoals, deleteSubGoal, SubGoal as APISubGoal } from "../api/subgoals"
+import { ArrowLeft, Plus, Trash2, Calendar, Clock, Target, Pencil } from "lucide-react"
+import { createSubGoal, getSubGoals, deleteSubGoal, updateSubGoal, SubGoal as APISubGoal } from "../api/subgoals"
 
 interface SubGoal {
   subGoalId: number
@@ -38,6 +38,8 @@ export function GoalDetail({ goal, onBack, onUpdate }: GoalDetailProps) {
   const [subGoals, setSubGoals] = useState<SubGoal[]>(goal.subGoals)
   const [loadingSubGoals, setLoadingSubGoals] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [editingSubGoalId, setEditingSubGoalId] = useState<number | null>(null)
+  const [editingSubGoalTitle, setEditingSubGoalTitle] = useState("")
 
   // 소목표 DB에서 불러오기
   useEffect(() => {
@@ -47,11 +49,13 @@ export function GoalDetail({ goal, onBack, onUpdate }: GoalDetailProps) {
       try {
         const res = await getSubGoals(goal.goalId)
         setSubGoals(
-          res.result.subGoals.map((sg: APISubGoal) => ({
-            subGoalId: sg.subGoalId,
-            title: sg.title,
-            completed: sg.isCompleted,
-          })),
+          res.result.subGoals
+            .map((sg: APISubGoal) => ({
+              subGoalId: sg.subGoalId,
+              title: sg.title,
+              completed: sg.isCompleted,
+            }))
+            .sort((a, b) => a.subGoalId - b.subGoalId),
         )
       } catch (e: any) {
         setError(e.message)
@@ -72,11 +76,13 @@ export function GoalDetail({ goal, onBack, onUpdate }: GoalDetailProps) {
       // 추가 후 목록 새로고침
       const res = await getSubGoals(goal.goalId)
       setSubGoals(
-        res.result.subGoals.map((sg: APISubGoal) => ({
-          subGoalId: sg.subGoalId,
-          title: sg.title,
-          completed: sg.isCompleted,
-        })),
+        res.result.subGoals
+          .map((sg: APISubGoal) => ({
+            subGoalId: sg.subGoalId,
+            title: sg.title,
+            completed: sg.isCompleted,
+          }))
+          .sort((a, b) => a.subGoalId - b.subGoalId),
       )
       setNewSubGoalTitle("")
     } catch (e: any) {
@@ -101,11 +107,13 @@ export function GoalDetail({ goal, onBack, onUpdate }: GoalDetailProps) {
       await deleteSubGoal(subGoalId)
       const res = await getSubGoals(goal.goalId)
       setSubGoals(
-        res.result.subGoals.map((sg: APISubGoal) => ({
-          subGoalId: sg.subGoalId,
-          title: sg.title,
-          completed: sg.isCompleted,
-        })),
+        res.result.subGoals
+          .map((sg: APISubGoal) => ({
+            subGoalId: sg.subGoalId,
+            title: sg.title,
+            completed: sg.isCompleted,
+          }))
+          .sort((a, b) => a.subGoalId - b.subGoalId),
       )
     } catch (e: any) {
       setError(e.message)
@@ -154,6 +162,44 @@ export function GoalDetail({ goal, onBack, onUpdate }: GoalDetailProps) {
 
   const completedSubGoals = subGoals.filter((sg) => sg.completed).length
   const progressPercentage = subGoals.length > 0 ? (completedSubGoals / subGoals.length) * 100 : 0
+
+  const startInlineEdit = (subGoal: SubGoal) => {
+    setEditingSubGoalId(subGoal.subGoalId)
+    setEditingSubGoalTitle(subGoal.title)
+  }
+
+  const cancelInlineEdit = () => {
+    setEditingSubGoalId(null)
+    setEditingSubGoalTitle("")
+  }
+
+  const saveInlineEdit = async (subGoal: SubGoal) => {
+    if (!editingSubGoalTitle.trim()) return
+    setLoadingSubGoals(true)
+    setError(null)
+    try {
+      await updateSubGoal(subGoal.subGoalId, {
+        title: editingSubGoalTitle,
+        is_completed: subGoal.completed,
+      })
+      // 목록 새로고침
+      const res = await getSubGoals(goal.goalId)
+      setSubGoals(
+        res.result.subGoals
+          .map((sg: APISubGoal) => ({
+            subGoalId: sg.subGoalId,
+            title: sg.title,
+            completed: sg.isCompleted,
+          }))
+          .sort((a, b) => a.subGoalId - b.subGoalId),
+      )
+      cancelInlineEdit()
+    } catch (e: any) {
+      setError(e.message)
+    } finally {
+      setLoadingSubGoals(false)
+    }
+  }
 
   return (
     <div className="min-h-screen bg-slate-50 p-6">
@@ -294,14 +340,7 @@ export function GoalDetail({ goal, onBack, onUpdate }: GoalDetailProps) {
             ) : (
               <div className="space-y-3">
                 {subGoals.map((subGoal, index) => (
-                  <div
-                    key={subGoal.subGoalId}
-                    className={`group flex items-center gap-4 p-4 rounded-lg border transition-all duration-200 ${
-                      subGoal.completed
-                        ? "bg-slate-50 border-slate-200"
-                        : "bg-white border-slate-200 hover:border-slate-300"
-                    }`}
-                  >
+                  <div key={subGoal.subGoalId} className="group flex items-center gap-4 p-4 rounded-lg border transition-all duration-200">
                     <div className="flex items-center justify-center w-6 h-6 rounded-full bg-slate-100 text-slate-600 text-sm font-medium">
                       {index + 1}
                     </div>
@@ -312,18 +351,55 @@ export function GoalDetail({ goal, onBack, onUpdate }: GoalDetailProps) {
                       className="w-5 h-5"
                     />
 
-                    <span
-                      className={`flex-1 font-medium ${
-                        subGoal.completed ? "line-through text-slate-500" : "text-slate-900"
-                      }`}
-                    >
-                      {subGoal.title}
+                    <span className={`flex-1 font-medium ${subGoal.completed ? "line-through text-slate-500" : "text-slate-900"}`}>
+                      {editingSubGoalId === subGoal.subGoalId ? (
+                        <Input
+                          value={editingSubGoalTitle}
+                          onChange={e => setEditingSubGoalTitle(e.target.value)}
+                          onKeyDown={e => {
+                            if (e.key === "Enter") saveInlineEdit(subGoal)
+                            if (e.key === "Escape") cancelInlineEdit()
+                          }}
+                          className="h-8"
+                          autoFocus
+                        />
+                      ) : (
+                        subGoal.title
+                      )}
                     </span>
 
                     {subGoal.completed && (
                       <span className="px-2 py-1 bg-slate-900 text-white text-xs font-medium rounded">Done</span>
                     )}
 
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() =>
+                        editingSubGoalId === subGoal.subGoalId
+                          ? saveInlineEdit(subGoal)
+                          : startInlineEdit(subGoal)
+                      }
+                      className="opacity-0 group-hover:opacity-100 h-8 w-8 p-0 hover:bg-slate-100 rounded-md"
+                    >
+                      {editingSubGoalId === subGoal.subGoalId ? (
+                        <span className="text-xs text-slate-600">저장</span>
+                      ) : (
+                        <Pencil className="h-4 w-4 text-slate-600" />
+                      )}
+                    </Button>
+                    {editingSubGoalId === subGoal.subGoalId && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={cancelInlineEdit}
+                        className="h-8 w-8 p-0 hover:bg-slate-100 rounded-md"
+                      >
+                        <span className="text-xs text-slate-600">취소</span>
+                      </Button>
+                    )}
+
+                    {/* 삭제 버튼 */}
                     <Button
                       variant="ghost"
                       size="sm"
