@@ -48,3 +48,51 @@ export const getPlans = async (dateTime: string): Promise<Plan[]> => {
     throw error;
   }
 };
+
+//-----------------------------------일정 생성 api---------------------------------
+export interface CreatePlanRequest {
+  title: string;
+  start_date_time: string; // "2025-08-03T15:05"
+  end_date_time: string;   // "2025-08-03T15:05"
+  all_day: boolean;
+}
+
+export interface CreatePlanResponse {
+  isSuccess: boolean;
+  code: string;
+  message: string;
+  result: {
+    plan_id: number;
+    goal_id: number;
+    sub_goal_id: number;
+    sub_plans: any[]; // 처음에는 비어있음
+    title: string;
+    start_date_time: string;
+    end_date_time: string;
+    all_day: boolean;
+    is_completed: boolean;
+    completed_at: string | null;
+    created_at: string;
+    updated_at: string;
+  };
+}
+
+export const createPlan = async (
+  subGoalId: number,
+  planData: CreatePlanRequest
+): Promise<CreatePlanResponse["result"]> => {
+  try {
+    const response = await axiosInstance.post<CreatePlanResponse>(
+      `/plans`,
+      planData,
+      {
+        params: { sub_goal_id: subGoalId }, // 👈 쿼리 파라미터
+      }
+    );
+
+    return response.data.result;
+  } catch (error) {
+    console.error("❌ createPlan API 호출 실패:", error);
+    throw error;
+  }
+};

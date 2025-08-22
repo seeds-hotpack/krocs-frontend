@@ -10,20 +10,26 @@ import { ScheduleForm } from "@/components/schedule-form"
 import { useTheme } from "next-themes"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import Link from "next/link"
-import { getPlans, Plan, SubPlan } from "@/api/subplan"
+import { getGoals, type Goal } from "@/api/goals";
+import { getPlans, Plan, SubPlan, createPlan, type CreatePlanRequest } from "@/api/subplan"
 
-// 컴포넌트에서 사용할 Schedule 인터페이스 (camelCase)
+// 컴포넌트에서 사용할 데이터 인터페이스
+export interface SubTask {
+  id: string;
+  title: string;
+  completed: boolean;
+}
 export interface Schedule {
   planId: number;
-  goalId: number;
-  subGoalId: number;
+  goalId?: number;
+  subGoalId?: number;
   title: string;
-  subPlans: SubPlan[];
+  subTasks?: SubTask[];
   startDateTime: string;
   endDateTime: string;
   allDay: boolean;
   isCompleted: boolean;
-  completedAt: string;
+  completedAt?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -38,6 +44,7 @@ const formatDateToYYYYMMDD = (date: Date): string => {
 
 export default function SchedulePage() {
   const [schedules, setSchedules] = useState<Schedule[]>([])
+  const [goalList, setGoalList] = useState<Goal[]>([]) // 목표 목록 상태 추가
   const [selectedDate, setSelectedDate] = useState(new Date())
   const [showCalendar, setShowCalendar] = useState(false)
   const [showForm, setShowForm] = useState(false)
@@ -48,6 +55,7 @@ export default function SchedulePage() {
   const timelineRef = useRef<{ scrollToCurrentTime: () => void }>(null)
   const { theme, setTheme } = useTheme()
 
+  // 일정 목록 가져오기
   useEffect(() => {
     const fetchSchedules = async () => {
       setLoading(true)
@@ -56,13 +64,16 @@ export default function SchedulePage() {
         const formattedDate = formatDateToYYYYMMDD(selectedDate)
         const fetchedPlans: Plan[] = await getPlans(formattedDate)
         
-        // API 응답 (Plan[])을 컴포넌트용 데이터 (Schedule[])로 변환
         const adaptedSchedules: Schedule[] = fetchedPlans.map(plan => ({
           planId: plan.plan_id,
           goalId: plan.goal_id,
           subGoalId: plan.sub_goal_id,
           title: plan.title,
-          subPlans: plan.sub_plans,
+          subTasks: plan.sub_plans.map(subPlan => ({
+            id: String(subPlan.sub_plan_id),
+            title: subPlan.content,
+            completed: subPlan.is_completed,
+          })),
           startDateTime: plan.start_date_time,
           endDateTime: plan.end_date_time,
           allDay: plan.all_day,
@@ -84,6 +95,19 @@ export default function SchedulePage() {
     fetchSchedules()
   }, [selectedDate])
 
+  // 목표 목록 가져오기 (컴포넌트 마운트 시 한 번만 실행)
+  useEffect(() => {
+    const fetchGoals = async () => {
+      try {
+        const goals = await getGoals(formatDateToYYYYMMDD(new Date()));
+        setGoalList(goals);
+      } catch (err) {
+        console.error("Failed to fetch goals:", err);
+      }
+    };
+    fetchGoals();
+  }, []);
+
   useEffect(() => {
     const handleResize = () => {
       if (window.innerWidth >= 1024) {
@@ -95,17 +119,44 @@ export default function SchedulePage() {
   }, [])
 
   const createSchedule = async (scheduleData: Omit<Schedule, 'planId' | 'isCompleted' | 'createdAt' | 'updatedAt'>) => {
-    // TODO: API 연동 필요
-    const newSchedule: Schedule = {
-      ...scheduleData,
-      planId: Date.now(),
-      isCompleted: false,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
+    if (scheduleData.subGoalId === undefined) {
+      setError("일정을 생성하려면 하위 목표를 선택해야 합니다.");
+      console.error("SubGoalId is required to create a plan.");
+      return;
     }
-    setSchedules((prev) => [...prev, newSchedule])
-    setShowForm(false)
-    setEditingSchedule(null)
+
+    const apiPayload: CreatePlanRequest = {
+      title: scheduleData.title,
+      start_date_time: scheduleData.startDateTime,
+      end_date_time: scheduleData.endDateTime,
+      all_day: scheduleData.allDay,
+    };
+
+    try {
+      const newPlanFromApi = await createPlan(scheduleData.subGoalId, apiPayload);
+
+      const newSchedule: Schedule = {
+        planId: newPlanFromApi.plan_id,
+        goalId: newPlanFromApi.goal_id,
+        subGoalId: newPlanFromApi.sub_goal_id,
+        title: newPlanFromApi.title,
+        subTasks: [], // 새 일정에는 하위 태스크가 없음
+        startDateTime: newPlanFromApi.start_date_time,
+        endDateTime: newPlanFromApi.end_date_time,
+        allDay: newPlanFromApi.all_day,
+        isCompleted: newPlanFromApi.is_completed,
+        completedAt: newPlanFromApi.completed_at,
+        createdAt: newPlanFromApi.created_at,
+        updatedAt: newPlanFromApi.updated_at,
+      };
+
+      setSchedules((prev) => [...prev, newSchedule]);
+      setShowForm(false);
+      setEditingSchedule(null);
+    } catch (err) {
+      console.error("Failed to create schedule:", err);
+      setError("일정 생성에 실패했습니다. 다시 시도해 주세요.");
+    }
   }
 
   const updateSchedule = async (planId: number, updates: Partial<Schedule>) => {
@@ -278,6 +329,7 @@ export default function SchedulePage() {
               onSubmit={editingSchedule ? handleUpdateSchedule : createSchedule}
               onCancel={() => { setShowForm(false); setEditingSchedule(null); }}
               defaultDate={selectedDate}
+              goals={goalList} // goals prop 추가
             />
           </div>
         </div>
