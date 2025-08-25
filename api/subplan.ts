@@ -12,10 +12,12 @@ export interface SubPlan {
 
 export interface Plan {
   title: string;
+  color: string;            
   plan_id: number;
   goal_id: number;
   sub_goal_id: number;
   sub_plans: SubPlan[];
+  plan_category: string;    
   start_date_time: string;
   end_date_time: string;
   all_day: boolean;
@@ -55,6 +57,8 @@ export interface CreatePlanRequest {
   start_date_time: string; // "2025-08-03T15:05"
   end_date_time: string;   // "2025-08-03T15:05"
   all_day: boolean;
+  color: string;           // ✅ 추가
+  plan_category: string;   // ✅ 추가 (enum이면 나중에 타입 좁혀도 됨)
 }
 
 export interface CreatePlanResponse {
@@ -62,11 +66,13 @@ export interface CreatePlanResponse {
   code: string;
   message: string;
   result: {
+    title: string;
+    color: string;            // ✅ 추가
     plan_id: number;
     goal_id: number;
     sub_goal_id: number;
-    sub_plans: any[]; // 처음에는 비어있음
-    title: string;
+    sub_plans: SubPlan[];     // ✅ 타입 명확히
+    plan_category: string;    // ✅ 추가
     start_date_time: string;
     end_date_time: string;
     all_day: boolean;
