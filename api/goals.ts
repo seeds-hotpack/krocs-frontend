@@ -40,6 +40,7 @@ export const getGoals = async (date: string): Promise<Goal[]> => {
     completionPercentage: g.completionPercentage ?? 0,
     createdAt: g.createdAt,
     updatedAt: g.updatedAt,
+    
   }));
 };
 

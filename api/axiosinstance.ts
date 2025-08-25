@@ -2,7 +2,8 @@ import axios from 'axios';
 
 // axios 인스턴스 생성
 const axiosInstance = axios.create({
-  baseURL: 'http://localhost:8080/api/v1',
+  // baseURL: 'http://localhost:8080/api/v1',
+  baseURL: 'http://13.125.229.182:8080/api/v1',
   timeout: 5000,
   headers: {
     'Content-Type': 'application/json',

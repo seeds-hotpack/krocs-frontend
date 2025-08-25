@@ -63,15 +63,34 @@ export default function SchedulePage() {
       try {
         const formattedDate = formatDateToYYYYMMDD(selectedDate)
         const fetchedPlans: Plan[] = await getPlans(formattedDate)
-        
+
+        const reverseColorMap: { [key: string]: string } = {
+          BLUE: "blue",
+          RED: "red",
+          GREEN: "green",
+          PURPLE: "purple",
+          ORANGE: "orange",
+          PINK: "pink",
+          YELLOW: "yellow",
+          NAVY: "indigo",
+        };
+
+        const reverseCategoryMap: { [key: string]: string } = {
+          WORK: "Briefcase",
+          STUDY: "Book",
+          ETC: "User", // ETC는 기본값 '사용자' 아이콘으로
+        };
+
         const adaptedSchedules: Schedule[] = fetchedPlans.map(plan => ({
           planId: plan.plan_id,
           goalId: plan.goal_id,
           subGoalId: plan.sub_goal_id,
           title: plan.title,
+          color: reverseColorMap[plan.color] || "blue",
+          icon: reverseCategoryMap[plan.plan_category] || "User",
           subTasks: plan.sub_plans.map(subPlan => ({
             id: String(subPlan.sub_plan_id),
-            title: subPlan.content,
+            title: subPlan.title, // API 명세에 맞게 content에서 title로 수정
             completed: subPlan.is_completed,
           })),
           startDateTime: plan.start_date_time,
@@ -125,11 +144,30 @@ export default function SchedulePage() {
       return;
     }
 
+    // Frontend 값을 Backend Enum 값으로 매핑
+    const colorMap: { [key: string]: string } = {
+      blue: "BLUE",
+      red: "RED",
+      green: "GREEN",
+      purple: "PURPLE",
+      orange: "ORANGE",
+      pink: "PINK",
+      yellow: "YELLOW",
+      indigo: "NAVY",
+    };
+
+    const categoryMap: { [key: string]: string } = {
+      Briefcase: "WORK", // 업무
+      Book: "STUDY",      // 학습
+    };
+
     const apiPayload: CreatePlanRequest = {
       title: scheduleData.title,
       start_date_time: scheduleData.startDateTime,
       end_date_time: scheduleData.endDateTime,
       all_day: scheduleData.allDay,
+      color: colorMap[scheduleData.color] || "BLUE", // 매핑되지 않은 값은 기본값 BLUE
+      plan_category: categoryMap[scheduleData.icon] || "ETC", // 'Briefcase', 'Book' 외에는 모두 'ETC'
     };
 
     try {
@@ -140,7 +178,9 @@ export default function SchedulePage() {
         goalId: newPlanFromApi.goal_id,
         subGoalId: newPlanFromApi.sub_goal_id,
         title: newPlanFromApi.title,
-        subTasks: [], // 새 일정에는 하위 태스크가 없음
+        color: scheduleData.color, // 폼에서 받은 프론트엔드 값을 그대로 사용
+        icon: scheduleData.icon,   // 폼에서 받은 프론트엔드 값을 그대로 사용
+        subTasks: [],
         startDateTime: newPlanFromApi.start_date_time,
         endDateTime: newPlanFromApi.end_date_time,
         allDay: newPlanFromApi.all_day,
