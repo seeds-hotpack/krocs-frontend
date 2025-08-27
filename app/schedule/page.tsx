@@ -11,7 +11,7 @@ import { useTheme } from "next-themes"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import Link from "next/link"
 import { getGoals, type Goal } from "@/api/goals";
-import { getPlans, Plan, SubPlan, createPlan, type CreatePlanRequest } from "@/api/subplan"
+import { getPlans, Plan, SubPlan, createPlan, updatePlan, type CreatePlanRequest, type UpdatePlanRequest } from "@/api/subplan"
 
 // 컴포넌트에서 사용할 데이터 인터페이스
 export interface SubTask {
@@ -105,6 +105,7 @@ export default function SchedulePage() {
         setSchedules(adaptedSchedules)
       } catch (err) {
         setError("일정을 불러오는 데 실패했습니다. 다시 시도해 주세요.")
+        setSchedules([]); // 실패 시 기존 스케줄을 비웁니다.
         console.error(err)
       } finally {
         setLoading(false)
@@ -118,14 +119,14 @@ export default function SchedulePage() {
   useEffect(() => {
     const fetchGoals = async () => {
       try {
-        const goals = await getGoals(formatDateToYYYYMMDD(new Date()));
+        const goals = await getGoals(formatDateToYYYYMMDD(selectedDate)); // new Date() -> selectedDate
         setGoalList(goals);
       } catch (err) {
         console.error("Failed to fetch goals:", err);
       }
     };
     fetchGoals();
-  }, []);
+  }, [selectedDate]); // 의존성 배열에 selectedDate 추가
 
   useEffect(() => {
     const handleResize = () => {
@@ -200,12 +201,71 @@ export default function SchedulePage() {
   }
 
   const updateSchedule = async (planId: number, updates: Partial<Schedule>) => {
-    // TODO: API 연동 필요
-    setSchedules((prev) =>
-      prev.map((schedule) =>
-        schedule.planId === planId ? { ...schedule, ...updates, updatedAt: new Date().toISOString() } : schedule,
-      ),
-    )
+    const originalSchedule = schedules.find(s => s.planId === planId);
+    if (!originalSchedule || originalSchedule.subGoalId === undefined) {
+      console.error("Schedule or subGoalId not found for update");
+      setError("일정 수정에 필요한 정보가 부족합니다.");
+      return;
+    }
+
+    // Dynamically build the partial payload for the PATCH request
+    const apiPayload: Partial<UpdatePlanRequest> = {};
+    const colorMap: { [key: string]: string } = { blue: "BLUE", red: "RED", green: "GREEN", purple: "PURPLE", orange: "ORANGE", pink: "PINK", yellow: "YELLOW", indigo: "NAVY" };
+    const categoryMap: { [key: string]: string } = { Briefcase: "WORK", Book: "STUDY" };
+
+    // Map only the fields that are present in the 'updates' object
+    if (updates.title !== undefined) apiPayload.title = updates.title;
+    if (updates.startDateTime !== undefined) apiPayload.start_date_time = updates.startDateTime;
+    if (updates.endDateTime !== undefined) apiPayload.end_date_time = updates.endDateTime;
+    if (updates.allDay !== undefined) apiPayload.all_day = updates.allDay;
+    if (updates.isCompleted !== undefined) apiPayload.is_completed = updates.isCompleted;
+    if (updates.color !== undefined) {
+      apiPayload.color = colorMap[updates.color] || 'BLUE';
+    }
+    if (updates.icon !== undefined) {
+      apiPayload.plan_category = categoryMap[updates.icon] || 'ETC';
+    }
+
+    // If no fields were changed that the API supports, do nothing.
+    // Note: subTasks are not supported by the update API.
+    if (Object.keys(apiPayload).length === 0) {
+      // Even if only subtasks changed, we update local state without an API call
+      if (updates.subTasks) {
+        setSchedules(prev => prev.map(s => s.planId === planId ? { ...s, ...updates } : s));
+      }
+      return;
+    }
+
+    try {
+      const updatedPlanFromApi = await updatePlan(planId, originalSchedule.subGoalId, apiPayload);
+
+      // Optimistically update the UI with the changes that were sent
+      const optimisticallyUpdated = { ...originalSchedule, ...updates };
+
+      // Then, fully update with the response from the server
+      const reverseColorMap: { [key: string]: string } = { BLUE: "blue", RED: "red", GREEN: "green", PURPLE: "purple", ORANGE: "orange", PINK: "pink", YELLOW: "yellow", NAVY: "indigo" };
+      const reverseCategoryMap: { [key: string]: string } = { WORK: "Briefcase", STUDY: "Book", ETC: "User" };
+
+      const finalUpdatedSchedule: Schedule = {
+        ...optimisticallyUpdated, // Use the optimistic data as a base
+        planId: updatedPlanFromApi.plan_id,
+        title: updatedPlanFromApi.title,
+        startDateTime: updatedPlanFromApi.start_date_time,
+        endDateTime: updatedPlanFromApi.end_date_time,
+        allDay: updatedPlanFromApi.all_day,
+        isCompleted: updatedPlanFromApi.is_completed,
+        completedAt: updatedPlanFromApi.completed_at,
+        updatedAt: updatedPlanFromApi.updated_at,
+        color: reverseColorMap[updatedPlanFromApi.color] || 'blue',
+        icon: reverseCategoryMap[updatedPlanFromApi.plan_category] || 'User',
+        subTasks: updatedPlanFromApi.sub_plans.map(subPlan => ({ id: String(subPlan.sub_plan_id), title: subPlan.title, completed: subPlan.is_completed })),
+      };
+
+      setSchedules(prev => prev.map(s => s.planId === planId ? finalUpdatedSchedule : s));
+    } catch (err) {
+      console.error("Failed to update schedule:", err);
+      setError("일정 수정에 실패했습니다. 다시 시도해 주세요.");
+    }
   }
 
   const handleEditSchedule = (schedule: Schedule) => {
