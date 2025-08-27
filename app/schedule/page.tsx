@@ -32,6 +32,9 @@ export interface Schedule {
   completedAt?: string | null;
   createdAt: string;
   updatedAt: string;
+  icon?: string;
+  color?: string;
+  reminderMinutes?: number;
 }
 
 // YYYY-MM-DD 형식으로 날짜를 변환하는 헬퍼 함수
@@ -167,8 +170,8 @@ export default function SchedulePage() {
       start_date_time: scheduleData.startDateTime,
       end_date_time: scheduleData.endDateTime,
       all_day: scheduleData.allDay,
-      color: colorMap[scheduleData.color] || "BLUE", // 매핑되지 않은 값은 기본값 BLUE
-      plan_category: categoryMap[scheduleData.icon] || "ETC", // 'Briefcase', 'Book' 외에는 모두 'ETC'
+      color: colorMap[scheduleData.color || 'blue'] || "BLUE", // undefined 방지
+      plan_category: categoryMap[scheduleData.icon || ''] || "ETC", // undefined 방지
     };
 
     try {

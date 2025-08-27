@@ -1,8 +1,6 @@
 "use client"
 
-import React, { forwardRef, useImperativeHandle } from "react"
-
-import { useState, useRef, useEffect } from "react"
+import React, { forwardRef, useImperativeHandle, useCallback, useState, useRef, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import {
   CheckCircle2,
@@ -41,7 +39,7 @@ interface Schedule {
   endDateTime: string
   allDay: boolean
   isCompleted: boolean
-  completedAt?: string
+  completedAt?: string | null
   createdAt: string
   updatedAt: string
   reminderMinutes?: number
@@ -59,23 +57,24 @@ interface ScheduleTimelineProps {
   onScrollToCurrentTime?: () => void
 }
 
-export const ScheduleTimeline = forwardRef<{ scrollToCurrentTime: () => void }, ScheduleTimelineProps>(({
-  schedules,
-  selectedDate,
-  onUpdateSchedule,
-  onEditSchedule,
-  loading,
-  onScrollToCurrentTime,
-}, ref) => {
+export const ScheduleTimeline = forwardRef<{
+  scrollToCurrentTime: () => void
+}, ScheduleTimelineProps>(({ schedules, selectedDate, onUpdateSchedule, onEditSchedule, loading, onScrollToCurrentTime }, ref) => {
   const [draggedItem, setDraggedItem] = useState<number | null>(null)
-  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 })
-  const [dragPosition, setDragPosition] = useState({ x: 0, y: 0 })
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  const [dragPosition, setDragPosition] = useState({ x: 0, y: 0 });
   const [mouseDownPosition, setMouseDownPosition] = useState<{ x: number; y: number } | null>(null);
   const [currentTime, setCurrentTime] = useState(new Date())
   const [expandedSchedules, setExpandedSchedules] = useState<Set<number>>(new Set())
   const [visibleCards, setVisibleCards] = useState<Set<number>>(new Set())
   const [showBackToCurrentTime, setShowBackToCurrentTime] = useState(false)
   const timelineRef = useRef<HTMLDivElement>(null)
+
+  const getCurrentTimePosition = useCallback(() => {
+    const currentHour = currentTime.getHours() + currentTime.getMinutes() / 60
+    const slotHeight = 24
+    return currentHour * 4 * slotHeight
+  }, [currentTime]);
 
   useImperativeHandle(ref, () => ({
     scrollToCurrentTime
@@ -104,25 +103,7 @@ export const ScheduleTimeline = forwardRef<{ scrollToCurrentTime: () => void }, 
         })
       }
     }
-  }, [loading])
-
-  useEffect(() => {
-    if (!loading && timelineRef.current) {
-      const today = new Date()
-      const isToday = selectedDate.toDateString() === today.toDateString()
-      
-      if (isToday) {
-        const currentPosition = getCurrentTimePosition()
-        const containerHeight = timelineRef.current.clientHeight
-        const scrollTo = currentPosition - containerHeight / 2
-        
-        timelineRef.current.scrollTo({
-          top: Math.max(0, scrollTo),
-          behavior: 'smooth'
-        })
-      }
-    }
-  }, [selectedDate])
+  }, [loading, selectedDate, getCurrentTimePosition])
 
   useEffect(() => {
     const timelineElement = timelineRef.current
@@ -160,7 +141,7 @@ export const ScheduleTimeline = forwardRef<{ scrollToCurrentTime: () => void }, 
       timelineElement.removeEventListener('scroll', handleScroll)
       clearTimeout(timeoutId)
     }
-  }, [selectedDate, currentTime])
+  }, [selectedDate, currentTime, getCurrentTimePosition])
 
   const timeSlots = []
   for (let hour = 0; hour <= 23; hour++) {
@@ -268,12 +249,6 @@ export const ScheduleTimeline = forwardRef<{ scrollToCurrentTime: () => void }, 
     }
   }
 
-  const getCurrentTimePosition = () => {
-    const currentHour = currentTime.getHours() + currentTime.getMinutes() / 60
-    const slotHeight = 24
-    return currentHour * 4 * slotHeight
-  }
-
   const snapToGrid = (y: number) => {
     const slotHeight = 24
     return Math.round(y / slotHeight) * slotHeight
@@ -285,24 +260,6 @@ export const ScheduleTimeline = forwardRef<{ scrollToCurrentTime: () => void }, 
     const hour = Math.floor(slotIndex / 4)
     const minute = (slotIndex % 4) * 15
     return { hour: Math.max(0, Math.min(23, hour)), minute }
-  }
-
-  const checkScheduleOverlap = (schedule: Schedule, newStartTime: Date, newEndTime: Date) => {
-    return timedSchedules.some((otherSchedule) => {
-      if (otherSchedule.planId === schedule.planId) return false
-      const otherStart = new Date(otherSchedule.startDateTime)
-      const otherEnd = new Date(otherSchedule.endDateTime)
-      return newStartTime < otherEnd && newEndTime > otherStart
-    })
-  }
-
-  const getOverlappingSchedules = (schedule: Schedule, newStartTime: Date, newEndTime: Date) => {
-    return timedSchedules.filter((otherSchedule) => {
-      if (otherSchedule.planId === schedule.planId) return false
-      const otherStart = new Date(otherSchedule.startDateTime)
-      const otherEnd = new Date(otherSchedule.endDateTime)
-      return newStartTime < otherEnd && newEndTime > otherStart
-    })
   }
 
   const getOverlapAreas = () => {
@@ -339,111 +296,88 @@ export const ScheduleTimeline = forwardRef<{ scrollToCurrentTime: () => void }, 
   }
 
   const handleMouseDown = (e: React.MouseEvent, planId: number) => {
-    if (!timelineRef.current) return
-    setMouseDownPosition({ x: e.clientX, y: e.clientY });
-    const timelineRect = timelineRef.current.getBoundingClientRect()
-    const scrollTop = timelineRef.current.scrollTop
-    const clickY = e.clientY - timelineRect.top + scrollTop
-    const schedule = timedSchedules.find((s) => s.planId === planId)
-    if (!schedule) return
-    const originalPosition = getSchedulePosition(schedule)
-    setDraggedItem(planId)
-    setDragOffset({ x: e.clientX - timelineRect.left, y: clickY - originalPosition.top })
-    setDragPosition({ x: e.clientX, y: e.clientY })
-    e.preventDefault()
-  }
+    if (!timelineRef.current) return;
 
-  const handleMouseMove = (e: React.MouseEvent) => {
-    if (!draggedItem || !timelineRef.current) return
-    const timelineRect = timelineRef.current.getBoundingClientRect()
-    const scrollTop = timelineRef.current.scrollTop
-    const currentY = e.clientY - timelineRect.top + scrollTop
-    const newY = currentY - dragOffset.y
-    const snappedY = snapToGrid(Math.max(0, newY))
-    setDragPosition({ x: e.clientX, y: e.clientY })
-    const draggedElement = document.querySelector(`[data-schedule-id="${draggedItem}"]`) as HTMLElement
-    const draggedContainer = draggedElement?.parentElement as HTMLElement
-    if (draggedElement && draggedContainer) {
-      const originalSchedule = timedSchedules.find((s) => s.planId === draggedItem)
-      if (originalSchedule) {
-        const originalPosition = getSchedulePosition(originalSchedule)
-        const transformY = snappedY - originalPosition.top
-        draggedContainer.style.transform = `translateY(${transformY}px)`
-        draggedContainer.style.zIndex = "9999"
-        draggedContainer.style.opacity = "0.9"
-        draggedContainer.style.pointerEvents = "none"
-        const cardElement = draggedContainer.children[1] as HTMLElement
-        if (cardElement) {
-          cardElement.style.opacity = "1"
-          cardElement.style.zIndex = "9999"
-        }
+    const startMouseDownPos = { x: e.clientX, y: e.clientY };
+    const schedule = timedSchedules.find((s) => s.planId === planId);
+    if (!schedule) return;
+
+    const timelineRect = timelineRef.current.getBoundingClientRect();
+    const scrollTop = timelineRef.current.scrollTop;
+    const clickY = e.clientY - timelineRect.top + scrollTop;
+    const originalPosition = getSchedulePosition(schedule);
+
+    const dragOffset = { x: e.clientX - timelineRect.left, y: clickY - originalPosition.top };
+    
+    setDraggedItem(planId);
+
+    const handleMouseMove = (moveEvent: MouseEvent) => {
+      setDragPosition({ x: moveEvent.clientX, y: moveEvent.clientY });
+      const currentY = moveEvent.clientY - timelineRect.top + scrollTop;
+      const newY = currentY - dragOffset.y;
+      const snappedY = snapToGrid(Math.max(0, newY));
+      const draggedElement = document.querySelector(`[data-schedule-id="${planId}"]`) as HTMLElement;
+      const draggedContainer = draggedElement?.parentElement as HTMLElement;
+
+      if (draggedElement && draggedContainer) {
+        const transformY = snappedY - originalPosition.top;
+        draggedContainer.style.transform = `translateY(${transformY}px)`;
+        draggedContainer.style.zIndex = "50";
+        draggedContainer.style.opacity = "0.9";
       }
-    }
-  }
-
-  const handleMouseUp = (e: React.MouseEvent) => {
-    if (!draggedItem || !timelineRef.current) return
-
-    if (mouseDownPosition) {
-      const distance = Math.sqrt(
-        Math.pow(e.clientX - mouseDownPosition.x, 2) +
-        Math.pow(e.clientY - mouseDownPosition.y, 2)
-      );
-      if (distance < 5) {
-        setDraggedItem(null);
-        setMouseDownPosition(null);
-        return;
-      }
-    }
-
-    const timelineRect = timelineRef.current.getBoundingClientRect()
-    const scrollTop = timelineRef.current.scrollTop
-    const currentY = e.clientY - timelineRect.top + scrollTop
-    const newY = currentY - dragOffset.y
-    const snappedY = snapToGrid(Math.max(0, newY))
-    const schedule = timedSchedules.find((s) => s.planId === draggedItem)
-    if (!schedule) return
-    const originalStart = new Date(schedule.startDateTime)
-    const originalEnd = new Date(schedule.endDateTime)
-    const duration = originalEnd.getTime() - originalStart.getTime()
-    const newTime = getTimeFromPosition(snappedY)
-    const newStart = new Date(selectedDate)
-    newStart.setHours(newTime.hour, newTime.minute, 0, 0)
-    const newEnd = new Date(newStart.getTime() + duration)
-    const hasOverlap = checkScheduleOverlap(schedule, newStart, newEnd)
-    const formatToAPIDate = (date: Date) => {
-      const year = date.getFullYear();
-      const month = String(date.getMonth() + 1).padStart(2, '0');
-      const day = String(date.getDate()).padStart(2, '0');
-      const hours = String(date.getHours()).padStart(2, '0');
-      const minutes = String(date.getMinutes()).padStart(2, '0');
-      return `${year}-${month}-${day}T${hours}:${minutes}`;
     };
 
-    onUpdateSchedule(draggedItem, {
-      startDateTime: formatToAPIDate(newStart),
-      endDateTime: formatToAPIDate(newEnd),
-    })
+    const handleMouseUp = (upEvent: MouseEvent) => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
 
-    const draggedElement = document.querySelector(`[data-schedule-id="${draggedItem}"]`) as HTMLElement
-    const draggedContainer = draggedElement?.parentElement as HTMLElement
-    if (draggedElement && draggedContainer) {
-      draggedContainer.style.transform = ""
-      draggedContainer.style.zIndex = ""
-      draggedContainer.style.opacity = ""
-      draggedContainer.style.pointerEvents = ""
-      const cardElement = draggedContainer.children[1] as HTMLElement
-      if (cardElement) {
-        cardElement.style.opacity = ""
-        cardElement.style.zIndex = ""
+      const draggedElement = document.querySelector(`[data-schedule-id="${planId}"]`) as HTMLElement;
+      const draggedContainer = draggedElement?.parentElement as HTMLElement;
+      if (draggedElement && draggedContainer) {
+        draggedContainer.style.transform = "";
+        draggedContainer.style.zIndex = "";
+        draggedContainer.style.opacity = "";
       }
-    }
 
-    setDraggedItem(null)
-    setDragOffset({ x: 0, y: 0 })
-    setDragPosition({ x: 0, y: 0 })
-    setMouseDownPosition(null);
-  }
+      setDraggedItem(null);
+      setDragPosition({ x: 0, y: 0 });
+
+      const distance = Math.sqrt(
+        Math.pow(upEvent.clientX - startMouseDownPos.x, 2) +
+        Math.pow(upEvent.clientY - startMouseDownPos.y, 2)
+      );
+
+      if (distance < 5) return;
+
+      const currentY = upEvent.clientY - timelineRect.top + scrollTop;
+      const newY = currentY - dragOffset.y;
+      const snappedY = snapToGrid(Math.max(0, newY));
+      const newTime = getTimeFromPosition(snappedY);
+      const newStart = new Date(selectedDate);
+      newStart.setHours(newTime.hour, newTime.minute, 0, 0);
+      const duration = new Date(schedule.endDateTime).getTime() - new Date(schedule.startDateTime).getTime();
+      const newEnd = new Date(newStart.getTime() + duration);
+
+      const formatToAPIDate = (date: Date) => {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        const hours = String(date.getHours()).padStart(2, '0');
+        const minutes = String(date.getMinutes()).padStart(2, '0');
+        return `${year}-${month}-${day}T${hours}:${minutes}`;
+      };
+
+      onUpdateSchedule(planId, {
+        startDateTime: formatToAPIDate(newStart),
+        endDateTime: formatToAPIDate(newEnd),
+      });
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+
+    e.preventDefault();
+  };
 
   const toggleComplete = (planId: number, isCompleted: boolean) => {
     onUpdateSchedule(planId, {
@@ -601,12 +535,11 @@ export const ScheduleTimeline = forwardRef<{ scrollToCurrentTime: () => void }, 
         <div
           className="relative"
           style={{ height: `${24 * 4 * 24}px` }}
-          onMouseMove={handleMouseMove}
-          onMouseUp={handleMouseUp}
-          onMouseLeave={handleMouseUp}
         >
+          {/* Timeline Line */}
           <div className="absolute left-[52px] sm:left-[76px] top-0 bottom-0 w-0.5 bg-slate-300 dark:bg-slate-600"></div>
 
+          {/* Time Labels */}
           {timeSlots.map((slot, slotIndex) => (
             <div
               key={`${slot.hour}-${slot.minute}`}
@@ -624,6 +557,7 @@ export const ScheduleTimeline = forwardRef<{ scrollToCurrentTime: () => void }, 
             </div>
           ))}
 
+          {/* Overlap Areas */}
           {getOverlapAreas().map((overlap, index) => {
             const startHour = overlap.start.getHours() + overlap.start.getMinutes() / 60
             const endHour = overlap.end.getHours() + overlap.end.getMinutes() / 60
@@ -655,6 +589,7 @@ export const ScheduleTimeline = forwardRef<{ scrollToCurrentTime: () => void }, 
             )
           })}
 
+          {/* Current Time Indicator */}
           {currentTime.toDateString() === selectedDate.toDateString() && (
             <div
               className="absolute left-[52px] sm:left-[76px] right-2 sm:right-6 h-0.5 bg-red-500 z-20 flex items-center"
@@ -667,6 +602,7 @@ export const ScheduleTimeline = forwardRef<{ scrollToCurrentTime: () => void }, 
             </div>
           )}
 
+          {/* Schedule Icons and Bubbles */}
           {timedSchedules.map((schedule, index) => {
             const position = getSchedulePosition(schedule)
             const isExpanded = expandedSchedules.has(schedule.planId)
@@ -829,3 +765,5 @@ export const ScheduleTimeline = forwardRef<{ scrollToCurrentTime: () => void }, 
     </div>
   )
 })
+
+ScheduleTimeline.displayName = "ScheduleTimeline";
