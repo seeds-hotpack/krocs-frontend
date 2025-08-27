@@ -1,7 +1,7 @@
 "use client"
 
 import { getGoals, Goal, deleteBigGoal as deleteGoalApi } from '../api/goals';
-import { update_Goal as updateGoalApi } from '../api/updateGoal'
+import { update_Goal as updateGoalApi, type UpdateGoalRequest } from '../api/updateGoal'
 import { createGoal as createGoalApi } from '../api/createGoal'
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
@@ -65,24 +65,57 @@ export default function GoalManagementApp() {
   }
 
   const updateGoal = async (goalId: number, goalData: Partial<Goal>) => {
-    setLoading(true)
+    const originalGoal = goals.find(g => g.goalId === goalId);
+    if (!originalGoal) return;
+
+    // Optimistically update UI for instant feedback
+    const optimisticUpdatedGoal = { ...originalGoal, ...goalData };
+    setGoals(prevGoals => prevGoals.map(g => g.goalId === goalId ? optimisticUpdatedGoal : g));
+
+    // Build the partial payload for the PATCH request
+    const apiPayload: Partial<UpdateGoalRequest> = {};
+    if (goalData.title !== undefined) apiPayload.title = goalData.title;
+    if (goalData.priority !== undefined) apiPayload.priority = goalData.priority;
+    if (goalData.startDate !== undefined) apiPayload.startDate = goalData.startDate;
+    if (goalData.endDate !== undefined) apiPayload.endDate = goalData.endDate;
+    if (goalData.completed !== undefined) apiPayload.isCompleted = goalData.completed;
+
     try {
-      const updateData = {
-        title: goalData.title ?? "",
-        priority: goalData.priority ?? "MEDIUM",
-        startDate: goalData.startDate ?? "",
-        endDate: goalData.endDate ?? "",
-        isCompleted: goalData.completed ?? false,
+      const response = await updateGoalApi(goalId, 1, apiPayload);
+      const updatedGoalFromApi = response.result;
+
+      // Final update with the definitive data from the API response
+      const finalGoal: Goal = {
+        ...originalGoal,
+        goalId: updatedGoalFromApi.goalId,
+        title: updatedGoalFromApi.title,
+        priority: updatedGoalFromApi.priority as 'HIGH' | 'MEDIUM' | 'LOW',
+        startDate: updatedGoalFromApi.startDate,
+        endDate: updatedGoalFromApi.endDate,
+        completed: updatedGoalFromApi.isCompleted,
+        subGoals: (updatedGoalFromApi.subGoals || []).map((sg: any) => ({
+          subGoalId: sg.subGoalId,
+          title: sg.title,
+          completed: sg.isCompleted,
+        })),
+        completionPercentage: updatedGoalFromApi.completionPercentage ?? 0,
+        createdAt: updatedGoalFromApi.createdAt,
+        updatedAt: updatedGoalFromApi.updatedAt,
+        duration: originalGoal.duration, // Assuming duration is not returned by update API
+      };
+
+      setGoals(prevGoals => prevGoals.map(g => g.goalId === goalId ? finalGoal : g));
+
+      if (editingGoal?.goalId === goalId) {
+        setEditingGoal(null);
+        setIsFormOpen(false);
       }
-      await updateGoalApi(goalId, 1, updateData)
-      await fetchGoals(selectedDate)
-      setEditingGoal(null)
-      setIsFormOpen(false)
+
     } catch (err: any) {
-      setError(err?.response?.data?.message || "목표 수정에 실패했습니다.")
-      console.error(err)
-    } finally {
-      setLoading(false)
+      // Revert the optimistic update if the API call fails
+      setGoals(prevGoals => prevGoals.map(g => g.goalId === goalId ? originalGoal : g));
+      setError(err?.response?.data?.message || "목표 수정에 실패했습니다.");
+      console.error(err);
     }
   }
 
@@ -104,11 +137,11 @@ export default function GoalManagementApp() {
   }
 
   const toggleGoalCompletion = async (goalId: number) => {
-    setGoals((prev) =>
-      prev.map((goal) =>
-        goal.goalId === goalId ? { ...goal, completed: !goal.completed, updatedAt: new Date().toISOString() } : goal,
-      ),
-    )
+    const goal = goals.find(g => g.goalId === goalId);
+    if (!goal) return;
+
+    // Call the existing updateGoal function to handle API call and state refresh
+    await updateGoal(goalId, { ...goal, completed: !goal.completed });
   }
 
   useEffect(() => {
