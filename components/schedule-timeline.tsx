@@ -611,6 +611,8 @@ export const ScheduleTimeline = forwardRef<{
             const iconHeight = Math.max(32, position.height)
             const iconWidth = Math.max(32, Math.min(iconHeight * 0.8, 48))
 
+            
+
             return (
               <div key={schedule.planId} className="absolute flex items-center" style={{ top: `${position.top}px`, height: `${position.height}px` }}>
                 <div

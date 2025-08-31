@@ -11,7 +11,7 @@ import { useTheme } from "next-themes"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import Link from "next/link"
 import { getGoals, type Goal } from "@/api/goals";
-import { getPlans, Plan, SubPlan, createPlan, updatePlan, type CreatePlanRequest, type UpdatePlanRequest } from "@/api/subplan"
+import { getPlans, Plan, SubPlan, createPlan, updatePlan, createSubPlans, type CreatePlanRequest, type UpdatePlanRequest } from "@/api/subplan"
 
 // 컴포넌트에서 사용할 데이터 인터페이스
 export interface SubTask {
@@ -55,6 +55,7 @@ export default function SchedulePage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [refreshTrigger, setRefreshTrigger] = useState(0)
   const timelineRef = useRef<{ scrollToCurrentTime: () => void }>(null)
   const { theme, setTheme } = useTheme()
 
@@ -116,7 +117,7 @@ export default function SchedulePage() {
     }
 
     fetchSchedules()
-  }, [selectedDate])
+  }, [selectedDate, refreshTrigger])
 
   // 목표 목록 가져오기 (컴포넌트 마운트 시 한 번만 실행)
   useEffect(() => {
@@ -177,6 +178,22 @@ export default function SchedulePage() {
     try {
       const newPlanFromApi = await createPlan(scheduleData.subGoalId, apiPayload);
 
+      let createdSubTasks: SubTask[] = [];
+      if (scheduleData.subTasks && scheduleData.subTasks.length > 0) {
+        const subPlansToCreate = scheduleData.subTasks.map(st => ({ title: st.title }));
+        try {
+          const apiResponseSubPlans = await createSubPlans(newPlanFromApi.plan_id, subPlansToCreate);
+          createdSubTasks = apiResponseSubPlans.map(s => ({
+            id: String(s.sub_plan_id),
+            title: s.title,
+            completed: s.is_completed,
+          }));
+        } catch (subPlanError) {
+          console.error("Failed to create sub-plans after main plan creation:", subPlanError);
+          alert("세부 일정 생성 중 오류가 발생했습니다. 일정을 다시 확인해주세요.");
+        }
+      }
+
       const newSchedule: Schedule = {
         planId: newPlanFromApi.plan_id,
         goalId: newPlanFromApi.goal_id,
@@ -184,7 +201,7 @@ export default function SchedulePage() {
         title: newPlanFromApi.title,
         color: scheduleData.color, // 폼에서 받은 프론트엔드 값을 그대로 사용
         icon: scheduleData.icon,   // 폼에서 받은 프론트엔드 값을 그대로 사용
-        subTasks: [],
+        subTasks: createdSubTasks, // This should now be correctly populated
         startDateTime: newPlanFromApi.start_date_time,
         endDateTime: newPlanFromApi.end_date_time,
         allDay: newPlanFromApi.all_day,
@@ -197,6 +214,7 @@ export default function SchedulePage() {
       setSchedules((prev) => [...prev, newSchedule]);
       setShowForm(false);
       setEditingSchedule(null);
+      setRefreshTrigger(prev => prev + 1);
     } catch (err) {
       console.error("Failed to create schedule:", err);
       setError("일정 생성에 실패했습니다. 다시 시도해 주세요.");
@@ -236,7 +254,7 @@ export default function SchedulePage() {
       if (updates.subTasks) {
         setSchedules(prev => prev.map(s => s.planId === planId ? { ...s, ...updates } : s));
       }
-      return;
+      setRefreshTrigger(prev => prev + 1);
     }
 
     try {
@@ -265,6 +283,7 @@ export default function SchedulePage() {
       };
 
       setSchedules(prev => prev.map(s => s.planId === planId ? finalUpdatedSchedule : s));
+      setRefreshTrigger(prev => prev + 1);
     } catch (err) {
       console.error("Failed to update schedule:", err);
       setError("일정 수정에 실패했습니다. 다시 시도해 주세요.");
@@ -433,6 +452,15 @@ export default function SchedulePage() {
               onCancel={() => { setShowForm(false); setEditingSchedule(null); }}
               defaultDate={selectedDate}
               goals={goalList} // goals prop 추가
+              onSubTaskChange={(planId, newSubTask) => {
+                setSchedules(prevSchedules =>
+                  prevSchedules.map(schedule =>
+                    schedule.planId === planId
+                      ? { ...schedule, subTasks: [...(schedule.subTasks || []), newSubTask] }
+                      : schedule
+                  )
+                );
+              }} // Add this line
             />
           </div>
         </div>

@@ -163,3 +163,80 @@ export const updatePlan = async (
     throw error;
   }
 };
+
+//----------------------------------세부 일정 호출 api---------------------------------
+export interface SubPlan {
+  title: string;
+  sub_plan_id: number;
+  is_completed: boolean;
+  completed_at: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface GetSubPlansResponse {
+  isSuccess: boolean;
+  code: string;
+  message: string;
+  result: {
+    sub_plans: SubPlan[];
+  };
+}
+
+export const getSubPlans = async (
+  planId: number
+): Promise<GetSubPlansResponse["result"]["sub_plans"]> => {
+  try {
+    const response = await axiosInstance.get<GetSubPlansResponse>(
+      `/plans/${planId}/sub-plans`
+    );
+    return response.data.result.sub_plans;
+  } catch (error) {
+    console.error("❌ getSubPlans API 호출 실패:", error);
+    throw error;
+  }
+};
+
+//----------------------------------세부 일정 생성 api--------------------------------
+export interface CreateSubPlanRequest {
+  sub_plans: {
+    title: string;
+  }[];
+}
+
+export interface SubPlan {
+  title: string;
+  sub_plan_id: number;
+  is_completed: boolean;
+  completed_at: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreateSubPlansResponse {
+  isSuccess: boolean;
+  code: string;
+  message: string;
+  result: {
+    plan_id: number;
+    created_sub_plans: SubPlan[];
+  };
+}
+export const createSubPlans = async (
+  planId: number,
+  subPlans: { title: string }[]
+): Promise<SubPlan[]> => {
+  try {
+    const body: CreateSubPlanRequest = { sub_plans: subPlans };
+
+    const response = await axiosInstance.post<CreateSubPlansResponse>(
+      `/plans/${planId}/subplans`,
+      body
+    );
+
+    return response.data.result.created_sub_plans;
+  } catch (error) {
+    console.error("❌ createSubPlans API 호출 실패:", error);
+    throw error;
+  }
+};

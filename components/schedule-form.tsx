@@ -1,6 +1,7 @@
 "use client"
 
-import React from "react"
+import { createSubPlans } from "../api/subplan";
+import React from "react";
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -55,6 +56,7 @@ interface ScheduleFormProps {
   onCancel: () => void
   defaultDate: Date
   goals?: Goal[] // goals prop을 받도록 수정
+  onSubTaskChange?: (planId: number, newSubTask: SubTask) => void // Add this line
 }
 
 const iconOptions = [
@@ -82,7 +84,7 @@ const colorOptions = [
   { value: "indigo", label: "남색", class: "bg-indigo-100 text-indigo-600 border-indigo-200" },
 ]
 
-export function ScheduleForm({ schedule, onSubmit, onCancel, defaultDate, goals = [] }: ScheduleFormProps) {
+export function ScheduleForm({ schedule, onSubmit, onCancel, defaultDate, goals = [], onSubTaskChange }: ScheduleFormProps) {
   const [subTasks, setSubTasks] = useState<SubTask[]>(schedule?.subTasks || [])
   const [newSubTask, setNewSubTask] = useState("")
   const [formData, setFormData] = useState({
@@ -132,17 +134,37 @@ export function ScheduleForm({ schedule, onSubmit, onCancel, defaultDate, goals 
     color: schedule?.color || "blue",
   })
 
-  const addSubTask = () => {
+  const addSubTask = async () => {
     if (newSubTask.trim()) {
       const subTask: SubTask = {
         id: Date.now().toString(),
         title: newSubTask.trim(),
         completed: false,
+      };
+
+      if (schedule?.planId) {
+        try {
+          const createdSubPlans = await createSubPlans(schedule.planId, [{ title: newSubTask.trim() }]);
+          if (createdSubPlans && createdSubPlans.length > 0) {
+            const apiSubTask: SubTask = {
+              id: String(createdSubPlans[0].sub_plan_id),
+              title: createdSubPlans[0].title,
+              completed: createdSubPlans[0].is_completed,
+            };
+            setSubTasks([...subTasks, apiSubTask]);
+            onSubTaskChange?.(schedule.planId, apiSubTask);
+          }
+        } catch (error) {
+          console.error("API를 통한 세부 일정 생성 실패:", error);
+          alert("세부 일정 추가에 실패했습니다.");
+          return;
+        }
+      } else {
+        setSubTasks([...subTasks, subTask]);
       }
-      setSubTasks([...subTasks, subTask])
-      setNewSubTask("")
+      setNewSubTask("");
     }
-  }
+  };
 
   const removeSubTask = (id: string) => {
     setSubTasks(subTasks.filter((task) => task.id !== id))
