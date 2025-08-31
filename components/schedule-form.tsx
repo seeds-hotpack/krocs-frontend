@@ -1,6 +1,7 @@
 "use client"
 
-import { createSubPlans } from "../api/subplan";
+
+import { createSubPlans, updateSubPlan } from "../api/subplan";
 import React from "react";
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
@@ -26,6 +27,7 @@ import {
   Camera,
   Gamepad2,
   Palette,
+  Pencil
 } from "lucide-react"
 import type { Goal } from "@/api/goals"
 
@@ -87,6 +89,8 @@ const colorOptions = [
 export function ScheduleForm({ schedule, onSubmit, onCancel, defaultDate, goals = [], onSubTaskChange }: ScheduleFormProps) {
   const [subTasks, setSubTasks] = useState<SubTask[]>(schedule?.subTasks || [])
   const [newSubTask, setNewSubTask] = useState("")
+  const [editingSubTaskId, setEditingSubTaskId] = useState<string | null>(null) // New state
+  const [editingSubTaskTitle, setEditingSubTaskTitle] = useState("") // New state
   const [formData, setFormData] = useState({
     title: schedule?.title || "",
     startDate: schedule?.startDateTime
@@ -170,9 +174,62 @@ export function ScheduleForm({ schedule, onSubmit, onCancel, defaultDate, goals 
     setSubTasks(subTasks.filter((task) => task.id !== id))
   }
 
-  const toggleSubTask = (id: string) => {
-    setSubTasks(subTasks.map((task) => (task.id === id ? { ...task, completed: !task.completed } : task)))
-  }
+  const toggleSubTask = async (id: string) => {
+    const subTaskToUpdate = subTasks.find(task => task.id === id);
+    if (!subTaskToUpdate || !schedule?.planId) {
+      alert("일정 ID가 없어 세부 일정을 수정할 수 없습니다.");
+      return;
+    }
+
+    const newCompletedStatus = !subTaskToUpdate.completed;
+
+    try {
+      const updatedApiSubPlan = await updateSubPlan(Number(id), { is_completed: newCompletedStatus });
+      const updatedSubTasks = subTasks.map(task =>
+        task.id === id
+          ? { ...task, completed: updatedApiSubPlan.is_completed }
+          : task
+      );
+      setSubTasks(updatedSubTasks);
+      onSubTaskChange?.(schedule.planId, { ...subTaskToUpdate, completed: updatedApiSubPlan.is_completed }); // Notify parent
+    } catch (error) {
+      console.error("API를 통한 세부 일정 완료 상태 변경 실패:", error);
+      alert("세부 일정 완료 상태 변경에 실패했습니다.");
+    }
+  };
+
+  const startInlineEdit = (subTask: SubTask) => {
+    setEditingSubTaskId(subTask.id);
+    setEditingSubTaskTitle(subTask.title);
+  };
+
+  const cancelInlineEdit = () => {
+    setEditingSubTaskId(null);
+    setEditingSubTaskTitle("");
+  };
+
+  const saveInlineEdit = async (subTask: SubTask) => {
+    if (!editingSubTaskTitle.trim()) return;
+    if (!schedule?.planId) {
+      alert("일정 ID가 없어 세부 일정을 수정할 수 없습니다.");
+      return;
+    }
+
+    try {
+      const updatedApiSubPlan = await updateSubPlan(Number(subTask.id), { title: editingSubTaskTitle.trim() });
+      const updatedSubTasks = subTasks.map(t =>
+        t.id === subTask.id
+          ? { ...t, title: updatedApiSubPlan.title }
+          : t
+      );
+      setSubTasks(updatedSubTasks);
+      onSubTaskChange?.(schedule.planId, { ...subTask, title: updatedApiSubPlan.title }); // Notify parent
+      cancelInlineEdit();
+    } catch (error) {
+      console.error("API를 통한 세부 일정 수정 실패:", error);
+      alert("세부 일정 수정에 실패했습니다.");
+    }
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -507,11 +564,56 @@ export function ScheduleForm({ schedule, onSubmit, onCancel, defaultDate, goals 
                     onCheckedChange={() => toggleSubTask(task.id)}
                     className="border-slate-300 dark:border-slate-600"
                   />
-                  <span
-                    className={`flex-1 text-sm ${task.completed ? "line-through text-slate-500" : "text-slate-900 dark:text-slate-100"}`}
-                  >
-                    {task.title}
-                  </span>
+                  {editingSubTaskId === task.id ? (
+                    <Input
+                      value={editingSubTaskTitle}
+                      onChange={(e) => setEditingSubTaskTitle(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") saveInlineEdit(task);
+                        if (e.key === "Escape") cancelInlineEdit();
+                      }}
+                      className="flex-1 h-8"
+                      autoFocus
+                    />
+                  ) : (
+                    <span
+                      className={`flex-1 text-sm ${task.completed ? "line-through text-slate-500" : "text-slate-900 dark:text-slate-100"}`}
+                    >
+                      {task.title}
+                    </span>
+                  )}
+                  {editingSubTaskId === task.id ? (
+                    <>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => saveInlineEdit(task)}
+                        className="h-6 w-6 p-0 hover:bg-slate-200 dark:hover:bg-slate-700"
+                      >
+                        저장
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={cancelInlineEdit}
+                        className="h-6 w-6 p-0 hover:bg-slate-200 dark:hover:bg-slate-700"
+                      >
+                        취소
+                      </Button>
+                    </>
+                  ) : (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => startInlineEdit(task)}
+                      className="h-6 w-6 p-0 hover:bg-slate-200 dark:hover:bg-slate-700"
+                    >
+                      <Pencil className="h-3 w-3" />
+                    </Button>
+                  )}
                   <Button
                     type="button"
                     variant="ghost"

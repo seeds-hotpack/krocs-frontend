@@ -240,3 +240,14 @@ export const createSubPlans = async (
     throw error;
   }
 };
+
+//----------------------------------세부 일정 수정 api---------------------------------
+interface SubPlanUpdate {
+  title?: string;
+  is_completed?: boolean;
+}
+
+export const updateSubPlan = async (subPlanId: number, data: SubPlanUpdate) => {
+  const response = await axiosInstance.patch(`/${subPlanId}`, data);
+  return response.data;
+};
