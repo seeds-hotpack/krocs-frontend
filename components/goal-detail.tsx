@@ -92,13 +92,36 @@ export function GoalDetail({ goal, onBack, onUpdate }: GoalDetailProps) {
     }
   }
 
-  const toggleSubGoal = (subGoalId: number) => {
-    const updatedSubGoals = subGoals.map((sg) =>
-      sg.subGoalId === subGoalId ? { ...sg, completed: !sg.completed } : sg,
-    )
-    setSubGoals(updatedSubGoals)
-    onUpdate({ subGoals: updatedSubGoals })
-  }
+  const toggleSubGoal = async (subGoalId: number) => {
+    const subGoalToUpdate = subGoals.find((sg) => sg.subGoalId === subGoalId);
+    if (!subGoalToUpdate) return;
+
+    const newCompletedStatus = !subGoalToUpdate.completed;
+
+    setLoadingSubGoals(true);
+    setError(null);
+    try {
+      await updateSubGoal(subGoalId, {
+        title: subGoalToUpdate.title,
+        is_completed: newCompletedStatus,
+      });
+
+      const res = await getSubGoals(goal.goalId);
+      setSubGoals(
+        res.result.subGoals
+          .map((sg: APISubGoal) => ({
+            subGoalId: sg.subGoalId,
+            title: sg.title,
+            completed: sg.isCompleted,
+          }))
+          .sort((a, b) => a.subGoalId - b.subGoalId),
+      );
+    } catch (e: any) {
+      setError(e.message);
+    } finally {
+      setLoadingSubGoals(false);
+    }
+  };
 
   const handleDeleteSubGoal = async (subGoalId: number) => {
     setLoadingSubGoals(true)
