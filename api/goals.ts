@@ -20,9 +20,9 @@ export interface Goal {
   updatedAt: string;
 }
 
+
 export const getGoals = async (date: string): Promise<Goal[]> => {
-  const params = { date };  // date 필수
-  const response = await axiosInstance.get('/goals', { params });
+  const response = await axiosInstance.get('/goals', { params: { date } });
   const apiGoals = response.data.result;
 
   return apiGoals.map((g: any) => ({
