@@ -1,13 +1,12 @@
 "use client"
 
 import React from "react"
-
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGroup, SelectLabel } from "@/components/ui/select"
 import {
   X,
   Clock,
@@ -27,12 +26,7 @@ import {
   Gamepad2,
   Palette,
 } from "lucide-react"
-
-interface Goal {
-  goalId: number
-  title: string
-  priority: string
-}
+import type { Goal } from "@/api/goals"
 
 interface SubTask {
   id: string
@@ -40,6 +34,7 @@ interface SubTask {
   completed: boolean
 }
 
+// page.tsx와 호환되도록 Schedule 인터페이스를 사용합니다.
 interface Schedule {
   planId?: number
   title: string
@@ -59,6 +54,7 @@ interface ScheduleFormProps {
   onSubmit: (data: Omit<Schedule, "planId" | "isCompleted" | "createdAt" | "updatedAt">) => void
   onCancel: () => void
   defaultDate: Date
+  goals?: Goal[] // goals prop을 받도록 수정
 }
 
 const iconOptions = [
@@ -86,8 +82,7 @@ const colorOptions = [
   { value: "indigo", label: "남색", class: "bg-indigo-100 text-indigo-600 border-indigo-200" },
 ]
 
-export function ScheduleForm({ schedule, onSubmit, onCancel, defaultDate }: ScheduleFormProps) {
-  const [goals, setGoals] = useState<Goal[]>([])
+export function ScheduleForm({ schedule, onSubmit, onCancel, defaultDate, goals = [] }: ScheduleFormProps) {
   const [subTasks, setSubTasks] = useState<SubTask[]>(schedule?.subTasks || [])
   const [newSubTask, setNewSubTask] = useState("")
   const [formData, setFormData] = useState({
@@ -131,21 +126,11 @@ export function ScheduleForm({ schedule, onSubmit, onCancel, defaultDate }: Sche
           return `${year}-${month}-${day}T10:00`
         })(),
     allDay: schedule?.allDay || false,
-    goalId: schedule?.goalId,
+    subGoalId: schedule?.subGoalId, // subGoalId 상태 추가
     reminderMinutes: schedule?.reminderMinutes,
     icon: schedule?.icon || "User",
     color: schedule?.color || "blue",
   })
-
-  // Mock goals data
-  useEffect(() => {
-    const mockGoals: Goal[] = [
-      { goalId: 1, title: "프로젝트 완료하기", priority: "HIGH" },
-      { goalId: 2, title: "운동 루틴 만들기", priority: "MEDIUM" },
-      { goalId: 3, title: "독서 습관 만들기", priority: "LOW" },
-    ]
-    setGoals(mockGoals)
-  }, [])
 
   const addSubTask = () => {
     if (newSubTask.trim()) {
@@ -170,10 +155,7 @@ export function ScheduleForm({ schedule, onSubmit, onCancel, defaultDate }: Sche
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
 
-    // datetime-local 입력값을 올바른 ISO 문자열로 변환
     const formatDateTime = (dateTimeString: string) => {
-      // datetime-local 입력은 "YYYY-MM-DDTHH:MM" 형식
-      // 로컬 시간을 그대로 유지하여 ISO 형식으로 변환
       const date = new Date(dateTimeString)
       const year = date.getFullYear()
       const month = String(date.getMonth() + 1).padStart(2, '0')
@@ -181,38 +163,41 @@ export function ScheduleForm({ schedule, onSubmit, onCancel, defaultDate }: Sche
       const hours = String(date.getHours()).padStart(2, '0')
       const minutes = String(date.getMinutes()).padStart(2, '0')
       
-      // 로컬 시간대를 유지하면서 ISO 형식으로 변환 (Z 대신 로컬 시간대 오프셋 사용)
-      const timezoneOffset = date.getTimezoneOffset()
-      const offsetHours = Math.abs(Math.floor(timezoneOffset / 60))
-      const offsetMinutes = Math.abs(timezoneOffset % 60)
-      const offsetSign = timezoneOffset > 0 ? '-' : '+'
-      const offsetString = `${offsetSign}${String(offsetHours).padStart(2, '0')}:${String(offsetMinutes).padStart(2, '0')}`
-      
-      return `${year}-${month}-${day}T${hours}:${minutes}:00${offsetString}`
+      // API가 요구하는 "YYYY-MM-DDTHH:MM" 형식으로 반환
+      return `${year}-${month}-${day}T${hours}:${minutes}`
     }
 
-    // 로컬 시간대 오프셋을 동적으로 계산
-    const getLocalTimezoneOffset = () => {
-      const date = new Date()
-      const timezoneOffset = date.getTimezoneOffset()
-      const offsetHours = Math.abs(Math.floor(timezoneOffset / 60))
-      const offsetMinutes = Math.abs(timezoneOffset % 60)
-      const offsetSign = timezoneOffset > 0 ? '-' : '+'
-      return `${offsetSign}${String(offsetHours).padStart(2, '0')}:${String(offsetMinutes).padStart(2, '0')}`
-    }
+    // 로컬 시간대 오프셋을 동적으로 계산하는 함수는 더 이상 필요 없으므로 제거
+    // const getLocalTimezoneOffset = () => {
+    //   const date = new Date()
+    //   const timezoneOffset = date.getTimezoneOffset()
+    //   const offsetHours = Math.abs(Math.floor(timezoneOffset / 60))
+    //   const offsetMinutes = Math.abs(timezoneOffset % 60)
+    //   const offsetSign = timezoneOffset > 0 ? '-' : '+'
+    //   return `${offsetSign}${String(offsetHours).padStart(2, '0')}:${String(offsetMinutes).padStart(2, '0')}`
+    // }
 
-    const timezoneOffset = getLocalTimezoneOffset()
+    // const timezoneOffset = getLocalTimezoneOffset() // 이 변수도 더 이상 필요 없음
+
+    // subGoalId가 선택되었는지 확인
+    if (!formData.subGoalId) {
+      alert("하위 목표를 선택해주세요.");
+      return;
+    }
+    
+    const selectedGoal = goals.find(g => g.subGoals.some(sg => sg.subGoalId === formData.subGoalId));
 
     onSubmit({
       title: formData.title,
       startDateTime: formData.allDay
-        ? `${formData.startDate}T00:00:00${timezoneOffset}`
+        ? `${formData.startDate}T00:00` // 하루 종일 일정의 시작 시간도 형식에 맞게 수정
         : formatDateTime(formData.startDateTime),
       endDateTime: formData.allDay
-        ? `${formData.endDate}T23:59:59${timezoneOffset}`
+        ? `${formData.endDate}T23:59` // 하루 종일 일정의 종료 시간도 형식에 맞게 수정
         : formatDateTime(formData.endDateTime),
       allDay: formData.allDay,
-      goalId: formData.goalId,
+      goalId: selectedGoal?.goalId, // 선택된 subGoalId를 통해 goalId를 찾아서 전달
+      subGoalId: formData.subGoalId, // subGoalId 전달
       reminderMinutes: formData.reminderMinutes,
       icon: formData.icon,
       color: formData.color,
@@ -261,6 +246,52 @@ export function ScheduleForm({ schedule, onSubmit, onCancel, defaultDate }: Sche
             className="h-10 border-slate-300 focus:border-slate-900 focus:ring-slate-900 dark:border-slate-600 dark:bg-slate-800"
             required
           />
+        </div>
+
+        {/* 하위 목표 선택 드롭다운 */}
+        <div className="space-y-2">
+          <Label
+            htmlFor="subGoalId"
+            className="text-sm font-medium text-slate-700 dark:text-slate-300 flex items-center gap-2"
+          >
+            <Target className="h-4 w-4 text-slate-500" />
+            하위 목표 선택 (필수)
+          </Label>
+          <Select
+            value={formData.subGoalId?.toString() || ""}
+            onValueChange={(value) =>
+              setFormData({ ...formData, subGoalId: value ? Number(value) : undefined })
+            }
+            required
+          >
+            <SelectTrigger className="h-10 border-slate-300 focus:border-slate-900 focus:ring-slate-900 dark:border-slate-600 dark:bg-slate-800">
+              <SelectValue placeholder="연결할 하위 목표를 선택하세요" />
+            </SelectTrigger>
+            <SelectContent>
+              {goals.length === 0 ? (
+                <SelectItem value="loading" disabled>
+                  목표를 불러오는 중...
+                </SelectItem>
+              ) : (
+                goals.map((goal) => (
+                  <SelectGroup key={goal.goalId}>
+                    <SelectLabel>{goal.title}</SelectLabel>
+                    {goal.subGoals.length > 0 ? (
+                      goal.subGoals.map((subGoal) => (
+                        <SelectItem key={subGoal.subGoalId} value={subGoal.subGoalId.toString()}>
+                          {subGoal.title}
+                        </SelectItem>
+                      ))
+                    ) : (
+                      <SelectItem value={`no-subgoals-${goal.goalId}`} disabled>
+                        하위 목표 없음
+                      </SelectItem>
+                    )}
+                  </SelectGroup>
+                ))
+              )}
+            </SelectContent>
+          </Select>
         </div>
 
         {/* Icon and Color Selection */}
@@ -324,34 +355,6 @@ export function ScheduleForm({ schedule, onSubmit, onCancel, defaultDate }: Sche
               <p className="text-xs text-slate-600 dark:text-slate-400">미리보기</p>
             </div>
           </div>
-        </div>
-
-        <div className="space-y-2">
-          <Label
-            htmlFor="goalId"
-            className="text-sm font-medium text-slate-700 dark:text-slate-300 flex items-center gap-2"
-          >
-            <Target className="h-4 w-4 text-slate-500" />
-            연결된 목표 (선택사항)
-          </Label>
-          <Select
-            value={formData.goalId?.toString() || "none"}
-            onValueChange={(value) =>
-              setFormData({ ...formData, goalId: value === "none" ? undefined : Number.parseInt(value) })
-            }
-          >
-            <SelectTrigger className="h-10 border-slate-300 focus:border-slate-900 focus:ring-slate-900 dark:border-slate-600 dark:bg-slate-800">
-              <SelectValue placeholder="목표를 선택하세요" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="none">목표 없음</SelectItem>
-              {goals.map((goal) => (
-                <SelectItem key={goal.goalId} value={goal.goalId.toString()}>
-                  {goal.title}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
         </div>
 
         <div className="flex items-center space-x-2">

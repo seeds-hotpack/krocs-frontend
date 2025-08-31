@@ -6,7 +6,7 @@ interface SubGoal {
   isCompleted: boolean;
 }
 
-interface UpdateGoalRequest {
+export interface UpdateGoalRequest {
   title: string;
   priority: 'LOW' | 'MEDIUM' | 'HIGH';
   startDate: string; // YYYY-MM-DD
@@ -35,7 +35,7 @@ interface UpdateGoalResponse {
 export const update_Goal = async (
   goalId: number,
   userId: number,
-  goalData: UpdateGoalRequest
+  goalData: Partial<UpdateGoalRequest>
 ): Promise<UpdateGoalResponse> => {
   try {
     const response = await axiosInstance.patch<UpdateGoalResponse>(
