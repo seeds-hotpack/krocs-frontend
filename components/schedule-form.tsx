@@ -37,7 +37,6 @@ interface SubTask {
   completed: boolean
 }
 
-// page.tsx와 호환되도록 Schedule 인터페이스를 사용합니다.
 interface Schedule {
   planId?: number
   title: string
@@ -57,8 +56,8 @@ interface ScheduleFormProps {
   onSubmit: (data: Omit<Schedule, "planId" | "isCompleted" | "createdAt" | "updatedAt">) => void
   onCancel: () => void
   defaultDate: Date
-  goals?: Goal[] // goals prop을 받도록 수정
-  onSubTaskChange?: (planId: number, newSubTask: SubTask) => void // Add this line
+  goals?: Goal[]
+  onSubTaskChange: (planId: number, index: number | null, newSubTask: SubTask) => void;
 }
 
 const iconOptions = [
@@ -89,8 +88,8 @@ const colorOptions = [
 export function ScheduleForm({ schedule, onSubmit, onCancel, defaultDate, goals = [], onSubTaskChange }: ScheduleFormProps) {
   const [subTasks, setSubTasks] = useState<SubTask[]>(schedule?.subTasks || [])
   const [newSubTask, setNewSubTask] = useState("")
-  const [editingSubTaskId, setEditingSubTaskId] = useState<string | null>(null) // New state
-  const [editingSubTaskTitle, setEditingSubTaskTitle] = useState("") // New state
+  const [editingSubTaskIndex, setEditingSubTaskIndex] = useState<number | null>(null)
+  const [editingSubTaskTitle, setEditingSubTaskTitle] = useState("")
   const [formData, setFormData] = useState({
     title: schedule?.title || "",
     startDate: schedule?.startDateTime
@@ -132,41 +131,59 @@ export function ScheduleForm({ schedule, onSubmit, onCancel, defaultDate, goals 
           return `${year}-${month}-${day}T10:00`
         })(),
     allDay: schedule?.allDay || false,
-    subGoalId: schedule?.subGoalId, // subGoalId 상태 추가
+    subGoalId: schedule?.subGoalId,
     reminderMinutes: schedule?.reminderMinutes,
     icon: schedule?.icon || "User",
     color: schedule?.color || "blue",
   })
 
-  const addSubTask = async () => {
-    if (newSubTask.trim()) {
-      const subTask: SubTask = {
-        id: Date.now().toString(),
-        title: newSubTask.trim(),
-        completed: false,
-      };
+  useEffect(() => {
+    setSubTasks(schedule?.subTasks || []);
+    setFormData(prev => ({
+        ...prev,
+        title: schedule?.title || "",
+        startDate: schedule?.startDateTime ? new Date(schedule.startDateTime).toISOString().split("T")[0] : defaultDate.toISOString().split("T")[0],
+        endDate: schedule?.endDateTime ? new Date(schedule.endDateTime).toISOString().split("T")[0] : defaultDate.toISOString().split("T")[0],
+        startDateTime: schedule?.startDateTime ? new Date(schedule.startDateTime).toISOString().slice(0, 16) : `${defaultDate.toISOString().slice(0, 10)}T09:00`,
+        endDateTime: schedule?.endDateTime ? new Date(schedule.endDateTime).toISOString().slice(0, 16) : `${defaultDate.toISOString().slice(0, 10)}T10:00`,
+        allDay: schedule?.allDay || false,
+        subGoalId: schedule?.subGoalId,
+        reminderMinutes: schedule?.reminderMinutes,
+        icon: schedule?.icon || "User",
+        color: schedule?.color || "blue",
+    }));
+  }, [schedule, defaultDate]);
 
-      if (schedule?.planId) {
-        try {
-          const createdSubPlans = await createSubPlans(schedule.planId, [{ title: newSubTask.trim() }]);
-          if (createdSubPlans && createdSubPlans.length > 0) {
-            const apiSubTask: SubTask = {
-              id: String(createdSubPlans[0].sub_plan_id),
-              title: createdSubPlans[0].title,
-              completed: createdSubPlans[0].is_completed,
-            };
-            setSubTasks([...subTasks, apiSubTask]);
-            onSubTaskChange?.(schedule.planId, apiSubTask);
-          }
-        } catch (error) {
-          console.error("API를 통한 세부 일정 생성 실패:", error);
-          alert("세부 일정 추가에 실패했습니다.");
-          return;
-        }
-      } else {
-        setSubTasks([...subTasks, subTask]);
+  const addSubTask = async () => {
+    if (!newSubTask.trim()) return;
+    if (!schedule?.planId) {
+        // For new schedules, just update local state
+        const tempSubTask: SubTask = {
+            id: Date.now().toString(),
+            title: newSubTask.trim(),
+            completed: false,
+        };
+        setSubTasks([...subTasks, tempSubTask]);
+        setNewSubTask("");
+        return;
+    }
+
+    try {
+      const createdSubPlans = await createSubPlans(schedule.planId, [{ title: newSubTask.trim() }]);
+      if (createdSubPlans && createdSubPlans.length > 0) {
+          const newApiSubTask = {
+            id: String(createdSubPlans[0].sub_plan_id),
+            title: createdSubPlans[0].title,
+            completed: createdSubPlans[0].is_completed,
+          };
+          const newSubTasks = [...subTasks, newApiSubTask];
+          setSubTasks(newSubTasks);
+          onSubTaskChange(schedule.planId, null, newApiSubTask);
+          setNewSubTask("");
       }
-      setNewSubTask("");
+    } catch (error) {
+      console.error("API를 통한 세부 일정 생성 실패:", error);
+      alert("세부 일정 추가에 실패했습니다.");
     }
   };
 
@@ -174,56 +191,61 @@ export function ScheduleForm({ schedule, onSubmit, onCancel, defaultDate, goals 
     setSubTasks(subTasks.filter((task) => task.id !== id))
   }
 
-  const toggleSubTask = async (id: string) => {
-    const subTaskToUpdate = subTasks.find(task => task.id === id);
-    if (!subTaskToUpdate || !schedule?.planId) {
-      alert("일정 ID가 없어 세부 일정을 수정할 수 없습니다.");
-      return;
-    }
-
-    const newCompletedStatus = !subTaskToUpdate.completed;
+  const toggleSubTask = async (id: string, index: number) => {
+    const subTaskToUpdate = subTasks[index];
+    if (!subTaskToUpdate || !schedule?.planId) return;
 
     try {
-      const updatedApiSubPlan = await updateSubPlan(Number(id), { is_completed: newCompletedStatus });
-      const updatedSubTasks = subTasks.map(task =>
-        task.id === id
-          ? { ...task, completed: updatedApiSubPlan.is_completed }
-          : task
-      );
-      setSubTasks(updatedSubTasks);
-      onSubTaskChange?.(schedule.planId, { ...subTaskToUpdate, completed: updatedApiSubPlan.is_completed }); // Notify parent
+      // First, call the API to ensure the change is persisted
+      await updateSubPlan(Number(id), { is_completed: !subTaskToUpdate.completed });
+
+      // On successful API call, update the local and parent state
+      const updatedSubTask: SubTask = {
+        ...subTaskToUpdate,
+        completed: !subTaskToUpdate.completed,
+      };
+
+      const newSubTasks = [...subTasks];
+      newSubTasks[index] = updatedSubTask;
+      setSubTasks(newSubTasks);
+      onSubTaskChange(schedule.planId, index, updatedSubTask);
+
     } catch (error) {
       console.error("API를 통한 세부 일정 완료 상태 변경 실패:", error);
       alert("세부 일정 완료 상태 변경에 실패했습니다.");
     }
   };
 
-  const startInlineEdit = (subTask: SubTask) => {
-    setEditingSubTaskId(subTask.id);
+  const startInlineEdit = (subTask: SubTask, index: number) => {
+    setEditingSubTaskIndex(index);
     setEditingSubTaskTitle(subTask.title);
   };
 
   const cancelInlineEdit = () => {
-    setEditingSubTaskId(null);
+    setEditingSubTaskIndex(null);
     setEditingSubTaskTitle("");
   };
 
-  const saveInlineEdit = async (subTask: SubTask) => {
-    if (!editingSubTaskTitle.trim()) return;
-    if (!schedule?.planId) {
-      alert("일정 ID가 없어 세부 일정을 수정할 수 없습니다.");
-      return;
-    }
+  const saveInlineEdit = async () => {
+    if (editingSubTaskIndex === null || !editingSubTaskTitle.trim()) return;
+    if (!schedule?.planId) return;
 
+    const subTaskToUpdate = subTasks[editingSubTaskIndex];
     try {
-      const updatedApiSubPlan = await updateSubPlan(Number(subTask.id), { title: editingSubTaskTitle.trim() });
-      const updatedSubTasks = subTasks.map(t =>
-        t.id === subTask.id
-          ? { ...t, title: updatedApiSubPlan.title }
-          : t
-      );
-      setSubTasks(updatedSubTasks);
-      onSubTaskChange?.(schedule.planId, { ...subTask, title: updatedApiSubPlan.title }); // Notify parent
+      // First, call the API to ensure the change is persisted
+      await updateSubPlan(Number(subTaskToUpdate.id), { title: editingSubTaskTitle.trim() });
+
+      // On successful API call, update the local and parent state
+      const updatedSubTask: SubTask = {
+        ...subTaskToUpdate,
+        title: editingSubTaskTitle.trim(),
+      };
+
+      const newSubTasks = [...subTasks];
+      newSubTasks[editingSubTaskIndex] = updatedSubTask;
+      setSubTasks(newSubTasks);
+      onSubTaskChange(schedule.planId, editingSubTaskIndex, updatedSubTask);
+      
       cancelInlineEdit();
     } catch (error) {
       console.error("API를 통한 세부 일정 수정 실패:", error);
@@ -241,24 +263,9 @@ export function ScheduleForm({ schedule, onSubmit, onCancel, defaultDate, goals 
       const day = String(date.getDate()).padStart(2, '0')
       const hours = String(date.getHours()).padStart(2, '0')
       const minutes = String(date.getMinutes()).padStart(2, '0')
-      
-      // API가 요구하는 "YYYY-MM-DDTHH:MM" 형식으로 반환
       return `${year}-${month}-${day}T${hours}:${minutes}`
     }
 
-    // 로컬 시간대 오프셋을 동적으로 계산하는 함수는 더 이상 필요 없으므로 제거
-    // const getLocalTimezoneOffset = () => {
-    //   const date = new Date()
-    //   const timezoneOffset = date.getTimezoneOffset()
-    //   const offsetHours = Math.abs(Math.floor(timezoneOffset / 60))
-    //   const offsetMinutes = Math.abs(timezoneOffset % 60)
-    //   const offsetSign = timezoneOffset > 0 ? '-' : '+'
-    //   return `${offsetSign}${String(offsetHours).padStart(2, '0')}:${String(offsetMinutes).padStart(2, '0')}`
-    // }
-
-    // const timezoneOffset = getLocalTimezoneOffset() // 이 변수도 더 이상 필요 없음
-
-    // subGoalId가 선택되었는지 확인
     if (!formData.subGoalId) {
       alert("하위 목표를 선택해주세요.");
       return;
@@ -269,14 +276,14 @@ export function ScheduleForm({ schedule, onSubmit, onCancel, defaultDate, goals 
     onSubmit({
       title: formData.title,
       startDateTime: formData.allDay
-        ? `${formData.startDate}T00:00` // 하루 종일 일정의 시작 시간도 형식에 맞게 수정
+        ? `${formData.startDate}T00:00`
         : formatDateTime(formData.startDateTime),
       endDateTime: formData.allDay
-        ? `${formData.endDate}T23:59` // 하루 종일 일정의 종료 시간도 형식에 맞게 수정
+        ? `${formData.endDate}T23:59`
         : formatDateTime(formData.endDateTime),
       allDay: formData.allDay,
-      goalId: selectedGoal?.goalId, // 선택된 subGoalId를 통해 goalId를 찾아서 전달
-      subGoalId: formData.subGoalId, // subGoalId 전달
+      goalId: selectedGoal?.goalId,
+      subGoalId: formData.subGoalId,
       reminderMinutes: formData.reminderMinutes,
       icon: formData.icon,
       color: formData.color,
@@ -327,7 +334,6 @@ export function ScheduleForm({ schedule, onSubmit, onCancel, defaultDate, goals 
           />
         </div>
 
-        {/* 하위 목표 선택 드롭다운 */}
         <div className="space-y-2">
           <Label
             htmlFor="subGoalId"
@@ -373,7 +379,6 @@ export function ScheduleForm({ schedule, onSubmit, onCancel, defaultDate, goals 
           </Select>
         </div>
 
-        {/* Icon and Color Selection */}
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label className="text-sm font-medium text-slate-700 dark:text-slate-300 flex items-center gap-2">
@@ -423,7 +428,6 @@ export function ScheduleForm({ schedule, onSubmit, onCancel, defaultDate, goals 
           </div>
         </div>
 
-        {/* Preview */}
         <div className="p-3 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
           <div className="flex items-center gap-3">
             <div className={`w-10 h-10 rounded-full border-2 flex items-center justify-center ${selectedColor?.class}`}>
@@ -525,7 +529,6 @@ export function ScheduleForm({ schedule, onSubmit, onCancel, defaultDate, goals 
           </Select>
         </div>
 
-        {/* Sub Tasks Section */}
         <div className="space-y-3">
           <Label className="text-sm font-medium text-slate-700 dark:text-slate-300">세부 일정 (선택사항)</Label>
 
@@ -554,22 +557,22 @@ export function ScheduleForm({ schedule, onSubmit, onCancel, defaultDate, goals 
 
           {subTasks.length > 0 && (
             <div className="space-y-2 max-h-32 overflow-y-auto">
-              {subTasks.map((task) => (
+              {subTasks.map((task, index) => (
                 <div
-                  key={task.id}
+                  key={`${task.id}-${index}`}
                   className="flex items-center gap-2 p-2 bg-slate-50 dark:bg-slate-800 rounded border dark:border-slate-700"
                 >
                   <Checkbox
                     checked={task.completed}
-                    onCheckedChange={() => toggleSubTask(task.id)}
+                    onCheckedChange={() => toggleSubTask(task.id, index)}
                     className="border-slate-300 dark:border-slate-600"
                   />
-                  {editingSubTaskId === task.id ? (
+                  {editingSubTaskIndex === index ? (
                     <Input
                       value={editingSubTaskTitle}
                       onChange={(e) => setEditingSubTaskTitle(e.target.value)}
                       onKeyDown={(e) => {
-                        if (e.key === "Enter") saveInlineEdit(task);
+                        if (e.key === "Enter") saveInlineEdit();
                         if (e.key === "Escape") cancelInlineEdit();
                       }}
                       className="flex-1 h-8"
@@ -582,13 +585,13 @@ export function ScheduleForm({ schedule, onSubmit, onCancel, defaultDate, goals 
                       {task.title}
                     </span>
                   )}
-                  {editingSubTaskId === task.id ? (
+                  {editingSubTaskIndex === index ? (
                     <>
                       <Button
                         type="button"
                         variant="ghost"
                         size="sm"
-                        onClick={() => saveInlineEdit(task)}
+                        onClick={saveInlineEdit}
                         className="h-6 w-6 p-0 hover:bg-slate-200 dark:hover:bg-slate-700"
                       >
                         저장
@@ -608,7 +611,7 @@ export function ScheduleForm({ schedule, onSubmit, onCancel, defaultDate, goals 
                       type="button"
                       variant="ghost"
                       size="sm"
-                      onClick={() => startInlineEdit(task)}
+                      onClick={() => startInlineEdit(task, index)}
                       className="h-6 w-6 p-0 hover:bg-slate-200 dark:hover:bg-slate-700"
                     >
                       <Pencil className="h-3 w-3" />

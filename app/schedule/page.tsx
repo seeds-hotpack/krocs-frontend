@@ -47,7 +47,7 @@ const formatDateToYYYYMMDD = (date: Date): string => {
 
 export default function SchedulePage() {
   const [schedules, setSchedules] = useState<Schedule[]>([])
-  const [goalList, setGoalList] = useState<Goal[]>([]) // 목표 목록 상태 추가
+  const [goalList, setGoalList] = useState<Goal[]>([])
   const [selectedDate, setSelectedDate] = useState(new Date())
   const [showCalendar, setShowCalendar] = useState(false)
   const [showForm, setShowForm] = useState(false)
@@ -69,20 +69,12 @@ export default function SchedulePage() {
         const fetchedPlans: Plan[] = await getPlans(formattedDate)
 
         const reverseColorMap: { [key: string]: string } = {
-          BLUE: "blue",
-          RED: "red",
-          GREEN: "green",
-          PURPLE: "purple",
-          ORANGE: "orange",
-          PINK: "pink",
-          YELLOW: "yellow",
-          NAVY: "indigo",
+          BLUE: "blue", RED: "red", GREEN: "green", PURPLE: "purple",
+          ORANGE: "orange", PINK: "pink", YELLOW: "yellow", NAVY: "indigo",
         };
 
         const reverseCategoryMap: { [key: string]: string } = {
-          WORK: "Briefcase",
-          STUDY: "Book",
-          ETC: "User", // ETC는 기본값 '사용자' 아이콘으로
+          WORK: "Briefcase", STUDY: "Book", ETC: "User",
         };
 
         const adaptedSchedules: Schedule[] = fetchedPlans.map(plan => ({
@@ -94,9 +86,9 @@ export default function SchedulePage() {
           icon: reverseCategoryMap[plan.plan_category] || "User",
           subTasks: plan.sub_plans.map(subPlan => ({
             id: String(subPlan.sub_plan_id),
-            title: subPlan.title, // API 명세에 맞게 content에서 title로 수정
+            title: subPlan.title,
             completed: subPlan.is_completed,
-          })),
+          })).sort((a, b) => Number(a.id) - Number(b.id)), // Sub-tasks sorted by ID
           startDateTime: plan.start_date_time,
           endDateTime: plan.end_date_time,
           allDay: plan.all_day,
@@ -109,7 +101,7 @@ export default function SchedulePage() {
         setSchedules(adaptedSchedules)
       } catch (err) {
         setError("일정을 불러오는 데 실패했습니다. 다시 시도해 주세요.")
-        setSchedules([]); // 실패 시 기존 스케줄을 비웁니다.
+        setSchedules([]);
         console.error(err)
       } finally {
         setLoading(false)
@@ -123,14 +115,14 @@ export default function SchedulePage() {
   useEffect(() => {
     const fetchGoals = async () => {
       try {
-        const goals = await getGoals(formatDateToYYYYMMDD(selectedDate)); // new Date() -> selectedDate
+        const goals = await getGoals(formatDateToYYYYMMDD(selectedDate));
         setGoalList(goals);
       } catch (err) {
         console.error("Failed to fetch goals:", err);
       }
     };
     fetchGoals();
-  }, [selectedDate]); // 의존성 배열에 selectedDate 추가
+  }, [selectedDate]);
 
   useEffect(() => {
     const handleResize = () => {
@@ -149,21 +141,13 @@ export default function SchedulePage() {
       return;
     }
 
-    // Frontend 값을 Backend Enum 값으로 매핑
     const colorMap: { [key: string]: string } = {
-      blue: "BLUE",
-      red: "RED",
-      green: "GREEN",
-      purple: "PURPLE",
-      orange: "ORANGE",
-      pink: "PINK",
-      yellow: "YELLOW",
-      indigo: "NAVY",
+      blue: "BLUE", red: "RED", green: "GREEN", purple: "PURPLE",
+      orange: "ORANGE", pink: "PINK", yellow: "YELLOW", indigo: "NAVY",
     };
 
     const categoryMap: { [key: string]: string } = {
-      Briefcase: "WORK", // 업무
-      Book: "STUDY",      // 학습
+      Briefcase: "WORK", Book: "STUDY",
     };
 
     const apiPayload: CreatePlanRequest = {
@@ -171,47 +155,18 @@ export default function SchedulePage() {
       start_date_time: scheduleData.startDateTime,
       end_date_time: scheduleData.endDateTime,
       all_day: scheduleData.allDay,
-      color: colorMap[scheduleData.color || 'blue'] || "BLUE", // undefined 방지
-      plan_category: categoryMap[scheduleData.icon || ''] || "ETC", // undefined 방지
+      color: colorMap[scheduleData.color || 'blue'] || "BLUE",
+      plan_category: categoryMap[scheduleData.icon || ''] || "ETC",
     };
 
     try {
       const newPlanFromApi = await createPlan(scheduleData.subGoalId, apiPayload);
 
-      let createdSubTasks: SubTask[] = [];
       if (scheduleData.subTasks && scheduleData.subTasks.length > 0) {
         const subPlansToCreate = scheduleData.subTasks.map(st => ({ title: st.title }));
-        try {
-          const apiResponseSubPlans = await createSubPlans(newPlanFromApi.plan_id, subPlansToCreate);
-          createdSubTasks = apiResponseSubPlans.map(s => ({
-            id: String(s.sub_plan_id),
-            title: s.title,
-            completed: s.is_completed,
-          }));
-        } catch (subPlanError) {
-          console.error("Failed to create sub-plans after main plan creation:", subPlanError);
-          alert("세부 일정 생성 중 오류가 발생했습니다. 일정을 다시 확인해주세요.");
-        }
+        await createSubPlans(newPlanFromApi.plan_id, subPlansToCreate);
       }
 
-      const newSchedule: Schedule = {
-        planId: newPlanFromApi.plan_id,
-        goalId: newPlanFromApi.goal_id,
-        subGoalId: newPlanFromApi.sub_goal_id,
-        title: newPlanFromApi.title,
-        color: scheduleData.color, // 폼에서 받은 프론트엔드 값을 그대로 사용
-        icon: scheduleData.icon,   // 폼에서 받은 프론트엔드 값을 그대로 사용
-        subTasks: createdSubTasks, // This should now be correctly populated
-        startDateTime: newPlanFromApi.start_date_time,
-        endDateTime: newPlanFromApi.end_date_time,
-        allDay: newPlanFromApi.all_day,
-        isCompleted: newPlanFromApi.is_completed,
-        completedAt: newPlanFromApi.completed_at,
-        createdAt: newPlanFromApi.created_at,
-        updatedAt: newPlanFromApi.updated_at,
-      };
-
-      setSchedules((prev) => [...prev, newSchedule]);
       setShowForm(false);
       setEditingSchedule(null);
       setRefreshTrigger(prev => prev + 1);
@@ -229,61 +184,26 @@ export default function SchedulePage() {
       return;
     }
 
-    // Dynamically build the partial payload for the PATCH request
     const apiPayload: Partial<UpdatePlanRequest> = {};
     const colorMap: { [key: string]: string } = { blue: "BLUE", red: "RED", green: "GREEN", purple: "PURPLE", orange: "ORANGE", pink: "PINK", yellow: "YELLOW", indigo: "NAVY" };
     const categoryMap: { [key: string]: string } = { Briefcase: "WORK", Book: "STUDY" };
 
-    // Map only the fields that are present in the 'updates' object
     if (updates.title !== undefined) apiPayload.title = updates.title;
     if (updates.startDateTime !== undefined) apiPayload.start_date_time = updates.startDateTime;
     if (updates.endDateTime !== undefined) apiPayload.end_date_time = updates.endDateTime;
     if (updates.allDay !== undefined) apiPayload.all_day = updates.allDay;
     if (updates.isCompleted !== undefined) apiPayload.is_completed = updates.isCompleted;
-    if (updates.color !== undefined) {
-      apiPayload.color = colorMap[updates.color] || 'BLUE';
-    }
-    if (updates.icon !== undefined) {
-      apiPayload.plan_category = categoryMap[updates.icon] || 'ETC';
-    }
-
-    // If no fields were changed that the API supports, do nothing.
-    // Note: subTasks are not supported by the update API.
-    if (Object.keys(apiPayload).length === 0) {
-      // Even if only subtasks changed, we update local state without an API call
-      if (updates.subTasks) {
-        setSchedules(prev => prev.map(s => s.planId === planId ? { ...s, ...updates } : s));
-      }
-      setRefreshTrigger(prev => prev + 1);
-    }
+    if (updates.color !== undefined) apiPayload.color = colorMap[updates.color] || 'BLUE';
+    if (updates.icon !== undefined) apiPayload.plan_category = categoryMap[updates.icon] || 'ETC';
 
     try {
-      const updatedPlanFromApi = await updatePlan(planId, originalSchedule.subGoalId, apiPayload);
-
-      // Optimistically update the UI with the changes that were sent
-      const optimisticallyUpdated = { ...originalSchedule, ...updates };
-
-      // Then, fully update with the response from the server
-      const reverseColorMap: { [key: string]: string } = { BLUE: "blue", RED: "red", GREEN: "green", PURPLE: "purple", ORANGE: "orange", PINK: "pink", YELLOW: "yellow", NAVY: "indigo" };
-      const reverseCategoryMap: { [key: string]: string } = { WORK: "Briefcase", STUDY: "Book", ETC: "User" };
-
-      const finalUpdatedSchedule: Schedule = {
-        ...optimisticallyUpdated, // Use the optimistic data as a base
-        planId: updatedPlanFromApi.plan_id,
-        title: updatedPlanFromApi.title,
-        startDateTime: updatedPlanFromApi.start_date_time,
-        endDateTime: updatedPlanFromApi.end_date_time,
-        allDay: updatedPlanFromApi.all_day,
-        isCompleted: updatedPlanFromApi.is_completed,
-        completedAt: updatedPlanFromApi.completed_at,
-        updatedAt: updatedPlanFromApi.updated_at,
-        color: reverseColorMap[updatedPlanFromApi.color] || 'blue',
-        icon: reverseCategoryMap[updatedPlanFromApi.plan_category] || 'User',
-        subTasks: updatedPlanFromApi.sub_plans.map(subPlan => ({ id: String(subPlan.sub_plan_id), title: subPlan.title, completed: subPlan.is_completed })),
-      };
-
-      setSchedules(prev => prev.map(s => s.planId === planId ? finalUpdatedSchedule : s));
+      if (Object.keys(apiPayload).length > 0) {
+        await updatePlan(planId, originalSchedule.subGoalId, apiPayload);
+      }
+      
       setRefreshTrigger(prev => prev + 1);
+      setShowForm(false);
+      setEditingSchedule(null);
     } catch (err) {
       console.error("Failed to update schedule:", err);
       setError("일정 수정에 실패했습니다. 다시 시도해 주세요.");
@@ -298,8 +218,6 @@ export default function SchedulePage() {
   const handleUpdateSchedule = (scheduleData: Omit<Schedule, 'planId' | 'isCompleted' | 'createdAt' | 'updatedAt'>) => {
     if (editingSchedule) {
       updateSchedule(editingSchedule.planId, scheduleData)
-      setShowForm(false)
-      setEditingSchedule(null)
     }
   }
 
@@ -307,7 +225,7 @@ export default function SchedulePage() {
     return date.toLocaleDateString("ko-KR", { year: "numeric", month: "long", day: "numeric", weekday: "long" })
   }
 
-  const todaySchedules = schedules.sort((a, b) => new Date(a.startDateTime).getTime() - new Date(b.startDateTime).getTime())
+  const todaySchedules = [...schedules].sort((a, b) => new Date(a.startDateTime).getTime() - new Date(b.startDateTime).getTime())
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
@@ -451,16 +369,28 @@ export default function SchedulePage() {
               onSubmit={editingSchedule ? handleUpdateSchedule : createSchedule}
               onCancel={() => { setShowForm(false); setEditingSchedule(null); }}
               defaultDate={selectedDate}
-              goals={goalList} // goals prop 추가
-              onSubTaskChange={(planId, newSubTask) => {
-                setSchedules(prevSchedules =>
-                  prevSchedules.map(schedule =>
-                    schedule.planId === planId
-                      ? { ...schedule, subTasks: [...(schedule.subTasks || []), newSubTask] }
-                      : schedule
-                  )
-                );
-              }} // Add this line
+              goals={goalList}
+              onSubTaskChange={(planId, index, newSubTask) => {
+                const newSchedules = schedules.map(schedule => {
+                    if (schedule.planId !== planId) {
+                        return schedule;
+                    }
+                    const newSubTasks = [...(schedule.subTasks || [])];
+                    if (index === null) { // Add
+                        newSubTasks.push(newSubTask);
+                    } else { // Update
+                        newSubTasks[index] = newSubTask;
+                    }
+                    return { ...schedule, subTasks: newSubTasks };
+                });
+                setSchedules(newSchedules);
+                if (editingSchedule && editingSchedule.planId === planId) {
+                    const updatedScheduleForForm = newSchedules.find(s => s.planId === planId);
+                    if (updatedScheduleForForm) {
+                        setEditingSchedule(updatedScheduleForForm);
+                    }
+                }
+              }}
             />
           </div>
         </div>
