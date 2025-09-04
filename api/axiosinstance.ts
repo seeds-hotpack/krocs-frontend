@@ -2,8 +2,7 @@ import axios from 'axios';
 
 
 const axiosInstance = axios.create({
-  // baseURL: 'http://localhost:8080/api/v1',
-  baseURL: 'http://ec2-3-37-36-91.ap-northeast-2.compute.amazonaws.com:8080/api/v1',
+  baseURL: process.env.NEXT_PUBLIC_API_URL,
   timeout: 5000,
   headers: {
     'Content-Type': 'application/json',
