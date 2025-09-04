@@ -6,7 +6,7 @@ import { createGoal as createGoalApi } from '../api/createGoal'
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Plus, Edit, Trash2, Calendar, Clock, Target, TrendingUp, CheckCircle2, Sun, Moon, Monitor } from "lucide-react"
+import { Plus, Edit, Trash2, Calendar, Clock, Target, TrendingUp, CheckCircle2, Sun, Moon, Monitor, ClipboardList } from "lucide-react"
 import { GoalForm } from "@/components/goal-form"
 import { GoalDetail } from "@/components/goal-detail"
 import { useTheme } from "next-themes"
@@ -257,6 +257,15 @@ export default function GoalManagementApp() {
               >
                 <Calendar className="h-4 w-4 mr-2" />
                 Schedule
+              </Button>
+            </Link>
+            <Link href="/templates">
+              <Button
+                variant="outline"
+                className="border-slate-300 hover:bg-slate-50 dark:border-slate-600 dark:hover:bg-slate-800 bg-transparent"
+              >
+                <ClipboardList className="h-4 w-4 mr-2" />
+                Templates
               </Button>
             </Link>
             <Button
