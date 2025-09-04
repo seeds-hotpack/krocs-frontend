@@ -31,7 +31,7 @@ export function TemplateForm({ template, onSubmit, onCancel }: TemplateFormProps
       setDuration(template.duration);
       setSubTemplates(template.subTemplates || []);
 
-      const p = template.priority;
+      const p = template.priority as string; // Cast to string to allow for case-insensitive comparison
       if (p === 'HIGH' || p === 'high') {
         setPriority('HIGH');
       } else if (p === 'LOW' || p === 'low') {
