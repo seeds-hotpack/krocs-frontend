@@ -3,14 +3,14 @@ import axios from 'axios';
 
 const axiosInstance = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL,
-  timeout: 5000,
+  timeout: 100000000000,
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
 
-axiosInstance.interceptors.request.use(
+axiosInstance.interceptors.request.use( 
   (config) => {
     // 👇 임의의 토큰 'test-token'을 직접 할당합니다.
     const token = 'test-token';
