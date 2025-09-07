@@ -27,7 +27,8 @@ import {
   Camera,
   Gamepad2,
   Palette,
-  Pencil
+  Pencil,
+  Trash2
 } from "lucide-react"
 import type { Goal } from "@/api/goals"
 
@@ -55,6 +56,7 @@ interface ScheduleFormProps {
   schedule?: Schedule | null
   onSubmit: (data: Omit<Schedule, "planId" | "isCompleted" | "createdAt" | "updatedAt">) => void
   onCancel: () => void
+  onDelete?: (planId: number) => void; // 삭제 함수 prop 추가
   defaultDate: Date
   goals?: Goal[]
   onSubTaskChange: (planId: number, index: number | null, newSubTask: SubTask) => void;
@@ -85,7 +87,7 @@ const colorOptions = [
   { value: "indigo", label: "남색", class: "bg-indigo-100 text-indigo-600 border-indigo-200" },
 ]
 
-export function ScheduleForm({ schedule, onSubmit, onCancel, defaultDate, goals = [], onSubTaskChange }: ScheduleFormProps) {
+export function ScheduleForm({ schedule, onSubmit, onCancel, onDelete, defaultDate, goals = [], onSubTaskChange }: ScheduleFormProps) {
   const [subTasks, setSubTasks] = useState<SubTask[]>(schedule?.subTasks || [])
   const [newSubTask, setNewSubTask] = useState("")
   const [editingSubTaskIndex, setEditingSubTaskIndex] = useState<number | null>(null)
@@ -651,6 +653,22 @@ export function ScheduleForm({ schedule, onSubmit, onCancel, defaultDate, goals 
           >
             취소
           </Button>
+
+          {schedule && onDelete && (
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={() => {
+                if (window.confirm("정말로 이 일정을 삭제하시겠습니까?")) {
+                  onDelete(schedule.planId!)
+                }
+              }}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              삭제
+            </Button>
+          )}
         </div>
       </form>
     </div>
