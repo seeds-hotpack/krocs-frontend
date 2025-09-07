@@ -578,16 +578,9 @@ export default function GoalManagementApp() {
                 >
                   이전
                 </Button>
-                {[...Array(totalPages)].map((_, index) => (
-                  <Button
-                    key={index}
-                    variant={currentPage === index + 1 ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setCurrentPage(index + 1)}
-                  >
-                    {index + 1}
-                  </Button>
-                ))}
+                <span className="text-sm font-medium">
+                  Page {currentPage} of {totalPages}
+                </span>
                 <Button
                   variant="outline"
                   size="sm"
