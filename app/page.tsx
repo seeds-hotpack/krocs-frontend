@@ -24,6 +24,7 @@ export default function GoalManagementApp() {
   const [error, setError] = useState<string | null>(null)
   const [selectedDate, setSelectedDate] = useState(new Date())
   const [isCalendarOpen, setIsCalendarOpen] = useState(false)
+  const [filterStatus, setFilterStatus] = useState("All") // 필터 상태 추가
 
   const fetchGoals = async (date: Date) => {
     setLoading(true)
@@ -195,6 +196,27 @@ export default function GoalManagementApp() {
   const totalGoals = goals.length
   const completedGoals = goals.filter(goal => goal.completed).length
 
+  const filteredGoals = goals.filter(goal => {
+    if (filterStatus === 'All') {
+      return true;
+    }
+    if (filterStatus === 'Completed') {
+      return goal.completed;
+    }
+    
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const endDate = new Date(goal.endDate);
+    
+    if (filterStatus === 'In Progress') {
+      return !goal.completed && endDate >= today;
+    }
+    if (filterStatus === 'Overdue') {
+      return !goal.completed && endDate < today;
+    }
+    return true;
+  });
+
   if (selectedGoal) {
     return (
       <GoalDetail
@@ -348,6 +370,13 @@ export default function GoalManagementApp() {
           </Card>
         </div>
 
+        <div className="flex gap-2 mb-4 pb-4 border-b border-slate-200 dark:border-slate-700">
+          <Button size="sm" variant={filterStatus === 'All' ? 'default' : 'ghost'} onClick={() => setFilterStatus('All')}>전체</Button>
+          <Button size="sm" variant={filterStatus === 'In Progress' ? 'default' : 'ghost'} onClick={() => setFilterStatus('In Progress')}>진행중</Button>
+          <Button size="sm" variant={filterStatus === 'Completed' ? 'default' : 'ghost'} onClick={() => setFilterStatus('Completed')}>완료</Button>
+          <Button size="sm" variant={filterStatus === 'Overdue' ? 'default' : 'ghost'} onClick={() => setFilterStatus('Overdue')}>기간만료</Button>
+        </div>
+
         {isFormOpen && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
             <div className="bg-white dark:bg-slate-800 rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -381,14 +410,18 @@ export default function GoalManagementApp() {
               </Card>
             ))}
           </div>
-        ) : goals.length === 0 ? (
+        ) : filteredGoals.length === 0 ? (
           <Card className="text-center py-16 border-0 shadow-sm dark:bg-slate-800">
             <CardContent>
               <div className="w-16 h-16 bg-slate-100 dark:bg-slate-700 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Target className="h-8 w-8 text-slate-400 dark:text-slate-400" />
               </div>
-              <h3 className="text-lg font-medium text-slate-900 dark:text-slate-100 mb-2">No goals yet</h3>
-              <p className="text-slate-600 dark:text-slate-400 mb-6">Create your first goal to get started</p>
+              <h3 className="text-lg font-medium text-slate-900 dark:text-slate-100 mb-2">
+                {filterStatus === 'All' ? 'No goals yet' : 'No matching goals'}
+              </h3>
+              <p className="text-slate-600 dark:text-slate-400 mb-6">
+                {filterStatus === 'All' ? 'Create your first goal to get started' : 'Try a different filter or create a new goal'}
+              </p>
               <Button
                 onClick={() => setIsFormOpen(true)}
                 className="bg-slate-900 hover:bg-slate-800 dark:bg-slate-100 dark:hover:bg-slate-200 text-white dark:text-slate-900 px-6 py-2 rounded-lg font-medium"
@@ -400,7 +433,7 @@ export default function GoalManagementApp() {
           </Card>
         ) : (
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {goals.map(goal => {
+            {filteredGoals.map(goal => {
                 const progress = getProgressPercentage(goal)
                 return (
                   <Card
