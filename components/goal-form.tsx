@@ -145,19 +145,9 @@ export function GoalForm({ goal, onSubmit, onCancel }: GoalFormProps) {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="duration" className="text-sm font-medium text-slate-700">
-              Duration (days)
-            </Label>
-            <Input
-              id="duration"
-              type="number"
-              value={formData.duration}
-              onChange={(e) => setFormData({ ...formData, duration: Number.parseInt(e.target.value) || 0 })}
-              min="0"
-              readOnly
-              className="h-10 border-slate-300 bg-slate-50"
-            />
-            <p className="text-sm text-slate-500">Automatically calculated from start and end dates</p>
+            <p className="text-sm font-medium text-slate-700">
+              Duration : {formData.duration} (days)
+            </p>
           </div>
 
           <div className="flex gap-3 pt-4">
