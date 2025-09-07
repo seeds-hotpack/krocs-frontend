@@ -556,6 +556,7 @@ export function ScheduleForm({ schedule, onSubmit, onCancel, onDelete, defaultDa
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
                   e.preventDefault()
+                  e.stopPropagation() // 이벤트 전파 중단 추가
                   addSubTask()
                 }
               }}
