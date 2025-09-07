@@ -233,6 +233,20 @@ export default function SchedulePage() {
     }
   }
 
+  const handleSubTasksUpdate = (planId: number, newSubTasks: SubTask[]) => {
+    const newSchedules = schedules.map(s =>
+      s.planId === planId ? { ...s, subTasks: newSubTasks } : s
+    );
+    setSchedules(newSchedules);
+
+    if (editingSchedule?.planId === planId) {
+      setEditingSchedule(prev => {
+        if (!prev) return null;
+        return { ...prev, subTasks: newSubTasks };
+      });
+    }
+  };
+
   const formatDate = (date: Date) => {
     return date.toLocaleDateString("ko-KR", { year: "numeric", month: "long", day: "numeric", weekday: "long" })
   }
@@ -405,6 +419,7 @@ export default function SchedulePage() {
                     }
                 }
               }}
+              onSubTasksUpdate={handleSubTasksUpdate}
             />
           </div>
         </div>
