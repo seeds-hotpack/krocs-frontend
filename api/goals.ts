@@ -25,23 +25,29 @@ export const getGoals = async (date: string): Promise<Goal[]> => {
   const response = await axiosInstance.get('/goals', { params: { date } });
   const apiGoals = response.data.result;
 
-  return apiGoals.map((g: any) => ({
-    goalId: g.goalId,
-    title: g.title,
-    priority: g.priority,
-    startDate: g.startDate,
-    endDate: g.endDate,
-    completed: g.isCompleted,
-    subGoals: (g.subGoals || []).map((sg: any) => ({
-      subGoalId: sg.subGoalId,
-      title: sg.title,
-      completed: sg.isCompleted,
-    })),
-    completionPercentage: g.completionPercentage ?? 0,
-    createdAt: g.createdAt,
-    updatedAt: g.updatedAt,
-    
-  }));
+  return apiGoals.map((g: any) => {
+    const startDate = new Date(g.startDate);
+    const endDate = new Date(g.endDate);
+    const duration = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+
+    return {
+      goalId: g.goalId,
+      title: g.title,
+      priority: g.priority,
+      startDate: g.startDate,
+      endDate: g.endDate,
+      duration: duration, // 계산된 duration 추가
+      completed: g.isCompleted,
+      subGoals: (g.subGoals || []).map((sg: any) => ({
+        subGoalId: sg.subGoalId,
+        title: sg.title,
+        completed: sg.isCompleted,
+      })),
+      completionPercentage: g.completionPercentage ?? 0,
+      createdAt: g.createdAt,
+      updatedAt: g.updatedAt,
+    };
+  });
 };
 
 //----------------------------------대목표 삭제 api---------------------------------

@@ -89,6 +89,8 @@ export function GoalForm({ goal, onSubmit, onCancel }: GoalFormProps) {
               placeholder="Enter your goal"
               className="h-10 border-slate-300 focus:border-slate-900 focus:ring-slate-900"
               required
+              onInvalid={(e) => (e.target as HTMLInputElement).setCustomValidity("목표명을 입력해 주세요.")}
+              onInput={(e) => (e.target as HTMLInputElement).setCustomValidity("")}
             />
           </div>
 
