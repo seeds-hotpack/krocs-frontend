@@ -61,6 +61,9 @@ export default function TemplatesPage() {
 
   const debouncedSearchTerm = useDebounce(searchTerm, 500);
 
+  const [currentPage, setCurrentPage] = useState(1); // 현재 페이지 상태
+  const itemsPerPage = 6; // 페이지 당 항목 수
+
   useEffect(() => {
     const fetchTemplates = async () => {
       try {
@@ -76,6 +79,17 @@ export default function TemplatesPage() {
       }
     };
     fetchTemplates();
+  }, [debouncedSearchTerm]);
+
+  // 페이지네이션 로직
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentItems = templates.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(templates.length / itemsPerPage);
+
+  // 검색어가 변경될 때 현재 페이지를 1로 초기화
+  useEffect(() => {
+    setCurrentPage(1);
   }, [debouncedSearchTerm]);
 
   const handleAddNew = () => {
@@ -168,7 +182,7 @@ export default function TemplatesPage() {
 
         {!isLoading && !error && templates.length > 0 && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {templates.map((template) => (
+            {currentItems.map((template) => (
               <TemplateCard
                 key={template.templateId}
                 template={template}
@@ -181,9 +195,33 @@ export default function TemplatesPage() {
 
         {!isLoading && !error && templates.length === 0 && (
             <div className="text-center py-20 bg-white dark:bg-slate-800/50 rounded-lg">
-                <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-200">검색 결과가 없습니다.</h3>
-                <p className="text-sm text-slate-500 mt-2">다른 검색어를 입력하시거나 새 템플릿을 추가해보세요.</p>
+                <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-200">{searchTerm ? "검색 결과가 없습니다." : "템플릿이 없습니다."}</h3>
+                <p className="text-sm text-slate-500 mt-2">{searchTerm ? "다른 검색어를 입력하시거나 새 템플릿을 추가해보세요." : "새 템플릿을 추가해보세요."}</p>
             </div>
+        )}
+
+        {!isLoading && !error && templates.length > itemsPerPage && (
+          <div className="flex justify-center items-center gap-2 mt-8">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+              disabled={currentPage === 1}
+            >
+              이전
+            </Button>
+            <div className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                Page {currentPage} of {totalPages}
+              </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+              disabled={currentPage === totalPages}
+            >
+              다음
+            </Button>
+          </div>
         )}
       </div>
 
