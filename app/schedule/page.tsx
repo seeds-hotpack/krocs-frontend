@@ -11,7 +11,7 @@ import { useTheme } from "next-themes"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import Link from "next/link"
 import { getGoals, type Goal } from "@/api/goals";
-import { getPlans, Plan, SubPlan, createPlan, updatePlan, createSubPlans, type CreatePlanRequest, type UpdatePlanRequest } from "@/api/subplan"
+import { getPlans, Plan, SubPlan, createPlan, updatePlan, deletePlan, createSubPlans, type CreatePlanRequest, type UpdatePlanRequest } from "@/api/subplan"
 
 // 컴포넌트에서 사용할 데이터 인터페이스
 export interface SubTask {
@@ -210,6 +210,18 @@ export default function SchedulePage() {
     }
   }
 
+  const deleteSchedule = async (planId: number) => {
+    try {
+      await deletePlan(planId);
+      setRefreshTrigger(prev => prev + 1); // 목록 새로고침
+      setShowForm(false); // 폼 닫기
+      setEditingSchedule(null); // 수정 상태 초기화
+    } catch (err) {
+      console.error("Failed to delete schedule:", err);
+      setError("일정 삭제에 실패했습니다. 다시 시도해 주세요.");
+    }
+  }
+
   const handleEditSchedule = (schedule: Schedule) => {
     setEditingSchedule(schedule)
     setShowForm(true)
@@ -350,6 +362,7 @@ export default function SchedulePage() {
                 schedules={todaySchedules}
                 selectedDate={selectedDate}
                 onUpdateSchedule={updateSchedule}
+                onDeleteSchedule={deleteSchedule}
                 onEditSchedule={handleEditSchedule}
                 loading={loading}
                 onScrollToCurrentTime={() => {}}
@@ -368,6 +381,7 @@ export default function SchedulePage() {
               schedule={editingSchedule}
               onSubmit={editingSchedule ? handleUpdateSchedule : createSchedule}
               onCancel={() => { setShowForm(false); setEditingSchedule(null); }}
+              onDelete={deleteSchedule}
               defaultDate={selectedDate}
               goals={goalList}
               onSubTaskChange={(planId, index, newSubTask) => {

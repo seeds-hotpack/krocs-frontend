@@ -251,3 +251,23 @@ export const updateSubPlan = async (subPlanId: number, data: SubPlanUpdate) => {
   const response = await axiosInstance.patch(`/${subPlanId}`, data);
   return response.data;
 };
+
+//----------------------------------일정 삭제 api---------------------------------
+export interface DeletePlanResponse {
+  isSuccess: boolean;
+  code: string;
+  message: string;
+  result: string;
+}
+
+export const deletePlan = async (planId: number): Promise<DeletePlanResponse> => {
+  try {
+    const response = await axiosInstance.delete<DeletePlanResponse>(
+      `/plans/${planId}`
+    );
+    return response.data;
+  } catch (error) {
+    console.error("❌ deletePlan API 호출 실패:", error);
+    throw error;
+  }
+};

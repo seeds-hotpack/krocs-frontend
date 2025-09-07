@@ -21,6 +21,7 @@ import {
   ChevronDown,
   ChevronUp,
   Clock,
+  Trash2,
 } from "lucide-react"
 import { Checkbox } from "@/components/ui/checkbox"
 
@@ -52,6 +53,7 @@ interface ScheduleTimelineProps {
   schedules: Schedule[]
   selectedDate: Date
   onUpdateSchedule: (planId: number, updates: Partial<Schedule>) => void
+  onDeleteSchedule: (planId: number) => void; // 일정 삭제 함수
   onEditSchedule?: (schedule: Schedule) => void
   loading: boolean
   onScrollToCurrentTime?: () => void
@@ -59,8 +61,12 @@ interface ScheduleTimelineProps {
 
 export const ScheduleTimeline = forwardRef<{
   scrollToCurrentTime: () => void
-}, ScheduleTimelineProps>(({ schedules, selectedDate, onUpdateSchedule, onEditSchedule, loading, onScrollToCurrentTime }, ref) => {
+}, ScheduleTimelineProps>(({ schedules, selectedDate, onUpdateSchedule, onDeleteSchedule, onEditSchedule, loading, onScrollToCurrentTime }, ref) => {
   const [draggedItem, setDraggedItem] = useState<number | null>(null)
+  const [isDragging, setIsDragging] = useState(false); // 드래그 상태
+  const [isOverTrashStyle, setIsOverTrashStyle] = useState(false); // 휴지통 위 호버 상태 (스타일용)
+  const isOverTrash = useRef(false); // 휴지통 위 호버 상태 (로직용)
+  const trashCanRef = useRef<HTMLDivElement>(null); // 휴지통 참조
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [dragPosition, setDragPosition] = useState({ x: 0, y: 0 });
   const [mouseDownPosition, setMouseDownPosition] = useState<{ x: number; y: number } | null>(null);
@@ -310,6 +316,7 @@ export const ScheduleTimeline = forwardRef<{
     const dragOffset = { x: e.clientX - timelineRect.left, y: clickY - originalPosition.top };
     
     setDraggedItem(planId);
+    setIsDragging(true); // 드래그 시작
 
     const handleMouseMove = (moveEvent: MouseEvent) => {
       setDragPosition({ x: moveEvent.clientX, y: moveEvent.clientY });
@@ -325,6 +332,19 @@ export const ScheduleTimeline = forwardRef<{
         draggedContainer.style.zIndex = "50";
         draggedContainer.style.opacity = "0.9";
       }
+
+      // 휴지통 영역 확인
+      if (trashCanRef.current) {
+        const trashRect = trashCanRef.current.getBoundingClientRect();
+        const isCurrentlyOver = 
+          moveEvent.clientX >= trashRect.left &&
+          moveEvent.clientX <= trashRect.right &&
+          moveEvent.clientY >= trashRect.top &&
+          moveEvent.clientY <= trashRect.bottom;
+        
+        isOverTrash.current = isCurrentlyOver; // 로직용 ref 업데이트
+        setIsOverTrashStyle(isCurrentlyOver); // 스타일용 state 업데이트
+      }
     };
 
     const handleMouseUp = (upEvent: MouseEvent) => {
@@ -339,38 +359,51 @@ export const ScheduleTimeline = forwardRef<{
         draggedContainer.style.opacity = "";
       }
 
+      // 드래그 상태 초기화
       setDraggedItem(null);
-      setDragPosition({ x: 0, y: 0 });
+      setIsDragging(false);
 
-      const distance = Math.sqrt(
-        Math.pow(upEvent.clientX - startMouseDownPos.x, 2) +
-        Math.pow(upEvent.clientY - startMouseDownPos.y, 2)
-      );
+      if (isOverTrash.current) {
+        // 휴지통 위에서 드롭되면 삭제 함수 호출
+        onDeleteSchedule(planId);
+      } else {
+        // 휴지통이 아닌 다른 곳에서 드롭되면 위치 업데이트
+        const distance = Math.sqrt(
+          Math.pow(upEvent.clientX - startMouseDownPos.x, 2) +
+          Math.pow(upEvent.clientY - startMouseDownPos.y, 2)
+        );
+  
+        if (distance < 5) {
+            // 클릭으로 간주, 아무 작업 안함
+        } else {
+            const currentY = upEvent.clientY - timelineRect.top + scrollTop;
+            const newY = currentY - dragOffset.y;
+            const snappedY = snapToGrid(Math.max(0, newY));
+            const newTime = getTimeFromPosition(snappedY);
+            const newStart = new Date(selectedDate);
+            newStart.setHours(newTime.hour, newTime.minute, 0, 0);
+            const duration = new Date(schedule.endDateTime).getTime() - new Date(schedule.startDateTime).getTime();
+            const newEnd = new Date(newStart.getTime() + duration);
+    
+            const formatToAPIDate = (date: Date) => {
+              const year = date.getFullYear();
+              const month = String(date.getMonth() + 1).padStart(2, '0');
+              const day = String(date.getDate()).padStart(2, '0');
+              const hours = String(date.getHours()).padStart(2, '0');
+              const minutes = String(date.getMinutes()).padStart(2, '0');
+              return `${year}-${month}-${day}T${hours}:${minutes}`;
+            };
+    
+            onUpdateSchedule(planId, {
+              startDateTime: formatToAPIDate(newStart),
+              endDateTime: formatToAPIDate(newEnd),
+            });
+        }
+      }
 
-      if (distance < 5) return;
-
-      const currentY = upEvent.clientY - timelineRect.top + scrollTop;
-      const newY = currentY - dragOffset.y;
-      const snappedY = snapToGrid(Math.max(0, newY));
-      const newTime = getTimeFromPosition(snappedY);
-      const newStart = new Date(selectedDate);
-      newStart.setHours(newTime.hour, newTime.minute, 0, 0);
-      const duration = new Date(schedule.endDateTime).getTime() - new Date(schedule.startDateTime).getTime();
-      const newEnd = new Date(newStart.getTime() + duration);
-
-      const formatToAPIDate = (date: Date) => {
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const day = String(date.getDate()).padStart(2, '0');
-        const hours = String(date.getHours()).padStart(2, '0');
-        const minutes = String(date.getMinutes()).padStart(2, '0');
-        return `${year}-${month}-${day}T${hours}:${minutes}`;
-      };
-
-      onUpdateSchedule(planId, {
-        startDateTime: formatToAPIDate(newStart),
-        endDateTime: formatToAPIDate(newEnd),
-      });
+      // 상태 초기화
+      isOverTrash.current = false;
+      setIsOverTrashStyle(false);
     };
 
     window.addEventListener('mousemove', handleMouseMove);
@@ -764,6 +797,18 @@ export const ScheduleTimeline = forwardRef<{
           </div>
         )}
       </div>
+
+      {/* 휴지통 아이콘 */}
+      {isDragging && (
+        <div
+          ref={trashCanRef}
+          className={`fixed bottom-10 right-10 z-[100] flex items-center justify-center w-24 h-24 rounded-full transition-all duration-300 ease-in-out ${
+            isOverTrashStyle ? "bg-red-500 scale-125" : "bg-slate-800/80 backdrop-blur-sm border border-slate-600/50"
+          }`}
+        >
+          <Trash2 className={`h-10 w-10 text-white transition-transform duration-300 ${isOverTrashStyle ? "rotate-12 scale-110" : ""}`} />
+        </div>
+      )}
     </div>
   )
 })
