@@ -271,3 +271,23 @@ export const deletePlan = async (planId: number): Promise<DeletePlanResponse> =>
     throw error;
   }
 };
+
+//----------------------------------세부 일정 삭제 api---------------------------------
+export interface DeleteSubPlanResponse {
+  isSuccess: boolean;
+  code: string;
+  message: string;
+  result: string;
+}
+
+export const deleteSubPlan = async (subPlanId: number): Promise<DeleteSubPlanResponse> => {
+  try {
+    const response = await axiosInstance.delete<DeleteSubPlanResponse>(
+      `/subplans/${subPlanId}`
+    );
+    return response.data;
+  } catch (error) {
+    console.error("❌ deleteSubPlan API 호출 실패:", error);
+    throw error;
+  }
+};

@@ -1,7 +1,7 @@
 "use client"
 
 
-import { createSubPlans, updateSubPlan } from "../api/subplan";
+import { createSubPlans, updateSubPlan, deleteSubPlan } from "../api/subplan";
 import React from "react";
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
@@ -60,6 +60,7 @@ interface ScheduleFormProps {
   defaultDate: Date
   goals?: Goal[]
   onSubTaskChange: (planId: number, index: number | null, newSubTask: SubTask) => void;
+  onSubTasksUpdate: (planId: number, newSubTasks: SubTask[]) => void; // 세부 일정 목록 업데이트 prop 추가
 }
 
 const iconOptions = [
@@ -87,7 +88,7 @@ const colorOptions = [
   { value: "indigo", label: "남색", class: "bg-indigo-100 text-indigo-600 border-indigo-200" },
 ]
 
-export function ScheduleForm({ schedule, onSubmit, onCancel, onDelete, defaultDate, goals = [], onSubTaskChange }: ScheduleFormProps) {
+export function ScheduleForm({ schedule, onSubmit, onCancel, onDelete, defaultDate, goals = [], onSubTaskChange, onSubTasksUpdate }: ScheduleFormProps) {
   const [subTasks, setSubTasks] = useState<SubTask[]>(schedule?.subTasks || [])
   const [newSubTask, setNewSubTask] = useState("")
   const [editingSubTaskIndex, setEditingSubTaskIndex] = useState<number | null>(null)
@@ -189,8 +190,21 @@ export function ScheduleForm({ schedule, onSubmit, onCancel, onDelete, defaultDa
     }
   };
 
-  const removeSubTask = (id: string) => {
-    setSubTasks(subTasks.filter((task) => task.id !== id))
+  const removeSubTask = async (id: string) => {
+    if (!schedule?.planId) return;
+
+    const newSubTasks = subTasks.filter((task) => task.id !== id);
+
+    try {
+      await deleteSubPlan(Number(id));
+      // API 호출 성공 시, 로컬 및 부모 상태 업데이트
+      setSubTasks(newSubTasks);
+      onSubTasksUpdate(schedule.planId, newSubTasks);
+    } catch (error) {
+      console.error("Failed to delete sub-task:", error);
+      alert("세부 일정 삭제에 실패했습니다. 다시 시도해 주세요.");
+      // 실패 시 특별한 UI 복구 로직이 필요하다면 여기에 추가
+    }
   }
 
   const toggleSubTask = async (id: string, index: number) => {
