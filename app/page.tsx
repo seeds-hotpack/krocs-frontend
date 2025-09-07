@@ -25,6 +25,8 @@ export default function GoalManagementApp() {
   const [selectedDate, setSelectedDate] = useState(new Date())
   const [isCalendarOpen, setIsCalendarOpen] = useState(false)
   const [filterStatus, setFilterStatus] = useState("All") // 필터 상태 추가
+  const [currentPage, setCurrentPage] = useState(1); // 현재 페이지 상태
+  const itemsPerPage = 6; // 페이지 당 항목 수
 
   const fetchGoals = async (date: Date) => {
     setLoading(true)
@@ -216,6 +218,17 @@ export default function GoalManagementApp() {
     }
     return true;
   });
+
+  // 페이지네이션 로직
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentItems = filteredGoals.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(filteredGoals.length / itemsPerPage);
+
+  // 필터나 페이지가 변경될 때 현재 페이지를 1로 초기화
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filterStatus]);
 
   if (selectedGoal) {
     return (
@@ -432,8 +445,9 @@ export default function GoalManagementApp() {
             </CardContent>
           </Card>
         ) : (
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {filteredGoals.map(goal => {
+          <>
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {currentItems.map(goal => {
                 const progress = getProgressPercentage(goal)
                 return (
                   <Card
@@ -552,7 +566,39 @@ export default function GoalManagementApp() {
                   </Card>
                 )
               })}
-          </div>
+            </div> {/* Closing div for the grid */}
+
+            {totalPages > 1 && (
+              <div className="flex justify-center items-center gap-2 mt-8">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                  disabled={currentPage === 1}
+                >
+                  이전
+                </Button>
+                {[...Array(totalPages)].map((_, index) => (
+                  <Button
+                    key={index}
+                    variant={currentPage === index + 1 ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setCurrentPage(index + 1)}
+                  >
+                    {index + 1}
+                  </Button>
+                ))}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                  disabled={currentPage === totalPages}
+                >
+                  다음
+                </Button>
+              </div>
+            )}
+          </> // Closing fragment
         )}
       </div>
     </div>
