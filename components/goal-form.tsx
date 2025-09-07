@@ -67,7 +67,7 @@ export function GoalForm({ goal, onSubmit, onCancel }: GoalFormProps) {
   }
 
   return (
-    <Card className="max-w-2xl mx-auto border-0 shadow-lg">
+    <Card className="w-full border-0">
       <CardHeader className="border-b border-slate-200">
         <div className="flex items-center justify-between">
           <CardTitle className="text-xl font-semibold text-slate-900">{goal ? "Edit Goal" : "New Goal"}</CardTitle>
