@@ -177,6 +177,16 @@ export default function SchedulePage() {
   }
 
   const updateSchedule = async (planId: number, updates: Partial<Schedule>) => {
+    // Handle sub-task only updates locally for immediate UI feedback
+    if (updates.subTasks && Object.keys(updates).length === 1) {
+      setSchedules(prevSchedules =>
+        prevSchedules.map(s =>
+          s.planId === planId ? { ...s, subTasks: updates.subTasks } : s
+        )
+      );
+      return;
+    }
+
     const originalSchedule = schedules.find(s => s.planId === planId);
     if (!originalSchedule || originalSchedule.subGoalId === undefined) {
       console.error("Schedule or subGoalId not found for update");
