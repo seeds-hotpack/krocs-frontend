@@ -88,73 +88,70 @@ const colorOptions = [
   { value: "indigo", label: "남색", class: "bg-indigo-100 text-indigo-600 border-indigo-200" },
 ]
 
+const formatLocalDatetime = (date: Date) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  const hours = String(date.getHours()).padStart(2, '0');
+  const minutes = String(date.getMinutes()).padStart(2, '0');
+  return `${year}-${month}-${day}T${hours}:${minutes}`;
+};
+
 export function ScheduleForm({ schedule, onSubmit, onCancel, onDelete, defaultDate, goals = [], onSubTaskChange, onSubTasksUpdate }: ScheduleFormProps) {
   const [subTasks, setSubTasks] = useState<SubTask[]>(schedule?.subTasks || [])
   const [newSubTask, setNewSubTask] = useState("")
   const [editingSubTaskIndex, setEditingSubTaskIndex] = useState<number | null>(null)
   const [editingSubTaskTitle, setEditingSubTaskTitle] = useState("")
-  const [formData, setFormData] = useState({
-    title: schedule?.title || "",
-    startDate: schedule?.startDateTime
-      ? new Date(schedule.startDateTime).toISOString().split("T")[0]
-      : defaultDate.toISOString().split("T")[0],
-    endDate: schedule?.endDateTime
-      ? new Date(schedule.endDateTime).toISOString().split("T")[0]
-      : defaultDate.toISOString().split("T")[0],
-    startDateTime: schedule?.startDateTime
-      ? (() => {
-          const date = new Date(schedule.startDateTime)
-          const year = date.getFullYear()
-          const month = String(date.getMonth() + 1).padStart(2, '0')
-          const day = String(date.getDate()).padStart(2, '0')
-          const hours = String(date.getHours()).padStart(2, '0')
-          const minutes = String(date.getMinutes()).padStart(2, '0')
-          return `${year}-${month}-${day}T${hours}:${minutes}`
-        })()
-      : (() => {
-          const year = defaultDate.getFullYear()
-          const month = String(defaultDate.getMonth() + 1).padStart(2, '0')
-          const day = String(defaultDate.getDate()).padStart(2, '0')
-          return `${year}-${month}-${day}T09:00`
-        })(),
-    endDateTime: schedule?.endDateTime
-      ? (() => {
-          const date = new Date(schedule.endDateTime)
-          const year = date.getFullYear()
-          const month = String(date.getMonth() + 1).padStart(2, '0')
-          const day = String(date.getDate()).padStart(2, '0')
-          const hours = String(date.getHours()).padStart(2, '0')
-          const minutes = String(date.getMinutes()).padStart(2, '0')
-          return `${year}-${month}-${day}T${hours}:${minutes}`
-        })()
-      : (() => {
-          const year = defaultDate.getFullYear()
-          const month = String(defaultDate.getMonth() + 1).padStart(2, '0')
-          const day = String(defaultDate.getDate()).padStart(2, '0')
-          return `${year}-${month}-${day}T10:00`
-        })(),
-    allDay: schedule?.allDay || false,
-    subGoalId: schedule?.subGoalId,
-    reminderMinutes: schedule?.reminderMinutes,
-    icon: schedule?.icon || "User",
-    color: schedule?.color || "blue",
-  })
+  const [formData, setFormData] = useState(() => {
+    const initialStartDateTime = schedule?.startDateTime
+      ? new Date(schedule.startDateTime)
+      : new Date(defaultDate.getFullYear(), defaultDate.getMonth(), defaultDate.getDate(), 9, 0); // Use defaultDate's date, set time to 9:00
+    const initialEndDateTime = schedule?.endDateTime
+      ? new Date(schedule.endDateTime)
+      : new Date(defaultDate.getFullYear(), defaultDate.getMonth(), defaultDate.getDate(), 10, 0); // Use defaultDate's date, set time to 10:00
+
+    return {
+      title: schedule?.title || "",
+      startDate: schedule?.startDateTime
+        ? new Date(schedule.startDateTime).toISOString().split("T")[0]
+        : defaultDate.toISOString().split("T")[0],
+      endDate: schedule?.endDateTime
+        ? new Date(schedule.endDateTime).toISOString().split("T")[0]
+        : defaultDate.toISOString().split("T")[0],
+      startDateTime: formatLocalDatetime(initialStartDateTime),
+      endDateTime: formatLocalDatetime(initialEndDateTime),
+      allDay: schedule?.allDay || false,
+      subGoalId: schedule?.subGoalId,
+      reminderMinutes: schedule?.reminderMinutes,
+      icon: schedule?.icon || "User",
+      color: schedule?.color || "blue",
+    };
+  });
 
   useEffect(() => {
     setSubTasks(schedule?.subTasks || []);
-    setFormData(prev => ({
+    setFormData(prev => {
+      const updatedStartDateTime = schedule?.startDateTime
+        ? new Date(schedule.startDateTime)
+        : new Date(defaultDate.getFullYear(), defaultDate.getMonth(), defaultDate.getDate(), 9, 0);
+      const updatedEndDateTime = schedule?.endDateTime
+        ? new Date(schedule.endDateTime)
+        : new Date(defaultDate.getFullYear(), defaultDate.getMonth(), defaultDate.getDate(), 10, 0);
+
+      return {
         ...prev,
         title: schedule?.title || "",
         startDate: schedule?.startDateTime ? new Date(schedule.startDateTime).toISOString().split("T")[0] : defaultDate.toISOString().split("T")[0],
         endDate: schedule?.endDateTime ? new Date(schedule.endDateTime).toISOString().split("T")[0] : defaultDate.toISOString().split("T")[0],
-        startDateTime: schedule?.startDateTime ? new Date(schedule.startDateTime).toISOString().slice(0, 16) : `${defaultDate.toISOString().slice(0, 10)}T09:00`,
-        endDateTime: schedule?.endDateTime ? new Date(schedule.endDateTime).toISOString().slice(0, 16) : `${defaultDate.toISOString().slice(0, 10)}T10:00`,
+        startDateTime: formatLocalDatetime(updatedStartDateTime),
+        endDateTime: formatLocalDatetime(updatedEndDateTime),
         allDay: schedule?.allDay || false,
         subGoalId: schedule?.subGoalId,
         reminderMinutes: schedule?.reminderMinutes,
         icon: schedule?.icon || "User",
         color: schedule?.color || "blue",
-    }));
+      };
+    });
   }, [schedule, defaultDate]);
 
   const addSubTask = async () => {

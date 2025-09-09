@@ -23,6 +23,7 @@ import {
   Clock,
   Trash2,
 } from "lucide-react"
+import { updateSubPlan } from "@/api/subplan";
 import { Checkbox } from "@/components/ui/checkbox"
 
 interface SubTask {
@@ -99,7 +100,11 @@ export const ScheduleTimeline = forwardRef<{
       const isToday = selectedDate.toDateString() === today.toDateString()
       
       if (isToday) {
-        const currentPosition = getCurrentTimePosition()
+        const now = new Date();
+        const currentHour = now.getHours() + now.getMinutes() / 60
+        const slotHeight = 24
+        const currentPosition = currentHour * 4 * slotHeight
+
         const containerHeight = timelineRef.current.clientHeight
         const scrollTo = currentPosition - containerHeight / 2
         
@@ -109,7 +114,7 @@ export const ScheduleTimeline = forwardRef<{
         })
       }
     }
-  }, [loading, selectedDate, getCurrentTimePosition])
+  }, [loading, selectedDate])
 
   useEffect(() => {
     const timelineElement = timelineRef.current
@@ -174,14 +179,60 @@ export const ScheduleTimeline = forwardRef<{
     }
     const startDate = new Date(schedule.startDateTime);
     const endDate = new Date(schedule.endDateTime);
-    // Set time to 0 to compare dates only
-    startDate.setHours(0, 0, 0, 0);
-    endDate.setHours(0, 0, 0, 0);
-    return startDate.getTime() !== endDate.getTime();
+
+    const durationMs = endDate.getTime() - startDate.getTime();
+    const durationHours = durationMs / (1000 * 60 * 60);
+
+    // A schedule is considered multi-day/all-day if its duration is strictly greater than 24 hours.
+    return durationHours > 24;
   };
 
   const allDaySchedules = schedules.filter(isMultiDayOrAllDay);
   const timedSchedules = schedules.filter(s => !isMultiDayOrAllDay(s));
+
+  const getDisplaySchedules = (schedules: Schedule[], selectedDate: Date) => {
+    const displaySchedules: Schedule[] = [];
+    const selectedDateMidnight = new Date(selectedDate);
+    selectedDateMidnight.setHours(0, 0, 0, 0);
+    const nextDayMidnight = new Date(selectedDate);
+    nextDayMidnight.setDate(selectedDate.getDate() + 1);
+    nextDayMidnight.setHours(0, 0, 0, 0);
+
+    schedules.forEach(schedule => {
+      const start = new Date(schedule.startDateTime);
+      const end = new Date(schedule.endDateTime);
+
+      // If the schedule is entirely within the selected day
+      if (start.getTime() >= selectedDateMidnight.getTime() && end.getTime() <= nextDayMidnight.getTime()) {
+        displaySchedules.push(schedule);
+      }
+      // If the schedule starts before and ends after the selected day
+      else if (start.getTime() < selectedDateMidnight.getTime() && end.getTime() > nextDayMidnight.getTime()) {
+        displaySchedules.push({
+          ...schedule,
+          startDateTime: selectedDateMidnight.toISOString(),
+          endDateTime: nextDayMidnight.toISOString(),
+        });
+      }
+      // If the schedule starts on the selected day and ends on a future day (crosses midnight)
+      else if (start.getTime() >= selectedDateMidnight.getTime() && start.getTime() < nextDayMidnight.getTime() && end.getTime() > nextDayMidnight.getTime()) {
+        displaySchedules.push({
+          ...schedule,
+          endDateTime: nextDayMidnight.toISOString(), // Clip end time to midnight
+        });
+      }
+      // If the schedule starts on a previous day and ends on the selected day (crosses midnight)
+      else if (start.getTime() < selectedDateMidnight.getTime() && end.getTime() > selectedDateMidnight.getTime() && end.getTime() <= nextDayMidnight.getTime()) {
+        displaySchedules.push({
+          ...schedule,
+          startDateTime: selectedDateMidnight.toISOString(), // Clip start time to midnight
+        });
+      }
+    });
+    return displaySchedules;
+  };
+
+  const schedulesToDisplayOnTimeline = getDisplaySchedules(timedSchedules, selectedDate);
 
   const iconMap = {
     User,
@@ -431,14 +482,32 @@ export const ScheduleTimeline = forwardRef<{
     })
   }
 
-  const toggleSubTask = (planId: number, subTaskId: string) => {
-    const schedule = schedules.find((s) => s.planId === planId)
-    if (!schedule?.subTasks) return
+  const toggleSubTask = async (planId: number, subTaskId: string) => {
+    const schedule = schedules.find((s) => s.planId === planId);
+    if (!schedule?.subTasks) return;
+
+    const subTask = schedule.subTasks.find(st => st.id === subTaskId);
+    if (!subTask) return;
+
+    const newCompletedState = !subTask.completed;
+
+    // 1. Optimistic UI Update
     const updatedSubTasks = schedule.subTasks.map((task) =>
-      task.id === subTaskId ? { ...task, completed: !task.completed } : task,
-    )
-    onUpdateSchedule(planId, { subTasks: updatedSubTasks })
-  }
+      task.id === subTaskId ? { ...task, completed: newCompletedState } : task
+    );
+    onUpdateSchedule(planId, { subTasks: updatedSubTasks });
+
+    try {
+      // 2. API Call
+      await updateSubPlan(Number(subTaskId), { is_completed: newCompletedState });
+      // If successful, the optimistic update is now confirmed.
+    } catch (error) {
+      console.error("Failed to update sub-task:", error);
+      // 3. Revert UI on failure
+      onUpdateSchedule(planId, { subTasks: schedule.subTasks });
+      // Optionally, show an error message to the user.
+    }
+  };
 
   const toggleExpanded = (planId: number) => {
     const newExpanded = new Set(expandedSchedules)
@@ -648,7 +717,7 @@ export const ScheduleTimeline = forwardRef<{
           )}
 
           {/* Schedule Icons and Bubbles */}
-          {timedSchedules.map((schedule, index) => {
+          {schedulesToDisplayOnTimeline.map((schedule, index) => {
             const position = getSchedulePosition(schedule)
             const isExpanded = expandedSchedules.has(schedule.planId)
             const isEven = index % 2 === 0
@@ -760,7 +829,7 @@ export const ScheduleTimeline = forwardRef<{
                       {schedule.subTasks && schedule.subTasks.length > 0 && isExpanded && (
                         <div className="mt-3 space-y-2 border-t border-black/10 dark:border-white/10 pt-2">
                           {schedule.subTasks.map((subTask) => (
-                            <div key={subTask.id} className="flex items-center gap-2 text-xs">
+                            <div key={subTask.id} className="flex items-center gap-2 text-xs" onClick={(e) => e.stopPropagation()}>
                               <Checkbox
                                 checked={subTask.completed}
                                 onCheckedChange={() => toggleSubTask(schedule.planId, subTask.id)}
