@@ -36,10 +36,24 @@ export function ScheduleCalendar({ selectedDate, onDateSelect, schedules, onClos
   }
 
   const getSchedulesForDate = (date: Date) => {
+    const targetDate = new Date(date);
+    targetDate.setHours(0, 0, 0, 0);
+
     return schedules.filter((schedule) => {
-      const scheduleDate = new Date(schedule.startDateTime)
-      return scheduleDate.toDateString() === date.toDateString()
-    })
+      const startDate = new Date(schedule.startDateTime);
+      startDate.setHours(0, 0, 0, 0);
+      
+      const endDate = new Date(schedule.endDateTime);
+      endDate.setHours(0, 0, 0, 0);
+
+      // Handle schedules that end on the same day they start
+      if (startDate.getTime() === endDate.getTime()) {
+        return startDate.getTime() === targetDate.getTime();
+      }
+
+      // For multi-day events, check if the target date is within the range
+      return targetDate.getTime() >= startDate.getTime() && targetDate.getTime() <= endDate.getTime();
+    });
   }
 
   const renderCalendarDays = () => {
@@ -81,12 +95,21 @@ export function ScheduleCalendar({ selectedDate, onDateSelect, schedules, onClos
         >
           {day}
           {daySchedules.length > 0 && (
-            <div className="absolute bottom-1 left-1/2 transform -translate-x-1/2 flex gap-0.5">
-              {daySchedules.slice(0, 3).map((_, index) => (
-                <div key={index} className={`w-1 h-1 rounded-full ${isSelected ? "bg-white/60" : "bg-slate-400"}`} />
-              ))}
-              {daySchedules.length > 3 && (
-                <div className={`w-1 h-1 rounded-full ${isSelected ? "bg-white/60" : "bg-slate-600"}`} />
+            <div className="absolute bottom-1 left-1/2 transform -translate-x-1/2 flex items-center justify-center">
+              {daySchedules.length < 4 ? (
+                <div className="flex gap-0.5">
+                  {daySchedules.slice(0, 3).map((_, index) => (
+                    <div
+                      key={index}
+                      className={`w-1 h-1 rounded-full ${isSelected ? "bg-white/60" : "bg-slate-400"}`}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <div
+                  className={`h-1 rounded-sm ${isSelected ? "bg-white/70" : "bg-slate-500"}`}
+                  style={{ width: "10px" }}
+                />
               )}
             </div>
           )}

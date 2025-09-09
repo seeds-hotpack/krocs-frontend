@@ -168,8 +168,20 @@ export const ScheduleTimeline = forwardRef<{
     }
   }
 
-  const allDaySchedules = schedules.filter((s) => s.allDay)
-  const timedSchedules = schedules.filter((s) => !s.allDay)
+  const isMultiDayOrAllDay = (schedule: Schedule) => {
+    if (schedule.allDay) {
+      return true;
+    }
+    const startDate = new Date(schedule.startDateTime);
+    const endDate = new Date(schedule.endDateTime);
+    // Set time to 0 to compare dates only
+    startDate.setHours(0, 0, 0, 0);
+    endDate.setHours(0, 0, 0, 0);
+    return startDate.getTime() !== endDate.getTime();
+  };
+
+  const allDaySchedules = schedules.filter(isMultiDayOrAllDay);
+  const timedSchedules = schedules.filter(s => !isMultiDayOrAllDay(s));
 
   const iconMap = {
     User,
