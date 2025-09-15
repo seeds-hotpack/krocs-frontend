@@ -6,7 +6,7 @@ import axiosInstance from './axiosinstance';
  */
 export const logout = async () => {
   try {
-    const response = await axiosInstance.post('/api/v1/auth/logout');
+    const response = await axiosInstance.post('auth/logout');
     return response.data;
   } catch (error) {
     console.error("Logout failed:", error);
