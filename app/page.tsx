@@ -6,15 +6,18 @@ import { createGoal as createGoalApi } from '../api/createGoal'
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Plus, Edit, Trash2, Calendar, Clock, Target, TrendingUp, CheckCircle2, Sun, Moon, Monitor, ClipboardList } from "lucide-react"
+import { Plus, Edit, Trash2, Calendar, Clock, Target, TrendingUp, CheckCircle2, Sun, Moon, Monitor, ClipboardList, LogOut } from "lucide-react"
 import { GoalForm } from "@/components/goal-form"
 import { GoalDetail } from "@/components/goal-detail"
 import { useTheme } from "next-themes"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { ScheduleCalendar } from "@/components/schedule-calendar"
+import { logout } from "../api/auth"
 
 export default function GoalManagementApp() {
+  const router = useRouter()
   const [goals, setGoals] = useState<Goal[]>([])
   const [selectedGoal, setSelectedGoal] = useState<Goal | null>(null)
   const [isFormOpen, setIsFormOpen] = useState(false)
@@ -28,6 +31,16 @@ export default function GoalManagementApp() {
   const [currentPage, setCurrentPage] = useState(1); // 현재 페이지 상태
   const itemsPerPage = 6; // 페이지 당 항목 수
 
+  const handleLogout = async () => {
+    try {
+      await logout();
+      alert("로그아웃 되었습니다.");
+      router.push('/login');
+    } catch (error) {
+      alert("로그아웃에 실패했습니다.");
+    }
+  }
+
   const fetchGoals = async (date: Date) => {
     setLoading(true)
     setError(null)
@@ -40,8 +53,12 @@ export default function GoalManagementApp() {
       const data = await getGoals(formattedDate)
       setGoals(data)
     } catch (err: any) {
-      setError(err?.response?.data?.message || "목표를 불러오는데 실패했습니다.")
-      console.error(err)
+      if (err.response?.status === 401 || err.response?.status === 403) {
+        router.push('/login');
+      } else {
+        setError(err?.response?.data?.message || "목표를 불러오는데 실패했습니다.")
+        console.error(err)
+      }
     } finally {
       setLoading(false)
     }
@@ -333,6 +350,13 @@ export default function GoalManagementApp() {
             >
               <Plus className="h-4 w-4 mr-2" />
               New Goal
+            </Button>
+            <Button
+              variant="outline"
+              onClick={handleLogout}
+              className="border-slate-300 hover:bg-slate-50 dark:border-slate-600 dark:hover:bg-slate-800 bg-transparent p-2"
+            >
+              <LogOut className="h-4 w-4" />
             </Button>
           </div>
         </div>
