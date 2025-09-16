@@ -607,14 +607,14 @@ export const ScheduleTimeline = forwardRef<{
           onClick={() => setFilterType('schedules')}
           className="px-4 py-2 text-sm font-medium"
         >
-          일정만
+          일정
         </Button>
         <Button
           variant={filterType === 'subgoals' ? 'default' : 'outline'}
           onClick={() => setFilterType('subgoals')}
           className="px-4 py-2 text-sm font-medium"
         >
-          세부목표만
+          세부목표
         </Button>
       </div>
       <div className="relative p-6">
