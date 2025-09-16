@@ -460,7 +460,7 @@ export default function GoalManagementApp() {
                 return (
                   <Link href={`/goal/${goal.goalId}`} key={goal.goalId} className="block">
                     <Card
-                      className={`group transition-all duration-200 hover:shadow-md border-0 shadow-sm ${
+                      className={`group transition-all duration-200 hover:shadow-md border border-slate-200 dark:border-slate-700 shadow-sm ${
                         goal.completed ? "bg-slate-50 dark:bg-slate-800" : "bg-white dark:bg-slate-900"
                       }`}
                     >
