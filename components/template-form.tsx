@@ -82,6 +82,9 @@ export function TemplateForm({ template, onSubmit, onCancel }: TemplateFormProps
   };
 
   const handleRemoveSubTemplate = (id: number) => {
+    if (!confirm("정말로 이 하위 템플릿을 삭제하시겠습니까?")) {
+      return; // User cancelled, do nothing
+    }
     setSubTemplates(subTemplates.filter((st) => st.sub_template_id !== id));
   };
 
