@@ -16,6 +16,7 @@ import {
   createSubTemplates,
   getTemplates,
   deleteTemplate,
+  deleteSubTemplate,
 } from '@/api/templates';
 
 // API 명세에 따른 타입 정의
