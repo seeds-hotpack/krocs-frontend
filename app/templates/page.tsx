@@ -13,6 +13,7 @@ import {
   updateTemplate,
   createSubTemplates,
   getTemplates,
+  deleteTemplate,
 } from '@/api/templates';
 
 // API 명세에 따른 타입 정의
@@ -102,9 +103,18 @@ export default function TemplatesPage() {
     setShowForm(true);
   };
 
-  const handleDelete = (templateId: number) => {
-    // TODO: API 연동 시, 여기서 DELETE API 호출
-    setTemplates(templates.filter((t) => t.templateId !== templateId));
+  const handleDelete = async (templateId: number) => {
+    if (!confirm("정말로 이 템플릿을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.")) {
+      return;
+    }
+    try {
+      await deleteTemplate(templateId);
+      setTemplates(prevTemplates => prevTemplates.filter((t) => t.templateId !== templateId));
+      // alert("템플릿이 성공적으로 삭제되었습니다."); // You might want a more subtle notification
+    } catch (err) {
+      console.error("Failed to delete template:", err);
+      alert("템플릿 삭제에 실패했습니다. 다시 시도해 주세요.");
+    }
   };
 
  const handleFormSubmit = async (formData: Omit<Template, 'templateId'>) => {

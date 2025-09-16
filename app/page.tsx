@@ -27,7 +27,7 @@ export default function GoalManagementApp() {
   const [error, setError] = useState<string | null>(null)
   const [selectedDate, setSelectedDate] = useState(new Date())
   const [isCalendarOpen, setIsCalendarOpen] = useState(false)
-  const [filterStatus, setFilterStatus] = useState("All") // 필터 상태 추가
+  const [filterStatus, setFilterStatus] = useState("In Progress") // 필터 상태 추가
   const [currentPage, setCurrentPage] = useState(1); // 현재 페이지 상태
   const itemsPerPage = 6; // 페이지 당 항목 수
 

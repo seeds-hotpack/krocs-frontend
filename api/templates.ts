@@ -164,3 +164,33 @@ export async function updateSubTemplate(
     throw error;
   }
 }
+
+// 템플릿 삭제 API
+export async function deleteTemplate(templateId: number): Promise<ApiResponse<string>> {
+  try {
+    const response = await axiosInstance.delete<ApiResponse<string>>(
+      `/templates/${templateId}`
+    );
+    return response.data;
+  } catch (error) {
+    console.error(`Failed to delete template ${templateId}:`, error);
+    throw error;
+  }
+}
+
+// 하위 템플릿 삭제 API
+interface DeleteSubTemplateResult {
+  sub_template_id: number;
+}
+
+export async function deleteSubTemplate(subTemplateId: number): Promise<ApiResponse<DeleteSubTemplateResult>> {
+  try {
+    const response = await axiosInstance.delete<ApiResponse<DeleteSubTemplateResult>>(
+      `/subtemplates/${subTemplateId}`
+    );
+    return response.data;
+  } catch (error) {
+    console.error(`Failed to delete sub-template ${subTemplateId}:`, error);
+    throw error;
+  }
+}

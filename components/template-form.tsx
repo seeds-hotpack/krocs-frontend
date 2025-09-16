@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { X, Plus, Pencil, Trash2 } from 'lucide-react';
 import type { Template, SubTemplate } from '@/app/templates/page';
-import { updateSubTemplate } from '@/api/templates';
+import { updateSubTemplate, deleteSubTemplate } from '@/api/templates';
 
 interface TemplateFormProps {
   template?: Template | null;
@@ -81,9 +81,25 @@ export function TemplateForm({ template, onSubmit, onCancel }: TemplateFormProps
     setNewSubTemplateTitle('');
   };
 
-  const handleRemoveSubTemplate = (id: number) => {
-    // TODO: API 연동 시, 여기서 DELETE API 호출. 현재는 로컬 상태만 변경.
-    setSubTemplates(subTemplates.filter((st) => st.sub_template_id !== id));
+  const handleRemoveSubTemplate = async (id: number) => {
+    // Newly added sub-templates have a large temporary ID from Date.now()
+    // These don't exist on the server, so just remove them from local state.
+    if (id > 100000) {
+      setSubTemplates(subTemplates.filter((st) => st.sub_template_id !== id));
+      return;
+    }
+
+    if (!confirm("정말로 이 하위 템플릿을 삭제하시겠습니까?")) {
+      return;
+    }
+
+    try {
+      await deleteSubTemplate(id);
+      setSubTemplates(subTemplates.filter((st) => st.sub_template_id !== id));
+    } catch (error) {
+      console.error('Failed to delete sub-template:', error);
+      alert('하위 템플릿 삭제에 실패했습니다.');
+    }
   };
 
   const handleStartEditSubTemplate = (sub: SubTemplate) => {
