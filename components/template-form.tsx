@@ -24,6 +24,7 @@ export function TemplateForm({ template, onSubmit, onCancel }: TemplateFormProps
   const [newSubTemplateTitle, setNewSubTemplateTitle] = useState('');
   const [editingSubTemplate, setEditingSubTemplate] = useState<SubTemplate | null>(null);
   const [editingSubTemplateTitle, setEditingSubTemplateTitle] = useState('');
+  const [durationError, setDurationError] = useState<string | null>(null);
 
   useEffect(() => {
     if (template) {
@@ -58,6 +59,13 @@ export function TemplateForm({ template, onSubmit, onCancel }: TemplateFormProps
     if (duration < 1) {
       alert('소요시간을 1일 이상 입력해주세요.');
       return;
+    }
+    if (duration > 36500) {
+      setDurationError("적절한 소요시간을 입력해 주세요.");
+      return;
+    }
+    if (durationError) { // Redundant check for safety
+        return;
     }
     onSubmit({ title, priority, duration, subTemplates });
   };
@@ -170,10 +178,20 @@ export function TemplateForm({ template, onSubmit, onCancel }: TemplateFormProps
             id="duration"
             type="number"
             value={duration}
-            onChange={(e) => setDuration(parseInt(e.target.value, 10) || 0)}
+            onChange={(e) => {
+              const val = parseInt(e.target.value, 10) || 0;
+              setDuration(val);
+              if (val > 36500) {
+                setDurationError("적절한 소요시간을 입력해 주세요.");
+              } else {
+                setDurationError(null);
+              }
+            }}
             placeholder="예: 7"
             required
+            className={durationError ? 'border-red-500' : ''}
           />
+          {durationError && <p className="text-sm text-red-500 mt-1">{durationError}</p>}
         </div>
       </div>
 
