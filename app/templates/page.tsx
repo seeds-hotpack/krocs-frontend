@@ -4,10 +4,12 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { PlusCircle, ArrowLeft, Search } from 'lucide-react';
+import { PlusCircle, ArrowLeft, Search, Sun, Moon, Monitor } from 'lucide-react';
 import { TemplateCard } from '@/components/template-card';
 import { TemplateForm } from '@/components/template-form';
 import Link from 'next/link';
+import { useTheme } from 'next-themes';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import {
   createTemplate,
   updateTemplate,
@@ -55,6 +57,7 @@ function useDebounce<T>(value: T, delay: number): T {
 export default function TemplatesPage() {
   const [templates, setTemplates] = useState<Template[]>([]);
   const [showForm, setShowForm] = useState(false);
+  const { theme, setTheme } = useTheme();
   const [editingTemplate, setEditingTemplate] = useState<Template | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -200,6 +203,36 @@ export default function TemplatesPage() {
                     className="pl-9 w-full"
                 />
             </div>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="outline"
+                  className="border-slate-300 hover:bg-slate-50 dark:border-slate-600 dark:hover:bg-slate-800 bg-transparent"
+                >
+                  {theme === "light" ? (
+                    <Sun className="h-4 w-4" />
+                  ) : theme === "dark" ? (
+                    <Moon className="h-4 w-4" />
+                  ) : (
+                    <Monitor className="h-4 w-4" />
+                  )}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => setTheme("light")}>
+                  <Sun className="h-4 w-4 mr-2" />
+                  라이트 모드
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setTheme("dark")}>
+                  <Moon className="h-4 w-4 mr-2" />
+                  다크 모드
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setTheme("system")}>
+                  <Monitor className="h-4 w-4 mr-2" />
+                  시스템 설정
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
             <Button onClick={handleAddNew} className="flex-shrink-0">
                 <PlusCircle className="h-4 w-4 sm:mr-2" />
                 <span className="hidden sm:inline">새 템플릿 추가</span>
