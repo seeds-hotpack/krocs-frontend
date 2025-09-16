@@ -123,8 +123,12 @@ export interface TemplateResponse {
 
 export async function getTemplates(title?: string): Promise<TemplateResponse[]> {
   try {
+    const params: any = { _cacheBust: new Date().getTime() };
+    if (title) {
+      params.title = title;
+    }
     const response = await axiosInstance.get<ApiResponse<TemplateResponse[]>>('/templates', {
-      params: title ? { title } : {},
+      params,
     });
     return response.data.result;
   } catch (error) {
