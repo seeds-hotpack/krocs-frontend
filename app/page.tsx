@@ -3,12 +3,12 @@
 import { getGoals, Goal, deleteBigGoal as deleteGoalApi } from '../api/goals';
 import { update_Goal as updateGoalApi, type UpdateGoalRequest } from '../api/updateGoal'
 import { createGoal as createGoalApi } from '../api/createGoal'
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Plus, Edit, Trash2, Calendar, Clock, Target, TrendingUp, CheckCircle2, Sun, Moon, Monitor, ClipboardList, LogOut } from "lucide-react"
 import { GoalForm } from "@/components/goal-form"
-import { GoalDetail } from "@/components/goal-detail"
+
 import { useTheme } from "next-themes"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import Link from "next/link"
@@ -19,7 +19,7 @@ import { logout } from "../api/auth"
 export default function GoalManagementApp() {
   const router = useRouter()
   const [goals, setGoals] = useState<Goal[]>([])
-  const [selectedGoal, setSelectedGoal] = useState<Goal | null>(null)
+  
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [editingGoal, setEditingGoal] = useState<Goal | null>(null)
   const [loading, setLoading] = useState(false)
@@ -41,7 +41,7 @@ export default function GoalManagementApp() {
     }
   }
 
-  const fetchGoals = async (date: Date) => {
+  const fetchGoals = useCallback(async (date: Date) => {
     setLoading(true)
     setError(null)
     try {
@@ -62,7 +62,7 @@ export default function GoalManagementApp() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [router])
 
   const createGoal = async (goalData: Omit<Goal, "goalId" | "completed" | "subGoals" | "createdAt" | "updatedAt">) => {
     setLoading(true)
@@ -145,9 +145,6 @@ export default function GoalManagementApp() {
     try {
       await deleteGoalApi(goalId)
       await fetchGoals(selectedDate) // 삭제 후 목록 새로고침
-      if (selectedGoal?.goalId === goalId) {
-        setSelectedGoal(null)
-      }
     } catch (err: any) {
       setError(err?.response?.data?.message || "목표 삭제에 실패했습니다.")
       console.error(err)
@@ -166,7 +163,7 @@ export default function GoalManagementApp() {
 
   useEffect(() => {
     fetchGoals(selectedDate)
-  }, [selectedDate])
+  }, [selectedDate, fetchGoals])
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
@@ -247,21 +244,8 @@ export default function GoalManagementApp() {
     setCurrentPage(1);
   }, [filterStatus]);
 
-  if (selectedGoal) {
-    return (
-      <GoalDetail
-        goal={selectedGoal}
-        onBack={() => {
-          setSelectedGoal(null)
-          fetchGoals(selectedDate) // "Back to Goals" 시점에 목록 새로고침
-        }}
-        onUpdate={(updatedGoal) => {
-          updateGoal(selectedGoal.goalId, updatedGoal)
-          setSelectedGoal({ ...selectedGoal, ...updatedGoal })
-        }}
-      />
-    )
-  }
+  // The GoalDetail component is now rendered on a separate dynamic page.
+  // The logic below has been removed.
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900 p-6">
@@ -474,120 +458,123 @@ export default function GoalManagementApp() {
               {currentItems.map(goal => {
                 const progress = getProgressPercentage(goal)
                 return (
-                  <Card
-                    key={goal.goalId}
-                    className={`group cursor-pointer transition-all duration-200 hover:shadow-md border-0 shadow-sm ${
-                      goal.completed ? "bg-slate-50 dark:bg-slate-800" : "bg-white dark:bg-slate-900"
-                    }`}
-                    onClick={() => setSelectedGoal(goal)}
-                  >
-                    <CardHeader className="pb-4">
-                      <div className="flex items-start justify-between mb-3">
-                        <CardTitle
-                          className={`text-lg font-medium leading-tight ${
-                            goal.completed
-                              ? "line-through text-slate-500 dark:text-slate-400"
-                              : "text-slate-900 dark:text-slate-100"
-                          }`}
-                        >
-                          {goal.title}
-                        </CardTitle>
-                        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-8 w-8 p-0 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-md"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              setEditingGoal(goal)
-                              setIsFormOpen(true)
-                            }}
+                  <Link href={`/goal/${goal.goalId}`} key={goal.goalId} className="block">
+                    <Card
+                      className={`group transition-all duration-200 hover:shadow-md border-0 shadow-sm ${
+                        goal.completed ? "bg-slate-50 dark:bg-slate-800" : "bg-white dark:bg-slate-900"
+                      }`}
+                    >
+                      <CardHeader className="pb-4">
+                        <div className="flex items-start justify-between mb-3">
+                          <CardTitle
+                            className={`text-lg font-medium leading-tight ${
+                              goal.completed
+                                ? "line-through text-slate-500 dark:text-slate-400"
+                                : "text-slate-900 dark:text-slate-100"
+                            }`}
                           >
-                            <Edit className="h-4 w-4 text-slate-600 dark:text-slate-400" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-8 w-8 p-0 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-md"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              deleteGoal(goal.goalId)
-                            }}
-                          >
-                            <Trash2 className="h-4 w-4 text-slate-600 dark:text-slate-400" />
-                          </Button>
+                            {goal.title}
+                          </CardTitle>
+                          <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 w-8 p-0 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-md"
+                              onClick={(e) => {
+                                e.preventDefault()
+                                e.stopPropagation()
+                                setEditingGoal(goal)
+                                setIsFormOpen(true)
+                              }}
+                            >
+                              <Edit className="h-4 w-4 text-slate-600 dark:text-slate-400" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 w-8 p-0 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-md"
+                              onClick={(e) => {
+                                e.preventDefault()
+                                e.stopPropagation()
+                                deleteGoal(goal.goalId)
+                              }}
+                            >
+                              <Trash2 className="h-4 w-4 text-slate-600 dark:text-slate-400" />
+                            </Button>
+                          </div>
                         </div>
-                      </div>
 
-                      <div className="flex items-center gap-2 mb-4">
-                        <span className={`px-2 py-1 rounded text-xs font-medium ${getPriorityColor(goal.priority)}`}>
-                          {getPriorityText(goal.priority)}
-                        </span>
-                        {goal.completed && (
-                          <span className="px-2 py-1 rounded text-xs font-medium bg-slate-900 text-white">Done</span>
-                        )}
-                      </div>
-
-                      <div className="mb-4">
-                        <div className="flex justify-between text-xs text-slate-600 dark:text-slate-400 mb-2">
-                          <span>Progress</span>
-                          <span>{Math.round(progress)}%</span>
-                        </div>
-                        <div className="w-full bg-slate-200 rounded-full h-1.5 dark:bg-slate-700">
-                          <div
-                            className="bg-slate-900 h-1.5 rounded-full transition-all duration-300 dark:bg-slate-100"
-                            style={{ width: `${progress}%` }}
-                          />
-                        </div>
-                      </div>
-                    </CardHeader>
-
-                    <CardContent className="space-y-4">
-                      <div className="space-y-2 text-sm text-slate-600 dark:text-slate-400">
-                        <div className="flex items-center gap-2">
-                          <Calendar className="h-4 w-4" />
-                          <span>
-                            {formatDate(goal.startDate)} - {formatDate(goal.endDate)}
+                        <div className="flex items-center gap-2 mb-4">
+                          <span className={`px-2 py-1 rounded text-xs font-medium ${getPriorityColor(goal.priority)}`}>
+                            {getPriorityText(goal.priority)}
                           </span>
+                          {goal.completed && (
+                            <span className="px-2 py-1 rounded text-xs font-medium bg-slate-900 text-white">Done</span>
+                          )}
                         </div>
-                        <div className="flex items-center gap-2">
-                          <Clock className="h-4 w-4" />
-                          <span>{goal.duration} days</span>
+
+                        <div className="mb-4">
+                          <div className="flex justify-between text-xs text-slate-600 dark:text-slate-400 mb-2">
+                            <span>Progress</span>
+                            <span>{Math.round(progress)}%</span>
+                          </div>
+                          <div className="w-full bg-slate-200 rounded-full h-1.5 dark:bg-slate-700">
+                            <div
+                              className="bg-slate-900 h-1.5 rounded-full transition-all duration-300 dark:bg-slate-100"
+                              style={{ width: `${progress}%` }}
+                            />
+                          </div>
                         </div>
-                        {goal.subGoals.length > 0 && (
+                      </CardHeader>
+
+                      <CardContent className="space-y-4">
+                        <div className="space-y-2 text-sm text-slate-600 dark:text-slate-400">
                           <div className="flex items-center gap-2">
-                            <Target className="h-4 w-4" />
+                            <Calendar className="h-4 w-4" />
                             <span>
-                              {goal.subGoals.filter((sg) => sg.completed).length}/{goal.subGoals.length} subtasks
+                              {formatDate(goal.startDate)} - {formatDate(goal.endDate)}
                             </span>
                           </div>
-                        )}
-                      </div>
+                          <div className="flex items-center gap-2">
+                            <Clock className="h-4 w-4" />
+                            <span>{goal.duration} days</span>
+                          </div>
+                          {goal.subGoals.length > 0 && (
+                            <div className="flex items-center gap-2">
+                              <Target className="h-4 w-4" />
+                              <span>
+                                {goal.subGoals.filter((sg) => sg.completed).length}/{goal.subGoals.length} subtasks
+                              </span>
+                            </div>
+                          )}
+                        </div>
 
-                      <Button
-                        variant={goal.completed ? "secondary" : "default"}
-                        size="sm"
-                        className={`w-full font-medium ${
-                          goal.completed
-                            ? "bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-700 dark:hover:bg-slate-600 dark:text-slate-300"
-                            : "bg-slate-900 hover:bg-slate-800 text-white dark:bg-slate-100 dark:hover:bg-slate-200 dark:text-slate-900"
-                        }`}
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          toggleGoalCompletion(goal.goalId)
-                        }}
-                      >
-                        {goal.completed ? (
-                          <>
-                            <CheckCircle2 className="h-4 w-4 mr-2" />
-                            Completed
-                          </>
-                        ) : (
-                          "Mark Complete"
-                        )}
-                      </Button>
-                    </CardContent>
-                  </Card>
+                        <Button
+                          variant={goal.completed ? "secondary" : "default"}
+                          size="sm"
+                          className={`w-full font-medium ${
+                            goal.completed
+                              ? "bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-700 dark:hover:bg-slate-600 dark:text-slate-300"
+                              : "bg-slate-900 hover:bg-slate-800 text-white dark:bg-slate-100 dark:hover:bg-slate-200 dark:text-slate-900"
+                          }`}
+                          onClick={(e) => {
+                            e.preventDefault()
+                            e.stopPropagation()
+                            toggleGoalCompletion(goal.goalId)
+                          }}
+                        >
+                          {goal.completed ? (
+                            <>
+                              <CheckCircle2 className="h-4 w-4 mr-2" />
+                              Completed
+                            </>
+                          ) : (
+                            "Mark Complete"
+                          )}
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  </Link>
                 )
               })}
             </div> {/* Closing div for the grid */}
