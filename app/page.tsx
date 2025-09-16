@@ -539,14 +539,16 @@ export default function GoalManagementApp() {
                             <Clock className="h-4 w-4" />
                             <span>{goal.duration} days</span>
                           </div>
-                          {goal.subGoals.length > 0 && (
-                            <div className="flex items-center gap-2">
-                              <Target className="h-4 w-4" />
-                              <span>
-                                {goal.subGoals.filter((sg) => sg.completed).length}/{goal.subGoals.length} subtasks
-                              </span>
-                            </div>
-                          )}
+                          <div className="flex items-center gap-2" style={{ minHeight: '1.5rem' }}> {/* minHeight to reserve space */}
+                            {goal.subGoals.length > 0 && (
+                              <>
+                                <Target className="h-4 w-4" />
+                                <span>
+                                  {goal.subGoals.filter((sg) => sg.completed).length}/{goal.subGoals.length} subtasks
+                                </span>
+                              </>
+                            )}
+                          </div>
                         </div>
 
                         <Button
