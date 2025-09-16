@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
+import { Checkbox } from "@/components/ui/checkbox"
 import { Calendar, ChevronDown, ChevronUp, Plus, Settings, Bell, Sun, Moon, Monitor, Menu, X, AlertCircle } from "lucide-react"
 import { ScheduleTimeline } from "@/components/schedule-timeline"
 import { ScheduleCalendar } from "@/components/schedule-calendar"
@@ -56,6 +57,7 @@ export default function SchedulePage() {
   const [error, setError] = useState<string | null>(null)
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [refreshTrigger, setRefreshTrigger] = useState(0)
+  const [expandedSummary, setExpandedSummary] = useState<string | null>(null); // State for expanded summary
   const timelineRef = useRef<{ scrollToCurrentTime: () => void }>(null)
   const { theme, setTheme } = useTheme()
 
@@ -249,12 +251,16 @@ export default function SchedulePage() {
     );
     setSchedules(newSchedules);
 
-    if (editingSchedule?.planId === planId) {
+    if (editingSchedule && editingSchedule.planId === planId) {
       setEditingSchedule(prev => {
         if (!prev) return null;
         return { ...prev, subTasks: newSubTasks };
       });
     }
+  };
+
+  const toggleScheduleCompletion = (schedule: Schedule) => {
+    updateSchedule(schedule.planId, { isCompleted: !schedule.isCompleted });
   };
 
   const formatDate = (date: Date) => {
@@ -307,17 +313,71 @@ export default function SchedulePage() {
           <div className="p-4 border-b border-slate-200 dark:border-slate-700">
             <h3 className="text-sm font-medium text-slate-900 dark:text-slate-100 mb-3">오늘의 요약</h3>
             <div className="space-y-2">
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-slate-600 dark:text-slate-400">전체 일정</span>
-                <span className="font-medium text-slate-900 dark:text-slate-100">{todaySchedules.length}</span>
+              {/* 전체 일정 */}
+              <div>
+                <div className="flex items-center justify-between text-sm cursor-pointer" onClick={() => setExpandedSummary(expandedSummary === 'all' ? null : 'all')}>
+                  <span className="text-slate-600 dark:text-slate-400">전체 일정</span>
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium text-slate-900 dark:text-slate-100">{todaySchedules.length}</span>
+                    <Button variant="ghost" size="sm">
+                      {expandedSummary === 'all' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                    </Button>
+                  </div>
+                </div>
+                {expandedSummary === 'all' && (
+                  <div className="mt-2 space-y-2 pl-4">
+                    {todaySchedules.map(schedule => (
+                      <div key={schedule.planId} className="flex items-center gap-3 text-sm">
+                        <Checkbox id={`summary-all-${schedule.planId}`} checked={schedule.isCompleted} onCheckedChange={() => toggleScheduleCompletion(schedule)} />
+                        <label htmlFor={`summary-all-${schedule.planId}`} className={`flex-1 ${schedule.isCompleted ? 'line-through text-slate-500' : 'text-slate-800 dark:text-slate-200'}`}>{schedule.title}</label>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-slate-600 dark:text-slate-400">완료됨</span>
-                <span className="font-medium text-slate-900 dark:text-slate-100">{todaySchedules.filter((s) => s.isCompleted).length}</span>
+              {/* 완료됨 */}
+              <div>
+                <div className="flex items-center justify-between text-sm cursor-pointer" onClick={() => setExpandedSummary(expandedSummary === 'completed' ? null : 'completed')}>
+                  <span className="text-slate-600 dark:text-slate-400">완료됨</span>
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium text-slate-900 dark:text-slate-100">{todaySchedules.filter((s) => s.isCompleted).length}</span>
+                    <Button variant="ghost" size="sm">
+                      {expandedSummary === 'completed' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                    </Button>
+                  </div>
+                </div>
+                {expandedSummary === 'completed' && (
+                  <div className="mt-2 space-y-2 pl-4">
+                    {todaySchedules.filter(s => s.isCompleted).map(schedule => (
+                      <div key={schedule.planId} className="flex items-center gap-3 text-sm">
+                        <Checkbox id={`summary-completed-${schedule.planId}`} checked={schedule.isCompleted} onCheckedChange={() => toggleScheduleCompletion(schedule)} />
+                        <label htmlFor={`summary-completed-${schedule.planId}`} className="flex-1 line-through text-slate-500">{schedule.title}</label>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-slate-600 dark:text-slate-400">남은 일정</span>
-                <span className="font-medium text-slate-900 dark:text-slate-100">{todaySchedules.filter((s) => !s.isCompleted).length}</span>
+              {/* 남은 일정 */}
+              <div>
+                <div className="flex items-center justify-between text-sm cursor-pointer" onClick={() => setExpandedSummary(expandedSummary === 'remaining' ? null : 'remaining')}>
+                  <span className="text-slate-600 dark:text-slate-400">남은 일정</span>
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium text-slate-900 dark:text-slate-100">{todaySchedules.filter((s) => !s.isCompleted).length}</span>
+                    <Button variant="ghost" size="sm">
+                      {expandedSummary === 'remaining' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                    </Button>
+                  </div>
+                </div>
+                {expandedSummary === 'remaining' && (
+                  <div className="mt-2 space-y-2 pl-4">
+                    {todaySchedules.filter(s => !s.isCompleted).map(schedule => (
+                      <div key={schedule.planId} className="flex items-center gap-3 text-sm">
+                        <Checkbox id={`summary-remaining-${schedule.planId}`} checked={schedule.isCompleted} onCheckedChange={() => toggleScheduleCompletion(schedule)} />
+                        <label htmlFor={`summary-remaining-${schedule.planId}`} className="flex-1 text-slate-800 dark:text-slate-200">{schedule.title}</label>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           </div>
