@@ -120,15 +120,35 @@ export default function TemplatesPage() {
  const handleFormSubmit = async (formData: Omit<Template, 'templateId'>) => {
     try {
       if (editingTemplate) {
+        // 1. Update main template properties
         const templateData = { title: formData.title, priority: formData.priority, duration: formData.duration };
         await updateTemplate(editingTemplate.templateId, templateData);
-        const originalSubIds = new Set(editingTemplate.subTemplates.map(st => st.sub_template_id));
-        const newSubTemplates = formData.subTemplates
-          .filter(st => !originalSubIds.has(st.sub_template_id))
+
+        const originalSubTemplates = editingTemplate.subTemplates || [];
+        const finalSubTemplates = formData.subTemplates || [];
+
+        const originalIds = new Set(originalSubTemplates.map(st => st.sub_template_id));
+        const finalIds = new Set(finalSubTemplates.map(st => st.sub_template_id));
+
+        // 2. Find and DELETE removed sub-templates
+        const deletedIds = originalSubTemplates
+          .filter(st => !finalIds.has(st.sub_template_id))
+          .map(st => st.sub_template_id);
+        
+        if (deletedIds.length > 0) {
+          // Concurrently delete all removed sub-templates
+          await Promise.all(deletedIds.map(id => deleteSubTemplate(id)));
+        }
+
+        // 3. Find and CREATE new sub-templates
+        const newSubTemplates = finalSubTemplates
+          .filter(st => !originalIds.has(st.sub_template_id))
           .map(st => ({ title: st.title }));
+
         if (newSubTemplates.length > 0) {
           await createSubTemplates(editingTemplate.templateId, newSubTemplates);
         }
+
       } else {
         const templateData = { title: formData.title, priority: formData.priority, duration: formData.duration };
         const newTemplateResult = await createTemplate(templateData);
@@ -138,7 +158,7 @@ export default function TemplatesPage() {
         }
       }
       
-      // 성공 시: 데이터 리프레시 및 폼 닫기
+      // SUCCESS: Re-fetch and close form
       const fetchedTemplates = await getTemplates(debouncedSearchTerm);
       setTemplates(fetchedTemplates as Template[]);
       setShowForm(false);

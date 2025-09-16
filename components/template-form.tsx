@@ -81,25 +81,8 @@ export function TemplateForm({ template, onSubmit, onCancel }: TemplateFormProps
     setNewSubTemplateTitle('');
   };
 
-  const handleRemoveSubTemplate = async (id: number) => {
-    // Newly added sub-templates have a large temporary ID from Date.now()
-    // These don't exist on the server, so just remove them from local state.
-    if (id > 100000) {
-      setSubTemplates(subTemplates.filter((st) => st.sub_template_id !== id));
-      return;
-    }
-
-    if (!confirm("정말로 이 하위 템플릿을 삭제하시겠습니까?")) {
-      return;
-    }
-
-    try {
-      await deleteSubTemplate(id);
-      setSubTemplates(subTemplates.filter((st) => st.sub_template_id !== id));
-    } catch (error) {
-      console.error('Failed to delete sub-template:', error);
-      alert('하위 템플릿 삭제에 실패했습니다.');
-    }
+  const handleRemoveSubTemplate = (id: number) => {
+    setSubTemplates(subTemplates.filter((st) => st.sub_template_id !== id));
   };
 
   const handleStartEditSubTemplate = (sub: SubTemplate) => {
