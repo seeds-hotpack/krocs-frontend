@@ -76,6 +76,7 @@ export const ScheduleTimeline = forwardRef<{
   const [visibleCards, setVisibleCards] = useState<Set<number>>(new Set())
   const [showBackToCurrentTime, setShowBackToCurrentTime] = useState(false)
   const timelineRef = useRef<HTMLDivElement>(null)
+  const [filterType, setFilterType] = useState<'all' | 'schedules' | 'subgoals'>('all')
 
   const getCurrentTimePosition = useCallback(() => {
     const currentHour = currentTime.getHours() + currentTime.getMinutes() / 60
@@ -593,6 +594,29 @@ export const ScheduleTimeline = forwardRef<{
 
   return (
     <div className="h-full overflow-y-auto" ref={timelineRef}>
+      <div className="flex justify-center gap-2 p-4 border-b border-slate-200 dark:border-slate-700">
+        <Button
+          variant={filterType === 'all' ? 'default' : 'outline'}
+          onClick={() => setFilterType('all')}
+          className="px-4 py-2 text-sm font-medium"
+        >
+          전체
+        </Button>
+        <Button
+          variant={filterType === 'schedules' ? 'default' : 'outline'}
+          onClick={() => setFilterType('schedules')}
+          className="px-4 py-2 text-sm font-medium"
+        >
+          일정만
+        </Button>
+        <Button
+          variant={filterType === 'subgoals' ? 'default' : 'outline'}
+          onClick={() => setFilterType('subgoals')}
+          className="px-4 py-2 text-sm font-medium"
+        >
+          세부목표만
+        </Button>
+      </div>
       <div className="relative p-6">
         {showBackToCurrentTime && (
           <div className="sticky top-6 z-50 flex justify-center">
