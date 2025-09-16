@@ -225,7 +225,7 @@ export function GoalDetail({ goal, onBack, onUpdate }: GoalDetailProps) {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 p-6">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 p-6">
       <div className="max-w-4xl mx-auto">
         <div className="flex items-center gap-4 mb-8">
           <Button
@@ -239,12 +239,12 @@ export function GoalDetail({ goal, onBack, onUpdate }: GoalDetailProps) {
         </div>
 
         {/* Main Goal Card */}
-        <Card className="mb-8 border-0 shadow-sm">
+        <Card className="mb-8 border border-slate-200 dark:border-slate-700 shadow-sm dark:bg-slate-800">
           <CardHeader className="border-b border-slate-200">
             <div className="flex items-start justify-between">
               <div className="space-y-3">
                 <h1
-                  className={`text-2xl font-semibold ${goal.completed ? "line-through text-slate-500" : "text-slate-900"}`}
+                  className={`text-2xl font-semibold ${goal.completed ? "line-through text-slate-500 dark:text-slate-400" : "text-slate-900 dark:text-slate-100"}`}}
                 >
                   {goal.title}
                 </h1>
@@ -262,8 +262,8 @@ export function GoalDetail({ goal, onBack, onUpdate }: GoalDetailProps) {
                 onClick={toggleGoalCompletion}
                 className={`px-6 py-2 font-medium ${
                   goal.completed
-                    ? "bg-slate-100 hover:bg-slate-200 text-slate-700"
-                    : "bg-slate-900 hover:bg-slate-800 text-white"
+                    ? "bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-700 dark:hover:bg-slate-600 dark:text-slate-300"
+                    : "bg-slate-900 hover:bg-slate-800 text-white dark:bg-slate-100 dark:hover:bg-slate-200 dark:text-slate-900"
                 }`}
               >
                 {goal.completed ? "Mark Incomplete" : "Mark Complete"}
@@ -294,8 +294,8 @@ export function GoalDetail({ goal, onBack, onUpdate }: GoalDetailProps) {
                   <Calendar className="h-5 w-5 text-slate-600" />
                 </div>
                 <div>
-                  <div className="text-sm text-slate-600">Start Date</div>
-                  <div className="font-medium text-slate-900">{formatDate(goal.startDate)}</div>
+                  <div className="text-sm text-slate-600 dark:text-slate-400">Start Date</div>
+                  <div className="font-medium text-slate-900 dark:text-slate-100">{formatDate(goal.startDate)}</div>
                 </div>
               </div>
 
@@ -304,8 +304,8 @@ export function GoalDetail({ goal, onBack, onUpdate }: GoalDetailProps) {
                   <Calendar className="h-5 w-5 text-slate-600" />
                 </div>
                 <div>
-                  <div className="text-sm text-slate-600">End Date</div>
-                  <div className="font-medium text-slate-900">{formatDate(goal.endDate)}</div>
+                  <div className="text-sm text-slate-600 dark:text-slate-400">End Date</div>
+                  <div className="font-medium text-slate-900 dark:text-slate-100">{formatDate(goal.endDate)}</div>
                 </div>
               </div>
 
@@ -314,8 +314,8 @@ export function GoalDetail({ goal, onBack, onUpdate }: GoalDetailProps) {
                   <Clock className="h-5 w-5 text-slate-600" />
                 </div>
                 <div>
-                  <div className="text-sm text-slate-600">Duration</div>
-                  <div className="font-medium text-slate-900">{goal.duration} days</div>
+                  <div className="text-sm text-slate-600 dark:text-slate-400">Duration</div>
+                  <div className="font-medium text-slate-900 dark:text-slate-100">{goal.duration} days</div>
                 </div>
               </div>
             </div>
@@ -323,9 +323,9 @@ export function GoalDetail({ goal, onBack, onUpdate }: GoalDetailProps) {
         </Card>
 
         {/* Sub Goals Card */}
-        <Card className="border-0 shadow-sm">
+        <Card className="border border-slate-200 dark:border-slate-700 shadow-sm dark:bg-slate-800">
           <CardHeader className="border-b border-slate-200">
-            <CardTitle className="text-xl font-semibold text-slate-900">Subtasks</CardTitle>
+            <CardTitle className="text-xl font-semibold text-slate-900 dark:text-slate-100">Subtasks</CardTitle>
           </CardHeader>
           <CardContent className="p-6">
             {/* Add Sub Goal */}
@@ -339,12 +339,12 @@ export function GoalDetail({ goal, onBack, onUpdate }: GoalDetailProps) {
                     addSubGoal()
                   }
                 }}
-                className="h-10 border-slate-300 focus:border-slate-900 focus:ring-slate-900"
+                className="h-10 border-slate-300 dark:border-slate-700 focus:border-slate-900 dark:focus:border-slate-100 focus:ring-slate-900 dark:focus:ring-slate-100 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100"
               />
               <Button
                 onClick={addSubGoal}
                 disabled={!newSubGoalTitle.trim()}
-                className="bg-slate-900 hover:bg-slate-800 text-white px-4 py-2 font-medium disabled:opacity-50"
+                className="bg-slate-900 hover:bg-slate-800 text-white px-4 py-2 font-medium disabled:opacity-50 dark:bg-slate-100 dark:hover:bg-slate-200 dark:text-slate-900"
               >
                 <Plus className="h-4 w-4" />
               </Button>
@@ -354,17 +354,17 @@ export function GoalDetail({ goal, onBack, onUpdate }: GoalDetailProps) {
               <div className="text-center py-12 text-slate-500">소목표를 불러오는 중...</div>
             ) : subGoals.length === 0 ? (
               <div className="text-center py-12">
-                <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <div className="w-16 h-16 bg-slate-100 dark:bg-slate-700 rounded-full flex items-center justify-center mx-auto mb-4">
                   <Target className="h-8 w-8 text-slate-400" />
                 </div>
-                <h3 className="text-lg font-medium text-slate-900 mb-2">No subtasks yet</h3>
-                <p className="text-slate-600">Break down your goal into smaller, manageable tasks</p>
+                <h3 className="text-lg font-medium text-slate-900 dark:text-slate-100 mb-2">No subtasks yet</h3>
+                <p className="text-slate-600 dark:text-slate-400">Break down your goal into smaller, manageable tasks</p>
               </div>
             ) : (
               <div className="space-y-3">
                 {subGoals.map((subGoal, index) => (
-                  <div key={subGoal.subGoalId} className="group flex items-center gap-4 p-4 rounded-lg border transition-all duration-200">
-                    <div className="flex items-center justify-center w-6 h-6 rounded-full bg-slate-100 text-slate-600 text-sm font-medium">
+                  <div key={subGoal.subGoalId} className="group flex items-center gap-4 p-4 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 transition-all duration-200">
+                    <div className="flex items-center justify-center w-6 h-6 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400 text-sm font-medium">
                       {index + 1}
                     </div>
 
@@ -374,7 +374,7 @@ export function GoalDetail({ goal, onBack, onUpdate }: GoalDetailProps) {
                       className="w-5 h-5"
                     />
 
-                    <span className={`flex-1 font-medium ${subGoal.completed ? "line-through text-slate-500" : "text-slate-900"}`}>
+                    <span className={`flex-1 font-medium ${subGoal.completed ? "line-through text-slate-500 dark:text-slate-400" : "text-slate-900 dark:text-slate-100"}`}>
                       {editingSubGoalId === subGoal.subGoalId ? (
                         <Input
                           value={editingSubGoalTitle}
@@ -383,7 +383,7 @@ export function GoalDetail({ goal, onBack, onUpdate }: GoalDetailProps) {
                             if (e.key === "Enter") saveInlineEdit(subGoal)
                             if (e.key === "Escape") cancelInlineEdit()
                           }}
-                          className="h-8"
+                          className="h-8 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 border-slate-300 dark:border-slate-700"
                           autoFocus
                         />
                       ) : (
@@ -403,10 +403,10 @@ export function GoalDetail({ goal, onBack, onUpdate }: GoalDetailProps) {
                           ? saveInlineEdit(subGoal)
                           : startInlineEdit(subGoal)
                       }
-                      className="opacity-0 group-hover:opacity-100 h-8 w-8 p-0 hover:bg-slate-100 rounded-md"
+                      className="opacity-0 group-hover:opacity-100 h-8 w-8 p-0 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-md"
                     >
                       {editingSubGoalId === subGoal.subGoalId ? (
-                        <span className="text-xs text-slate-600">저장</span>
+                        <span className="text-xs text-slate-600 dark:text-slate-400">저장</span>
                       ) : (
                         <Pencil className="h-4 w-4 text-slate-600" />
                       )}
@@ -437,12 +437,12 @@ export function GoalDetail({ goal, onBack, onUpdate }: GoalDetailProps) {
             )}
 
             {subGoals.length > 0 && (
-              <div className="mt-6 p-4 bg-slate-50 rounded-lg border border-slate-200">
+              <div className="mt-6 p-4 bg-slate-50 dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-700">
                 <div className="text-center">
-                  <div className="text-2xl font-semibold text-slate-900 mb-1">
+                  <div className="text-2xl font-semibold text-slate-900 dark:text-slate-100 mb-1">
                     {completedSubGoals}/{subGoals.length}
                   </div>
-                  <div className="text-sm text-slate-600">Subtasks completed ({Math.round(progressPercentage)}%)</div>
+                  <div className="text-sm text-slate-600 dark:text-slate-400">Subtasks completed ({Math.round(progressPercentage)}%)</div>
                 </div>
               </div>
             )}
