@@ -244,7 +244,7 @@ export function GoalDetail({ goal, onBack, onUpdate }: GoalDetailProps) {
             <div className="flex items-start justify-between">
               <div className="space-y-3">
                 <h1
-                  className={`text-2xl font-semibold ${goal.completed ? "line-through text-slate-500 dark:text-slate-400" : "text-slate-900 dark:text-slate-100"}`}}
+                  className={`text-2xl font-semibold ${goal.completed ? "line-through text-slate-500 dark:text-slate-400" : "text-slate-900 dark:text-slate-100"}`}
                 >
                   {goal.title}
                 </h1>
@@ -439,7 +439,7 @@ export function GoalDetail({ goal, onBack, onUpdate }: GoalDetailProps) {
             {subGoals.length > 0 && (
               <div className="mt-6 p-4 bg-slate-50 dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-700">
                 <div className="text-center">
-                  <div className="text-2xl font-semibold text-slate-900 dark:text-slate-100 mb-1">
+                  <div className={`text-2xl font-semibold ${progressPercentage === 100 ? "line-through text-slate-500 dark:text-slate-400" : "text-slate-900 dark:text-slate-100"} mb-1`}>
                     {completedSubGoals}/{subGoals.length}
                   </div>
                   <div className="text-sm text-slate-600 dark:text-slate-400">Subtasks completed ({Math.round(progressPercentage)}%)</div>
