@@ -121,7 +121,6 @@ export function ScheduleForm({ schedule, onSubmit, onCancel, onDelete, defaultDa
       startDateTime: formatLocalDatetime(initialStartDateTime),
       endDateTime: formatLocalDatetime(initialEndDateTime),
       allDay: schedule?.allDay || false,
-      subGoalId: schedule?.subGoalId,
       reminderMinutes: schedule?.reminderMinutes,
       icon: schedule?.icon || "User",
       color: schedule?.color || "blue",
@@ -146,7 +145,6 @@ export function ScheduleForm({ schedule, onSubmit, onCancel, onDelete, defaultDa
         startDateTime: formatLocalDatetime(updatedStartDateTime),
         endDateTime: formatLocalDatetime(updatedEndDateTime),
         allDay: schedule?.allDay || false,
-        subGoalId: schedule?.subGoalId,
         reminderMinutes: schedule?.reminderMinutes,
         icon: schedule?.icon || "User",
         color: schedule?.color || "blue",
@@ -279,13 +277,6 @@ export function ScheduleForm({ schedule, onSubmit, onCancel, onDelete, defaultDa
       return `${year}-${month}-${day}T${hours}:${minutes}`
     }
 
-    if (!formData.subGoalId) {
-      alert("하위 목표를 선택해주세요.");
-      return;
-    }
-    
-    const selectedGoal = goals.find(g => g.subGoals.some(sg => sg.subGoalId === formData.subGoalId));
-
     onSubmit({
       title: formData.title,
       startDateTime: formData.allDay
@@ -295,8 +286,6 @@ export function ScheduleForm({ schedule, onSubmit, onCancel, onDelete, defaultDa
         ? `${formData.endDate}T23:59`
         : formatDateTime(formData.endDateTime),
       allDay: formData.allDay,
-      goalId: selectedGoal?.goalId,
-      subGoalId: formData.subGoalId,
       reminderMinutes: formData.reminderMinutes,
       icon: formData.icon,
       color: formData.color,
@@ -345,51 +334,6 @@ export function ScheduleForm({ schedule, onSubmit, onCancel, onDelete, defaultDa
             className="h-10 border-slate-300 focus:border-slate-900 focus:ring-slate-900 dark:border-slate-600 dark:bg-slate-800"
             required
           />
-        </div>
-
-        <div className="space-y-2">
-          <Label
-            htmlFor="subGoalId"
-            className="text-sm font-medium text-slate-700 dark:text-slate-300 flex items-center gap-2"
-          >
-            <Target className="h-4 w-4 text-slate-500" />
-            하위 목표 선택 (필수)
-          </Label>
-          <Select
-            value={formData.subGoalId?.toString() || ""}
-            onValueChange={(value) =>
-              setFormData({ ...formData, subGoalId: value ? Number(value) : undefined })
-            }
-            required
-          >
-            <SelectTrigger className="h-10 border-slate-300 focus:border-slate-900 focus:ring-slate-900 dark:border-slate-600 dark:bg-slate-800">
-              <SelectValue placeholder="연결할 하위 목표를 선택하세요" />
-            </SelectTrigger>
-            <SelectContent>
-              {goals.length === 0 ? (
-                <SelectItem value="loading" disabled>
-                  목표를 불러오는 중...
-                </SelectItem>
-              ) : (
-                goals.map((goal) => (
-                  <SelectGroup key={goal.goalId}>
-                    <SelectLabel>{goal.title}</SelectLabel>
-                    {goal.subGoals.length > 0 ? (
-                      goal.subGoals.map((subGoal) => (
-                        <SelectItem key={subGoal.subGoalId} value={subGoal.subGoalId.toString()}>
-                          {subGoal.title}
-                        </SelectItem>
-                      ))
-                    ) : (
-                      <SelectItem value={`no-subgoals-${goal.goalId}`} disabled>
-                        하위 목표 없음
-                      </SelectItem>
-                    )}
-                  </SelectGroup>
-                ))
-              )}
-            </SelectContent>
-          </Select>
         </div>
 
         <div className="grid grid-cols-2 gap-4">

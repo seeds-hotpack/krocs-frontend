@@ -84,16 +84,12 @@ export interface CreatePlanResponse {
 }
 
 export const createPlan = async (
-  subGoalId: number,
   planData: CreatePlanRequest
 ): Promise<CreatePlanResponse["result"]> => {
   try {
     const response = await axiosInstance.post<CreatePlanResponse>(
       `/plans`,
-      planData,
-      {
-        params: { sub_goal_id: subGoalId }, // 👈 쿼리 파라미터
-      }
+      planData
     );
 
     return response.data.result;
@@ -145,16 +141,12 @@ export interface UpdatePlanResponse {
 
 export const updatePlan = async (
   planId: number,
-  subGoalId: number,
   planData: Partial<UpdatePlanRequest>
 ): Promise<UpdatePlanResponse["result"]> => {
   try {
     const response = await axiosInstance.patch<UpdatePlanResponse>(
       `/plans/${planId}`,
-      planData,
-      {
-        params: { sub_goal_id: subGoalId }, // 👈 쿼리 파라미터
-      }
+      planData
     );
 
     return response.data.result;

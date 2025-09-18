@@ -137,12 +137,6 @@ export default function SchedulePage() {
   }, [])
 
   const createSchedule = async (scheduleData: Omit<Schedule, 'planId' | 'isCompleted' | 'createdAt' | 'updatedAt'>) => {
-    if (scheduleData.subGoalId === undefined) {
-      setError("일정을 생성하려면 하위 목표를 선택해야 합니다.");
-      console.error("SubGoalId is required to create a plan.");
-      return;
-    }
-
     const colorMap: { [key: string]: string } = {
       blue: "BLUE", red: "RED", green: "GREEN", purple: "PURPLE",
       orange: "ORANGE", pink: "PINK", yellow: "YELLOW", indigo: "NAVY",
@@ -162,7 +156,7 @@ export default function SchedulePage() {
     };
 
     try {
-      const newPlanFromApi = await createPlan(scheduleData.subGoalId, apiPayload);
+      const newPlanFromApi = await createPlan(apiPayload);
 
       if (scheduleData.subTasks && scheduleData.subTasks.length > 0) {
         const subPlansToCreate = scheduleData.subTasks.map(st => ({ title: st.title }));
@@ -190,8 +184,8 @@ export default function SchedulePage() {
     }
 
     const originalSchedule = schedules.find(s => s.planId === planId);
-    if (!originalSchedule || originalSchedule.subGoalId === undefined) {
-      console.error("Schedule or subGoalId not found for update");
+    if (!originalSchedule) {
+      console.error("Schedule not found for update");
       setError("일정 수정에 필요한 정보가 부족합니다.");
       return;
     }
@@ -210,7 +204,7 @@ export default function SchedulePage() {
 
     try {
       if (Object.keys(apiPayload).length > 0) {
-        await updatePlan(planId, originalSchedule.subGoalId, apiPayload);
+        await updatePlan(planId, apiPayload);
       }
       
       setRefreshTrigger(prev => prev + 1);
