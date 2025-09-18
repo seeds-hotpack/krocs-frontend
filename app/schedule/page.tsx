@@ -1,4 +1,4 @@
-"use client"
+'use client'
 
 import { useState, useEffect, useRef } from "react"
 import { Button } from "@/components/ui/button"
@@ -76,7 +76,16 @@ export default function SchedulePage() {
         };
 
         const reverseCategoryMap: { [key: string]: string } = {
-          WORK: "Briefcase", STUDY: "Book", ETC: "User",
+          WORK: "Briefcase",
+          STUDY: "Book",
+          WORKOUT: "Dumbbell",
+          REST: "Coffee",
+          HEALTH: "Heart",
+          IMPORTANT: "Star",
+          ENERGY: "Zap",
+          MUSIC: "Music",
+          PHOTO: "Camera",
+          GAME: "Gamepad2",
         };
 
         const adaptedSchedules: Schedule[] = fetchedPlans.map(plan => ({
@@ -143,7 +152,16 @@ export default function SchedulePage() {
     };
 
     const categoryMap: { [key: string]: string } = {
-      Briefcase: "WORK", Book: "STUDY",
+      Briefcase: "WORK",
+      Book: "STUDY",
+      Dumbbell: "WORKOUT",
+      Coffee: "REST",
+      Heart: "HEALTH",
+      Star: "IMPORTANT",
+      Zap: "ENERGY",
+      Music: "MUSIC",
+      Camera: "PHOTO",
+      Gamepad2: "GAME",
     };
 
     const apiPayload: CreatePlanRequest = {
@@ -192,7 +210,18 @@ export default function SchedulePage() {
 
     const apiPayload: Partial<UpdatePlanRequest> = {};
     const colorMap: { [key: string]: string } = { blue: "BLUE", red: "RED", green: "GREEN", purple: "PURPLE", orange: "ORANGE", pink: "PINK", yellow: "YELLOW", indigo: "NAVY" };
-    const categoryMap: { [key: string]: string } = { Briefcase: "WORK", Book: "STUDY" };
+    const categoryMap: { [key: string]: string } = {
+      Briefcase: "WORK",
+      Book: "STUDY",
+      Dumbbell: "WORKOUT",
+      Coffee: "REST",
+      Heart: "HEALTH",
+      Star: "IMPORTANT",
+      Zap: "ENERGY",
+      Music: "MUSIC",
+      Camera: "PHOTO",
+      Gamepad2: "GAME",
+    };
 
     if (updates.title !== undefined) apiPayload.title = updates.title;
     if (updates.startDateTime !== undefined) apiPayload.start_date_time = updates.startDateTime;
