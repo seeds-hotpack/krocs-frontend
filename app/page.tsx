@@ -6,11 +6,11 @@ import { createGoal as createGoalApi } from '../api/createGoal'
 import { useState, useEffect, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Plus, Edit, Trash2, Calendar, Clock, Target, TrendingUp, CheckCircle2, Sun, Moon, Monitor, ClipboardList, LogOut } from "lucide-react"
+import { Plus, Edit, Trash2, Calendar, Clock, Target, TrendingUp, CheckCircle2, Sun, Moon, Monitor, ClipboardList, LogOut, Menu } from "lucide-react"
 import { GoalForm } from "@/components/goal-form"
 
 import { useTheme } from "next-themes"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuSub, DropdownMenuSubTrigger, DropdownMenuPortal, DropdownMenuSubContent } from "@/components/ui/dropdown-menu"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { ScheduleCalendar } from "@/components/schedule-calendar"
@@ -250,60 +250,13 @@ export default function GoalManagementApp() {
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900 p-6">
       <div className="max-w-6xl mx-auto">
-        <div className="flex items-center justify-between mb-12">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-12 gap-4">
           <div>
             <h1 className="text-3xl font-semibold text-slate-900 dark:text-slate-100 mb-2">Goals</h1>
             <p className="text-slate-600 dark:text-slate-400">Track and achieve your objectives</p>
           </div>
-          <div className="flex items-center gap-3 relative">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="outline"
-                  className="border-slate-300 hover:bg-slate-50 dark:border-slate-600 dark:hover:bg-slate-800 bg-transparent"
-                >
-                  {theme === "light" ? (
-                    <Sun className="h-4 w-4" />
-                  ) : theme === "dark" ? (
-                    <Moon className="h-4 w-4" />
-                  ) : (
-                    <Monitor className="h-4 w-4" />
-                  )}
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => setTheme("light")}>
-                  <Sun className="h-4 w-4 mr-2" />
-                  라이트 모드
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setTheme("dark")}>
-                  <Moon className="h-4 w-4 mr-2" />
-                  다크 모드
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setTheme("system")}>
-                  <Monitor className="h-4 w-4 mr-2" />
-                  시스템 설정
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-            <Link href="/schedule">
-              <Button
-                variant="outline"
-                className="border-slate-300 hover:bg-slate-50 dark:border-slate-600 dark:hover:bg-slate-800 bg-transparent"
-              >
-                <Calendar className="h-4 w-4 mr-2" />
-                Schedule
-              </Button>
-            </Link>
-            <Link href="/templates">
-              <Button
-                variant="outline"
-                className="border-slate-300 hover:bg-slate-50 dark:border-slate-600 dark:hover:bg-slate-800 bg-transparent"
-              >
-                <ClipboardList className="h-4 w-4 mr-2" />
-                Templates
-              </Button>
-            </Link>
+          <div className="flex items-center flex-wrap justify-end gap-3 relative">
+            {/* Always visible calendar button */}
             <Button
               variant="outline"
               className="border-slate-300 hover:bg-slate-50 dark:border-slate-600 dark:hover:bg-slate-800 bg-transparent"
@@ -325,27 +278,141 @@ export default function GoalManagementApp() {
                 />
               </div>
             )}
-            <Button
-              onClick={() => {
-                setEditingGoal(null)
-                setIsFormOpen(true)
-              }}
-              className="bg-slate-900 hover:bg-slate-800 dark:bg-slate-100 dark:hover:bg-slate-200 text-white dark:text-slate-900 px-6 py-2 rounded-lg font-medium"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              New Goal
-            </Button>
-            <Button
-              variant="outline"
-              onClick={handleLogout}
-              className="border-slate-300 hover:bg-slate-50 dark:border-slate-600 dark:hover:bg-slate-800 bg-transparent p-2"
-            >
-              <LogOut className="h-4 w-4" />
-            </Button>
+
+            {/* Buttons for medium and larger screens */}
+            <div className="hidden md:flex items-center gap-3">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="border-slate-300 hover:bg-slate-50 dark:border-slate-600 dark:hover:bg-slate-800 bg-transparent"
+                  >
+                    {theme === "light" ? (
+                      <Sun className="h-4 w-4" />
+                    ) : theme === "dark" ? (
+                      <Moon className="h-4 w-4" />
+                    ) : (
+                      <Monitor className="h-4 w-4" />
+                    )}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => setTheme("light")}>
+                    <Sun className="h-4 w-4 mr-2" />
+                    라이트 모드
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setTheme("dark")}>
+                    <Moon className="h-4 w-4 mr-2" />
+                    다크 모드
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setTheme("system")}>
+                    <Monitor className="h-4 w-4 mr-2" />
+                    시스템 설정
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+              <Link href="/schedule">
+                <Button
+                  variant="outline"
+                  className="border-slate-300 hover:bg-slate-50 dark:border-slate-600 dark:hover:bg-slate-800 bg-transparent"
+                >
+                  <Calendar className="h-4 w-4 mr-2" />
+                  Schedule
+                </Button>
+              </Link>
+              <Link href="/templates">
+                <Button
+                  variant="outline"
+                  className="border-slate-300 hover:bg-slate-50 dark:border-slate-600 dark:hover:bg-slate-800 bg-transparent"
+                >
+                  <ClipboardList className="h-4 w-4 mr-2" />
+                  Templates
+                </Button>
+              </Link>
+              <Button
+                onClick={() => {
+                  setEditingGoal(null)
+                  setIsFormOpen(true)
+                }}
+                className="bg-slate-900 hover:bg-slate-800 dark:bg-slate-100 dark:hover:bg-slate-200 text-white dark:text-slate-900 px-6 py-2 rounded-lg font-medium"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                New Goal
+              </Button>
+              <Button
+                variant="outline"
+                onClick={handleLogout}
+                className="border-slate-300 hover:bg-slate-50 dark:border-slate-600 dark:hover:bg-slate-800 bg-transparent p-2"
+              >
+                <LogOut className="h-4 w-4" />
+              </Button>
+            </div>
+
+            {/* Dropdown Menu for small screens */}
+            <div className="md:hidden">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="icon">
+                    <Menu className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => { setEditingGoal(null); setIsFormOpen(true); }}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    New Goal
+                  </DropdownMenuItem>
+                  <DropdownMenuSub>
+                    <DropdownMenuSubTrigger>
+                      {theme === "light" ? (
+                        <Sun className="h-4 w-4 mr-2" />
+                      ) : theme === "dark" ? (
+                        <Moon className="h-4 w-4 mr-2" />
+                      ) : (
+                        <Monitor className="h-4 w-4 mr-2" />
+                      )}
+                      <span>Theme</span>
+                    </DropdownMenuSubTrigger>
+                    <DropdownMenuPortal>
+                      <DropdownMenuSubContent>
+                        <DropdownMenuItem onClick={() => setTheme("light")}>
+                          <Sun className="h-4 w-4 mr-2" />
+                          라이트 모드
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => setTheme("dark")}>
+                          <Moon className="h-4 w-4 mr-2" />
+                          다크 모드
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => setTheme("system")}>
+                          <Monitor className="h-4 w-4 mr-2" />
+                          시스템 설정
+                        </DropdownMenuItem>
+                      </DropdownMenuSubContent>
+                    </DropdownMenuPortal>
+                  </DropdownMenuSub>
+                  <DropdownMenuItem asChild>
+                    <Link href="/schedule" className="flex items-center w-full">
+                      <Calendar className="h-4 w-4 mr-2" />
+                      Schedule
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/templates" className="flex items-center w-full">
+                      <ClipboardList className="h-4 w-4 mr-2" />
+                      Templates
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleLogout}>
+                    <LogOut className="h-4 w-4 mr-2" />
+                    <span>Logout</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           </div>
         </div>
 
-        <div className="grid grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <Card className="border-0 shadow-sm dark:bg-slate-800">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
