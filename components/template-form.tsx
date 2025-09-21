@@ -99,7 +99,7 @@ export function TemplateForm({ template, onSubmit, onCancel }: TemplateFormProps
   };
 
   const handleSaveSubTemplate = async () => {
-    if (!editingSubTemplate || !editingSubTemplateTitle.trim()) return;
+    if (!editingSubTemplate || !editingSubTemplateTitle.trim() || !template) return;
 
     if (editingSubTemplate.sub_template_id > 100000) {
         setSubTemplates(
@@ -114,7 +114,7 @@ export function TemplateForm({ template, onSubmit, onCancel }: TemplateFormProps
     }
 
     try {
-      const updatedSubTemplate = await updateSubTemplate(editingSubTemplate.sub_template_id, {
+      const updatedSubTemplate = await updateSubTemplate(template.templateId, editingSubTemplate.sub_template_id, {
         title: editingSubTemplateTitle.trim(),
       });
       setSubTemplates(

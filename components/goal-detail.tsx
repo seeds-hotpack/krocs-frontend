@@ -101,7 +101,7 @@ export function GoalDetail({ goal, onBack, onUpdate }: GoalDetailProps) {
     setLoadingSubGoals(true);
     setError(null);
     try {
-      await updateSubGoal(subGoalId, {
+      await updateSubGoal(goal.goalId, subGoalId, {
         title: subGoalToUpdate.title,
         is_completed: newCompletedStatus,
       });
@@ -127,7 +127,7 @@ export function GoalDetail({ goal, onBack, onUpdate }: GoalDetailProps) {
     setLoadingSubGoals(true)
     setError(null)
     try {
-      await deleteSubGoal(subGoalId)
+      await deleteSubGoal(goal.goalId, subGoalId)
       const res = await getSubGoals(goal.goalId)
       setSubGoals(
         res.result.subGoals
@@ -201,7 +201,7 @@ export function GoalDetail({ goal, onBack, onUpdate }: GoalDetailProps) {
     setLoadingSubGoals(true)
     setError(null)
     try {
-      await updateSubGoal(subGoal.subGoalId, {
+      await updateSubGoal(goal.goalId, subGoal.subGoalId, {
         title: editingSubGoalTitle,
         is_completed: subGoal.completed,
       })

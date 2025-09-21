@@ -500,7 +500,7 @@ export const ScheduleTimeline = forwardRef<{
 
     try {
       // 2. API Call
-      await updateSubPlan(Number(subTaskId), { is_completed: newCompletedState });
+      await updateSubPlan(planId, Number(subTaskId), { is_completed: newCompletedState });
       // If successful, the optimistic update is now confirmed.
     } catch (error) {
       console.error("Failed to update sub-task:", error);

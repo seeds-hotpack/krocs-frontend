@@ -85,11 +85,12 @@ export interface DeleteSubGoalResponse {
 }
 
 export const deleteSubGoal = async (
+  goalId: number,
   subGoalId: number
 ): Promise<DeleteSubGoalResponse> => {
   try {
     const response = await axiosInstance.delete<DeleteSubGoalResponse>(
-      `/subgoals/${subGoalId}`
+      `/goals/${goalId}/subgoals/${subGoalId}`
     );
     return response.data;
   } catch (error: any) {
@@ -123,12 +124,13 @@ export interface ApiResponse<T> {
 
 // 서브골 수정 API
 export const updateSubGoal = async (
+  goalId: number,
   subGoalId: number,
   data: UpdateSubGoalRequest
 ): Promise<SubGoalResponse> => {
   try {
     const response = await axiosInstance.patch<ApiResponse<SubGoalResponse>>(
-      `/subgoals/${subGoalId}`,
+      `/goals/${goalId}/subgoals/${subGoalId}`,
       data
     );
 

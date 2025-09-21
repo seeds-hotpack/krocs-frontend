@@ -154,12 +154,13 @@ export interface UpdateSubTemplateRequest {
 }
 
 export async function updateSubTemplate(
+  templateId: number,
   subTemplateId: number,
   data: UpdateSubTemplateRequest
 ): Promise<SubTemplateResponse> {
   try {
     const response = await axiosInstance.patch<ApiResponse<SubTemplateResponse>>(
-      `/subtemplates/${subTemplateId}`,
+      `/templates/${templateId}/subtemplates/${subTemplateId}`,
       data
     );
     return response.data.result;
@@ -187,10 +188,10 @@ interface DeleteSubTemplateResult {
   sub_template_id: number;
 }
 
-export async function deleteSubTemplate(subTemplateId: number): Promise<ApiResponse<DeleteSubTemplateResult>> {
+export async function deleteSubTemplate(templateId: number, subTemplateId: number): Promise<ApiResponse<DeleteSubTemplateResult>> {
   try {
     const response = await axiosInstance.delete<ApiResponse<DeleteSubTemplateResult>>(
-      `/subtemplates/${subTemplateId}`
+      `/templates/${templateId}/subtemplates/${subTemplateId}`
     );
     return response.data;
   } catch (error) {

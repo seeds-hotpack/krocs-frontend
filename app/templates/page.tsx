@@ -141,7 +141,7 @@ export default function TemplatesPage() {
         
         if (deletedIds.length > 0) {
           // Concurrently delete all removed sub-templates
-          await Promise.all(deletedIds.map(id => deleteSubTemplate(id)));
+          await Promise.all(deletedIds.map(id => deleteSubTemplate(editingTemplate.templateId, id)));
         }
 
         // 3. Find and CREATE new sub-templates

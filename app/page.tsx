@@ -6,7 +6,7 @@ import { createGoal as createGoalApi } from '../api/createGoal'
 import { useState, useEffect, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Plus, Edit, Trash2, Calendar, Clock, Target, TrendingUp, CheckCircle2, Sun, Moon, Monitor, ClipboardList, LogOut, Menu } from "lucide-react"
+import { Plus, Edit, Trash2, Calendar, Clock, Target, TrendingUp, CheckCircle2, Sun, Moon, Monitor, ClipboardList, LogOut, Menu, ChevronDown, ChevronUp } from "lucide-react"
 import { GoalForm } from "@/components/goal-form"
 
 import { useTheme } from "next-themes"
@@ -28,6 +28,7 @@ export default function GoalManagementApp() {
   const [selectedDate, setSelectedDate] = useState(new Date())
   const [isCalendarOpen, setIsCalendarOpen] = useState(false)
   const [filterStatus, setFilterStatus] = useState("In Progress") // 필터 상태 추가
+  const [isStatsVisible, setIsStatsVisible] = useState(false);
   const [currentPage, setCurrentPage] = useState(1); // 현재 페이지 상태
   const itemsPerPage = 6; // 페이지 당 항목 수
 
@@ -412,7 +413,13 @@ export default function GoalManagementApp() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div className="md:hidden flex justify-between items-center mb-4">
+          <h2 className="text-lg font-semibold">요약</h2>
+          <Button variant="ghost" onClick={() => setIsStatsVisible(!isStatsVisible)}>
+            {isStatsVisible ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
+          </Button>
+        </div>
+        <div className={`${isStatsVisible ? 'grid' : 'hidden'} md:grid grid-cols-1 md:grid-cols-3 gap-6 mb-8`}>
           <Card className="border-0 shadow-sm dark:bg-slate-800">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">

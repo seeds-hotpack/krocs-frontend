@@ -191,7 +191,7 @@ export function ScheduleForm({ schedule, onSubmit, onCancel, onDelete, defaultDa
     const newSubTasks = subTasks.filter((task) => task.id !== id);
 
     try {
-      await deleteSubPlan(Number(id));
+      await deleteSubPlan(schedule.planId, Number(id));
       // API 호출 성공 시, 로컬 및 부모 상태 업데이트
       setSubTasks(newSubTasks);
       onSubTasksUpdate(schedule.planId, newSubTasks);
@@ -208,7 +208,7 @@ export function ScheduleForm({ schedule, onSubmit, onCancel, onDelete, defaultDa
 
     try {
       // First, call the API to ensure the change is persisted
-      await updateSubPlan(Number(id), { is_completed: !subTaskToUpdate.completed });
+      await updateSubPlan(schedule.planId, Number(id), { is_completed: !subTaskToUpdate.completed });
 
       // On successful API call, update the local and parent state
       const updatedSubTask: SubTask = {
@@ -244,7 +244,7 @@ export function ScheduleForm({ schedule, onSubmit, onCancel, onDelete, defaultDa
     const subTaskToUpdate = subTasks[editingSubTaskIndex];
     try {
       // First, call the API to ensure the change is persisted
-      await updateSubPlan(Number(subTaskToUpdate.id), { title: editingSubTaskTitle.trim() });
+      await updateSubPlan(schedule.planId, Number(subTaskToUpdate.id), { title: editingSubTaskTitle.trim() });
 
       // On successful API call, update the local and parent state
       const updatedSubTask: SubTask = {

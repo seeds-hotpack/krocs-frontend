@@ -239,8 +239,8 @@ interface SubPlanUpdate {
   is_completed?: boolean;
 }
 
-export const updateSubPlan = async (subPlanId: number, data: SubPlanUpdate) => {
-  const response = await axiosInstance.patch(`/${subPlanId}`, data);
+export const updateSubPlan = async (planId: number, subPlanId: number, data: SubPlanUpdate) => {
+  const response = await axiosInstance.patch(`/plans/${planId}/subplans/${subPlanId}`, data);
   return response.data;
 };
 
@@ -272,10 +272,10 @@ export interface DeleteSubPlanResponse {
   result: string;
 }
 
-export const deleteSubPlan = async (subPlanId: number): Promise<DeleteSubPlanResponse> => {
+export const deleteSubPlan = async (planId: number, subPlanId: number): Promise<DeleteSubPlanResponse> => {
   try {
     const response = await axiosInstance.delete<DeleteSubPlanResponse>(
-      `/subplans/${subPlanId}`
+      `/plans/${planId}/subplans/${subPlanId}`
     );
     return response.data;
   } catch (error) {
