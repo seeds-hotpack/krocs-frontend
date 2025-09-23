@@ -93,33 +93,27 @@ export function GoalDetail({ goal, onBack, onUpdate }: GoalDetailProps) {
   }
 
   const toggleSubGoal = async (subGoalId: number) => {
+    const originalSubGoals = [...subGoals];
     const subGoalToUpdate = subGoals.find((sg) => sg.subGoalId === subGoalId);
     if (!subGoalToUpdate) return;
 
     const newCompletedStatus = !subGoalToUpdate.completed;
 
-    setLoadingSubGoals(true);
-    setError(null);
+    // Optimistic update
+    const updatedSubGoals = subGoals.map((sg) =>
+      sg.subGoalId === subGoalId ? { ...sg, completed: newCompletedStatus } : sg
+    );
+    setSubGoals(updatedSubGoals);
+
     try {
       await updateSubGoal(goal.goalId, subGoalId, {
         title: subGoalToUpdate.title,
         is_completed: newCompletedStatus,
       });
-
-      const res = await getSubGoals(goal.goalId);
-      setSubGoals(
-        res.result.subGoals
-          .map((sg: APISubGoal) => ({
-            subGoalId: sg.subGoalId,
-            title: sg.title,
-            completed: sg.isCompleted,
-          }))
-          .sort((a, b) => a.subGoalId - b.subGoalId),
-      );
     } catch (e: any) {
+      // Revert on error
+      setSubGoals(originalSubGoals);
       setError(e.message);
-    } finally {
-      setLoadingSubGoals(false);
     }
   };
 
