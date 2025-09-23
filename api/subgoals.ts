@@ -90,7 +90,7 @@ export const deleteSubGoal = async (
 ): Promise<DeleteSubGoalResponse> => {
   try {
     const response = await axiosInstance.delete<DeleteSubGoalResponse>(
-      `/goals/${goalId}/subgoals/${subGoalId}`
+      `/goals/${goalId}/subgoals${subGoalId}`
     );
     return response.data;
   } catch (error: any) {
@@ -130,7 +130,7 @@ export const updateSubGoal = async (
 ): Promise<SubGoalResponse> => {
   try {
     const response = await axiosInstance.patch<ApiResponse<SubGoalResponse>>(
-      `/goals/${goalId}/subgoals/${subGoalId}`,
+      `/goals/${goalId}/subgoals${subGoalId}`,
       data
     );
 

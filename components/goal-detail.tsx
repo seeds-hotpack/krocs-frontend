@@ -118,26 +118,17 @@ export function GoalDetail({ goal, onBack, onUpdate }: GoalDetailProps) {
   };
 
   const handleDeleteSubGoal = async (subGoalId: number) => {
-    setLoadingSubGoals(true)
-    setError(null)
+    const originalSubGoals = [...subGoals];
+    const updatedSubGoals = subGoals.filter((sg) => sg.subGoalId !== subGoalId);
+    setSubGoals(updatedSubGoals);
+
     try {
-      await deleteSubGoal(goal.goalId, subGoalId)
-      const res = await getSubGoals(goal.goalId)
-      setSubGoals(
-        res.result.subGoals
-          .map((sg: APISubGoal) => ({
-            subGoalId: sg.subGoalId,
-            title: sg.title,
-            completed: sg.isCompleted,
-          }))
-          .sort((a, b) => a.subGoalId - b.subGoalId),
-      )
+      await deleteSubGoal(goal.goalId, subGoalId);
     } catch (e: any) {
-      setError(e.message)
-    } finally {
-      setLoadingSubGoals(false)
+      setSubGoals(originalSubGoals);
+      setError(e.message);
     }
-  }
+  };
 
   const toggleGoalCompletion = () => {
     onUpdate({ completed: !goal.completed })
@@ -191,32 +182,27 @@ export function GoalDetail({ goal, onBack, onUpdate }: GoalDetailProps) {
   }
 
   const saveInlineEdit = async (subGoal: SubGoal) => {
-    if (!editingSubGoalTitle.trim()) return
-    setLoadingSubGoals(true)
-    setError(null)
+    if (!editingSubGoalTitle.trim()) return;
+
+    const originalSubGoals = [...subGoals];
+    const updatedSubGoals = subGoals.map((sg) =>
+      sg.subGoalId === subGoal.subGoalId
+        ? { ...sg, title: editingSubGoalTitle.trim() }
+        : sg
+    );
+    setSubGoals(updatedSubGoals);
+    cancelInlineEdit();
+
     try {
       await updateSubGoal(goal.goalId, subGoal.subGoalId, {
-        title: editingSubGoalTitle,
+        title: editingSubGoalTitle.trim(),
         is_completed: subGoal.completed,
-      })
-      // 목록 새로고침
-      const res = await getSubGoals(goal.goalId)
-      setSubGoals(
-        res.result.subGoals
-          .map((sg: APISubGoal) => ({
-            subGoalId: sg.subGoalId,
-            title: sg.title,
-            completed: sg.isCompleted,
-          }))
-          .sort((a, b) => a.subGoalId - b.subGoalId),
-      )
-      cancelInlineEdit()
+      });
     } catch (e: any) {
-      setError(e.message)
-    } finally {
-      setLoadingSubGoals(false)
+      setSubGoals(originalSubGoals);
+      setError(e.message);
     }
-  }
+  };
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900 p-6">
