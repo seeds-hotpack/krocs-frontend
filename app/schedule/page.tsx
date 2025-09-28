@@ -132,7 +132,7 @@ export default function SchedulePage() {
   useEffect(() => {
     const fetchGoalsAndSubGoals = async () => {
       try {
-        const goals = await getGoals(formatDateToYYYYMMDD(selectedDate));
+        const goals = await getGoals({ searchDate: formatDateToYYYYMMDD(selectedDate) });
         setGoalList(goals);
 
         const subGoalPromises = goals.map(goal => getSubGoals(goal.goalId));

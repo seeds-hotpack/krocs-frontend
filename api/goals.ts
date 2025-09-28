@@ -20,11 +20,20 @@ export interface Goal {
   updatedAt: string;
 }
 
+export interface GetGoalsParams {
+  searchDate?: string;
+  keyword?: string;
+  status?: 'IN_PROGRESS' | 'COMPLETED' | 'EXPIRED';
+}
 
-export const getGoals = async (date?: string): Promise<Goal[]> => {
-  const params = date ? { date } : {};
+export const getGoals = async (params: GetGoalsParams): Promise<Goal[]> => {
   const response = await axiosInstance.get('/goals', { params });
   const apiGoals = response.data.result;
+
+  if (!Array.isArray(apiGoals)) {
+    console.error("API did not return an array of goals:", apiGoals);
+    return []; 
+  }
 
   return apiGoals.map((g: any) => {
     const startDate = new Date(g.startDate);
@@ -42,7 +51,7 @@ export const getGoals = async (date?: string): Promise<Goal[]> => {
       subGoals: (g.subGoals || []).map((sg: any) => ({
         subGoalId: sg.subGoalId,
         title: sg.title,
-        completed: sg.isCompleted,
+        completed: sg.is_completed, // isCompleted -> is_completed
       })),
       completionPercentage: g.completionPercentage ?? 0,
       createdAt: g.createdAt,
@@ -70,4 +79,39 @@ export const deleteBigGoal = async (goalId: number): Promise<DeleteGoalResponse>
 
     throw error;
   }
+};
+
+export interface GetGoalResponse {
+    isSuccess: boolean;
+    code: string;
+    message: string;
+    result: any; // The raw goal object from API
+}
+
+export const getGoalById = async (goalId: number): Promise<Goal> => {
+    const response = await axiosInstance.get<GetGoalResponse>(`/goals/${goalId}`);
+    const g = response.data.result;
+
+    // Reuse the same mapping logic from getGoals
+    const startDate = new Date(g.startDate);
+    const endDate = new Date(g.endDate);
+    const duration = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+
+    return {
+        goalId: g.goalId,
+        title: g.title,
+        priority: g.priority,
+        startDate: g.startDate,
+        endDate: g.endDate,
+        duration: duration,
+        completed: g.isCompleted,
+        subGoals: (g.subGoals || []).map((sg: any) => ({
+            subGoalId: sg.subGoalId,
+            title: sg.title,
+            completed: sg.is_completed,
+        })),
+        completionPercentage: g.completionPercentage ?? 0,
+        createdAt: g.createdAt,
+        updatedAt: g.updatedAt,
+    };
 };

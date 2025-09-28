@@ -4,7 +4,7 @@ import { useParams } from 'next/navigation';
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { GoalDetail } from "@/components/goal-detail"
-import { getGoals, Goal } from '@/api/goals'
+import { getGoalById, Goal } from '@/api/goals'
 import { update_Goal } from '@/api/updateGoal'
 
 // goal-detail.tsx에서 사용하는 onUpdate와 동일한 인터페이스를 정의합니다.
@@ -32,11 +32,13 @@ export default function GoalDetailPage() {
       setLoading(true);
       setError(null);
       try {
-        const today = new Date();
-        const formattedDate = today.toISOString().split('T')[0];
-        const allGoals = await getGoals(formattedDate);
         const numericGoalId = parseInt(goalId, 10);
-        const foundGoal = allGoals.find(g => g.goalId === numericGoalId);
+        if (isNaN(numericGoalId)) {
+          setError("Invalid Goal ID.");
+          setLoading(false);
+          return;
+        }
+        const foundGoal = await getGoalById(numericGoalId);
 
         if (foundGoal) {
           setGoal(foundGoal);

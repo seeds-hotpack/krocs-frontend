@@ -42,7 +42,7 @@ export default function GoalManagementApp() {
     }
   }
 
-  const fetchGoals = useCallback(async (date: Date) => {
+  const fetchGoals = useCallback(async (date: Date, status: string) => {
     setLoading(true)
     setError(null)
     try {
@@ -51,7 +51,18 @@ export default function GoalManagementApp() {
       const day = String(date.getDate()).padStart(2, "0")
       const formattedDate = `${year}-${month}-${day}`
 
-      const data = await getGoals(formattedDate)
+      const apiStatusMap: { [key: string]: 'IN_PROGRESS' | 'COMPLETED' | 'EXPIRED' } = {
+        'In Progress': 'IN_PROGRESS',
+        'Completed': 'COMPLETED',
+        'Overdue': 'EXPIRED',
+      };
+      
+      const apiStatus = apiStatusMap[status];
+
+      const data = await getGoals({ 
+        searchDate: formattedDate,
+        status: apiStatus,
+      })
       setGoals(data)
     } catch (err: any) {
       if (err.response?.status === 401 || err.response?.status === 403) {
@@ -75,7 +86,7 @@ export default function GoalManagementApp() {
         endDate: goalData.endDate,
       }
       await createGoalApi(1, apiData)
-      await fetchGoals(selectedDate)
+      await fetchGoals(selectedDate, filterStatus)
       setIsFormOpen(false)
     } catch (err: any) {
       setError(err?.response?.data?.message || "목표 생성에 실패했습니다.")
@@ -145,7 +156,7 @@ export default function GoalManagementApp() {
     setError(null)
     try {
       await deleteGoalApi(goalId)
-      await fetchGoals(selectedDate) // 삭제 후 목록 새로고침
+      await fetchGoals(selectedDate, filterStatus) // 삭제 후 목록 새로고침
     } catch (err: any) {
       setError(err?.response?.data?.message || "목표 삭제에 실패했습니다.")
       console.error(err)
@@ -163,8 +174,8 @@ export default function GoalManagementApp() {
   }
 
   useEffect(() => {
-    fetchGoals(selectedDate)
-  }, [selectedDate, fetchGoals])
+    fetchGoals(selectedDate, filterStatus)
+  }, [selectedDate, filterStatus, fetchGoals])
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
