@@ -139,7 +139,7 @@ export interface PaginatedTemplatesResponse {
 export interface PageableParams {
     page?: number;
     size?: number;
-    sort?: string[];
+    sort?: string;
 }
 
 export async function getTemplates(

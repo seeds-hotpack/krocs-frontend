@@ -65,7 +65,7 @@ export default function TemplatesPage() {
     const fetchTemplates = async () => {
       try {
         setIsLoading(true);
-        const response = await getTemplates(debouncedSearchTerm, { page: currentPage - 1, size: itemsPerPage, sort: ['createdAt,desc'] });
+        const response = await getTemplates(debouncedSearchTerm, { page: currentPage - 1, size: itemsPerPage, sort: 'createdAt,desc' });
         setTemplates(response.content);
         setTotalPages(response.totalPages);
         setError(null);
@@ -100,8 +100,7 @@ export default function TemplatesPage() {
     }
     try {
       await deleteTemplate(templateId);
-      // Re-fetch current page after deletion
-      const response = await getTemplates(debouncedSearchTerm, { page: currentPage - 1, size: itemsPerPage, sort: ['createdAt,desc'] });
+      const response = await getTemplates(debouncedSearchTerm, { page: currentPage - 1, size: itemsPerPage, sort: 'createdAt,desc' });
       setTemplates(response.content);
       setTotalPages(response.totalPages);
       if (response.content.length === 0 && currentPage > 1) {
@@ -155,7 +154,7 @@ export default function TemplatesPage() {
       }
       
       // SUCCESS: Re-fetch and close form
-      const response = await getTemplates(debouncedSearchTerm, { page: currentPage - 1, size: itemsPerPage, sort: ['createdAt,desc'] });
+      const response = await getTemplates(debouncedSearchTerm, { page: currentPage - 1, size: itemsPerPage, sort: 'createdAt,desc' });
       setTemplates(response.content);
       setTotalPages(response.totalPages);
       setShowForm(false);
