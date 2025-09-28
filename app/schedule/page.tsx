@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useMemo } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -12,6 +12,7 @@ import { useTheme } from "next-themes"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import Link from "next/link"
 import { getGoals, type Goal } from "@/api/goals";
+import { getSubGoals, updateSubGoal } from "@/api/subgoals";
 import { getPlans, Plan, SubPlan, createPlan, updatePlan, deletePlan, createSubPlans, type CreatePlanRequest, type UpdatePlanRequest } from "@/api/subplan"
 
 // 컴포넌트에서 사용할 데이터 인터페이스
@@ -36,6 +37,7 @@ export interface Schedule {
   icon?: string;
   color?: string;
   reminderMinutes?: number;
+  type: 'schedule' | 'subgoal';
 }
 
 // YYYY-MM-DD 형식으로 날짜를 변환하는 헬퍼 함수
@@ -48,6 +50,7 @@ const formatDateToYYYYMMDD = (date: Date): string => {
 
 export default function SchedulePage() {
   const [schedules, setSchedules] = useState<Schedule[]>([])
+  const [subGoalSchedules, setSubGoalSchedules] = useState<Schedule[]>([]);
   const [goalList, setGoalList] = useState<Goal[]>([])
   const [selectedDate, setSelectedDate] = useState(new Date())
   const [showCalendar, setShowCalendar] = useState(false)
@@ -60,6 +63,8 @@ export default function SchedulePage() {
   const [expandedSummary, setExpandedSummary] = useState<string | null>(null); // State for expanded summary
   const timelineRef = useRef<{ scrollToCurrentTime: () => void }>(null)
   const { theme, setTheme } = useTheme()
+  const [filterType, setFilterType] = useState<'all' | 'schedules' | 'subgoals'>('schedules');
+
 
   // 일정 목록 가져오기
   useEffect(() => {
@@ -107,6 +112,7 @@ export default function SchedulePage() {
           completedAt: plan.completed_at,
           createdAt: plan.created_at,
           updatedAt: plan.updated_at,
+          type: 'schedule',
         }));
 
         setSchedules(adaptedSchedules)
@@ -122,18 +128,49 @@ export default function SchedulePage() {
     fetchSchedules()
   }, [selectedDate, refreshTrigger])
 
-  // 목표 목록 가져오기 (컴포넌트 마운트 시 한 번만 실행)
+  // 목표 목록 및 세부 목표 가져오기
   useEffect(() => {
-    const fetchGoals = async () => {
+    const fetchGoalsAndSubGoals = async () => {
       try {
         const goals = await getGoals(formatDateToYYYYMMDD(selectedDate));
         setGoalList(goals);
+
+        const subGoalPromises = goals.map(goal => getSubGoals(goal.goalId));
+        const subGoalResponses = await Promise.all(subGoalPromises);
+        
+        const timeSelectedSubGoals: Schedule[] = [];
+        const selectedDay = formatDateToYYYYMMDD(selectedDate);
+
+        subGoalResponses.forEach((res, index) => {
+          const goalId = goals[index].goalId;
+          res.result.subGoals.forEach(sg => {
+            const sgDate = sg.start_date_time.split('T')[0];
+            if (sg.is_time_selected && sgDate === selectedDay) {
+              timeSelectedSubGoals.push({
+                planId: sg.subGoalId,
+                goalId: goalId,
+                title: sg.title,
+                startDateTime: sg.start_date_time,
+                endDateTime: sg.end_date_time,
+                isCompleted: sg.is_completed,
+                allDay: true,
+                color: 'red',
+                type: 'subgoal',
+                subTasks: [],
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+              });
+            }
+          });
+        });
+        setSubGoalSchedules(timeSelectedSubGoals);
+
       } catch (err) {
-        console.error("Failed to fetch goals:", err);
+        console.error("Failed to fetch goals or sub-goals:", err);
       }
     };
-    fetchGoals();
-  }, [selectedDate]);
+    fetchGoalsAndSubGoals();
+  }, [selectedDate, refreshTrigger]);
 
   useEffect(() => {
     const handleResize = () => {
@@ -145,7 +182,37 @@ export default function SchedulePage() {
     return () => window.removeEventListener('resize', handleResize)
   }, [])
 
-  const createSchedule = async (scheduleData: Omit<Schedule, 'planId' | 'isCompleted' | 'createdAt' | 'updatedAt'>) => {
+  const onUpdateSubGoal = (goalId: number, subGoalId: number, updates: { isCompleted: boolean, title: string }) => {
+    // Optimistic update
+    setSubGoalSchedules(prev => prev.map(sg => 
+      sg.planId === subGoalId ? { ...sg, isCompleted: updates.isCompleted } : sg
+    ));
+
+    updateSubGoal(goalId, subGoalId, {
+      title: updates.title,
+      is_completed: updates.isCompleted,
+    }).catch(err => {
+      console.error("Failed to update sub-goal, reverting:", err);
+      // Revert
+      setSubGoalSchedules(prev => prev.map(sg => 
+        sg.planId === subGoalId ? { ...sg, isCompleted: !updates.isCompleted } : sg
+      ));
+    });
+  }
+
+  const timelineItems = useMemo(() => {
+    if (filterType === 'schedules') {
+      return schedules;
+    }
+    if (filterType === 'subgoals') {
+      return subGoalSchedules;
+    }
+    // 'all'
+    return [...schedules, ...subGoalSchedules].sort((a, b) => new Date(a.startDateTime).getTime() - new Date(b.startDateTime).getTime());
+  }, [schedules, subGoalSchedules, filterType]);
+
+
+  const createSchedule = async (scheduleData: Omit<Schedule, 'planId' | 'isCompleted' | 'createdAt' | 'updatedAt' | 'type'>) => {
     const colorMap: { [key: string]: string } = {
       blue: "BLUE", red: "RED", green: "GREEN", purple: "PURPLE",
       orange: "ORANGE", pink: "PINK", yellow: "YELLOW", indigo: "NAVY",
@@ -228,8 +295,8 @@ export default function SchedulePage() {
     if (updates.endDateTime !== undefined) apiPayload.end_date_time = updates.endDateTime;
     if (updates.allDay !== undefined) apiPayload.all_day = updates.allDay;
     if (updates.isCompleted !== undefined) apiPayload.is_completed = updates.isCompleted;
-    if (updates.color !== undefined) apiPayload.color = colorMap[updates.color] || 'BLUE';
-    if (updates.icon !== undefined) apiPayload.plan_category = categoryMap[updates.icon] || 'ETC';
+    if (updates.color !== undefined) apiPayload.color = colorMap[updates.color || 'blue'] || 'BLUE';
+    if (updates.icon !== undefined) apiPayload.plan_category = categoryMap[updates.icon || ''] || 'ETC';
 
     try {
       if (Object.keys(apiPayload).length > 0) {
@@ -262,7 +329,7 @@ export default function SchedulePage() {
     setShowForm(true)
   }
 
-  const handleUpdateSchedule = (scheduleData: Omit<Schedule, 'planId' | 'isCompleted' | 'createdAt' | 'updatedAt'>) => {
+  const handleUpdateSchedule = (scheduleData: Omit<Schedule, 'planId' | 'isCompleted' | 'createdAt' | 'updatedAt' | 'type'>) => {
     if (editingSchedule) {
       updateSchedule(editingSchedule.planId, scheduleData)
     }
@@ -466,13 +533,16 @@ export default function SchedulePage() {
             {!error && (
               <ScheduleTimeline
                 ref={timelineRef}
-                schedules={todaySchedules}
+                schedules={timelineItems}
                 selectedDate={selectedDate}
                 onUpdateSchedule={updateSchedule}
                 onDeleteSchedule={deleteSchedule}
                 onEditSchedule={handleEditSchedule}
                 loading={loading}
                 onScrollToCurrentTime={() => {}}
+                filterType={filterType}
+                onFilterTypeChange={setFilterType}
+                onUpdateSubGoal={onUpdateSubGoal}
               />
             )}
           </div>

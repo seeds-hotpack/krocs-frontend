@@ -22,8 +22,10 @@ import {
   ChevronUp,
   Clock,
   Trash2,
+  Target, // 목표 아이콘 추가
 } from "lucide-react"
 import { updateSubPlan } from "@/api/subplan";
+import { updateSubGoal } from "@/api/subgoals"; // 세부 목표 업데이트 API
 import { Checkbox } from "@/components/ui/checkbox"
 
 interface SubTask {
@@ -48,21 +50,36 @@ interface Schedule {
   icon?: string
   color?: string
   subTasks?: SubTask[]
+  type: 'schedule' | 'subgoal';
 }
 
 interface ScheduleTimelineProps {
   schedules: Schedule[]
   selectedDate: Date
   onUpdateSchedule: (planId: number, updates: Partial<Schedule>) => void
+  onUpdateSubGoal: (goalId: number, subGoalId: number, updates: { isCompleted: boolean, title: string }) => void;
   onDeleteSchedule: (planId: number) => void; // 일정 삭제 함수
   onEditSchedule?: (schedule: Schedule) => void
   loading: boolean
   onScrollToCurrentTime?: () => void
+  filterType: 'all' | 'schedules' | 'subgoals';
+  onFilterTypeChange: (type: 'all' | 'schedules' | 'subgoals') => void;
 }
 
 export const ScheduleTimeline = forwardRef<{
   scrollToCurrentTime: () => void
-}, ScheduleTimelineProps>(({ schedules, selectedDate, onUpdateSchedule, onDeleteSchedule, onEditSchedule, loading, onScrollToCurrentTime }, ref) => {
+}, ScheduleTimelineProps>(({ 
+  schedules, 
+  selectedDate, 
+  onUpdateSchedule, 
+  onUpdateSubGoal,
+  onDeleteSchedule, 
+  onEditSchedule, 
+  loading, 
+  onScrollToCurrentTime, 
+  filterType, 
+  onFilterTypeChange 
+}, ref) => {
   const [draggedItem, setDraggedItem] = useState<number | null>(null)
   const [isDragging, setIsDragging] = useState(false); // 드래그 상태
   const [isOverTrashStyle, setIsOverTrashStyle] = useState(false); // 휴지통 위 호버 상태 (스타일용)
@@ -76,7 +93,6 @@ export const ScheduleTimeline = forwardRef<{
   const [visibleCards, setVisibleCards] = useState<Set<number>>(new Set())
   const [showBackToCurrentTime, setShowBackToCurrentTime] = useState(false)
   const timelineRef = useRef<HTMLDivElement>(null)
-  const [filterType, setFilterType] = useState<'all' | 'schedules' | 'subgoals'>('all')
 
   const getCurrentTimePosition = useCallback(() => {
     const currentHour = currentTime.getHours() + currentTime.getMinutes() / 60
@@ -184,7 +200,6 @@ export const ScheduleTimeline = forwardRef<{
     const durationMs = endDate.getTime() - startDate.getTime();
     const durationHours = durationMs / (1000 * 60 * 60);
 
-    // A schedule is considered multi-day/all-day if its duration is strictly greater than 24 hours.
     return durationHours > 24;
   };
 
@@ -203,30 +218,23 @@ export const ScheduleTimeline = forwardRef<{
       const start = new Date(schedule.startDateTime);
       const end = new Date(schedule.endDateTime);
 
-      // If the schedule is entirely within the selected day
       if (start.getTime() >= selectedDateMidnight.getTime() && end.getTime() <= nextDayMidnight.getTime()) {
         displaySchedules.push(schedule);
-      }
-      // If the schedule starts before and ends after the selected day
-      else if (start.getTime() < selectedDateMidnight.getTime() && end.getTime() > nextDayMidnight.getTime()) {
+      } else if (start.getTime() < selectedDateMidnight.getTime() && end.getTime() > nextDayMidnight.getTime()) {
         displaySchedules.push({
           ...schedule,
           startDateTime: selectedDateMidnight.toISOString(),
           endDateTime: nextDayMidnight.toISOString(),
         });
-      }
-      // If the schedule starts on the selected day and ends on a future day (crosses midnight)
-      else if (start.getTime() >= selectedDateMidnight.getTime() && start.getTime() < nextDayMidnight.getTime() && end.getTime() > nextDayMidnight.getTime()) {
+      } else if (start.getTime() >= selectedDateMidnight.getTime() && start.getTime() < nextDayMidnight.getTime() && end.getTime() > nextDayMidnight.getTime()) {
         displaySchedules.push({
           ...schedule,
-          endDateTime: nextDayMidnight.toISOString(), // Clip end time to midnight
+          endDateTime: nextDayMidnight.toISOString(),
         });
-      }
-      // If the schedule starts on a previous day and ends on the selected day (crosses midnight)
-      else if (start.getTime() < selectedDateMidnight.getTime() && end.getTime() > selectedDateMidnight.getTime() && end.getTime() <= nextDayMidnight.getTime()) {
+      } else if (start.getTime() < selectedDateMidnight.getTime() && end.getTime() > selectedDateMidnight.getTime() && end.getTime() <= nextDayMidnight.getTime()) {
         displaySchedules.push({
           ...schedule,
-          startDateTime: selectedDateMidnight.toISOString(), // Clip start time to midnight
+          startDateTime: selectedDateMidnight.toISOString(),
         });
       }
     });
@@ -247,13 +255,15 @@ export const ScheduleTimeline = forwardRef<{
     Music,
     Camera,
     Gamepad2,
+    Target,
   }
 
-  const getScheduleIcon = (iconName?: string, title?: string) => {
-    if (iconName && iconMap[iconName as keyof typeof iconMap]) {
-      return iconMap[iconName as keyof typeof iconMap]
+  const getScheduleIcon = (schedule: Schedule) => {
+    if (schedule.type === 'subgoal') return Target;
+    if (schedule.icon && iconMap[schedule.icon as keyof typeof iconMap]) {
+      return iconMap[schedule.icon as keyof typeof iconMap]
     }
-    const lowerTitle = title?.toLowerCase() || ""
+    const lowerTitle = schedule.title?.toLowerCase() || ""
     if (lowerTitle.includes("운동") || lowerTitle.includes("workout")) return Dumbbell
     if (lowerTitle.includes("회의") || lowerTitle.includes("meeting")) return Briefcase
     if (lowerTitle.includes("독서") || lowerTitle.includes("book")) return Book
@@ -365,13 +375,12 @@ export const ScheduleTimeline = forwardRef<{
     return overlapAreas
   }
 
-  const handleMouseDown = (e: React.MouseEvent, planId: number) => {
-    if (!timelineRef.current) return;
+  const handleMouseDown = (e: React.MouseEvent, schedule: Schedule) => {
+    if (schedule.type === 'subgoal' || !timelineRef.current) return;
+    const planId = schedule.planId;
 
     const startMouseDownPos = { x: e.clientX, y: e.clientY };
-    const schedule = timedSchedules.find((s) => s.planId === planId);
-    if (!schedule) return;
-
+    
     const timelineRect = timelineRef.current.getBoundingClientRect();
     const scrollTop = timelineRef.current.scrollTop;
     const clickY = e.clientY - timelineRect.top + scrollTop;
@@ -397,7 +406,6 @@ export const ScheduleTimeline = forwardRef<{
         draggedContainer.style.opacity = "0.9";
       }
 
-      // 휴지통 영역 확인
       if (trashCanRef.current) {
         const trashRect = trashCanRef.current.getBoundingClientRect();
         const isCurrentlyOver = 
@@ -406,8 +414,8 @@ export const ScheduleTimeline = forwardRef<{
           moveEvent.clientY >= trashRect.top &&
           moveEvent.clientY <= trashRect.bottom;
         
-        isOverTrash.current = isCurrentlyOver; // 로직용 ref 업데이트
-        setIsOverTrashStyle(isCurrentlyOver); // 스타일용 state 업데이트
+        isOverTrash.current = isCurrentlyOver;
+        setIsOverTrashStyle(isCurrentlyOver);
       }
     };
 
@@ -423,23 +431,18 @@ export const ScheduleTimeline = forwardRef<{
         draggedContainer.style.opacity = "";
       }
 
-      // 드래그 상태 초기화
       setDraggedItem(null);
       setIsDragging(false);
 
       if (isOverTrash.current) {
-        // 휴지통 위에서 드롭되면 삭제 함수 호출
         onDeleteSchedule(planId);
       } else {
-        // 휴지통이 아닌 다른 곳에서 드롭되면 위치 업데이트
         const distance = Math.sqrt(
           Math.pow(upEvent.clientX - startMouseDownPos.x, 2) +
           Math.pow(upEvent.clientY - startMouseDownPos.y, 2)
         );
   
-        if (distance < 5) {
-            // 클릭으로 간주, 아무 작업 안함
-        } else {
+        if (distance >= 5) {
             const currentY = upEvent.clientY - timelineRect.top + scrollTop;
             const newY = currentY - dragOffset.y;
             const snappedY = snapToGrid(Math.max(0, newY));
@@ -465,7 +468,6 @@ export const ScheduleTimeline = forwardRef<{
         }
       }
 
-      // 상태 초기화
       isOverTrash.current = false;
       setIsOverTrashStyle(false);
     };
@@ -476,11 +478,18 @@ export const ScheduleTimeline = forwardRef<{
     e.preventDefault();
   };
 
-  const toggleComplete = (planId: number, isCompleted: boolean) => {
-    onUpdateSchedule(planId, {
-      isCompleted: !isCompleted,
-      completedAt: !isCompleted ? new Date().toISOString() : undefined,
-    })
+  const toggleComplete = (schedule: Schedule) => {
+    if (schedule.type === 'subgoal' && schedule.goalId) {
+      onUpdateSubGoal(schedule.goalId, schedule.planId, { 
+        title: schedule.title, 
+        isCompleted: !schedule.isCompleted 
+      });
+    } else {
+      onUpdateSchedule(schedule.planId, {
+        isCompleted: !schedule.isCompleted,
+        completedAt: !schedule.isCompleted ? new Date().toISOString() : undefined,
+      })
+    }
   }
 
   const toggleSubTask = async (planId: number, subTaskId: string) => {
@@ -492,21 +501,16 @@ export const ScheduleTimeline = forwardRef<{
 
     const newCompletedState = !subTask.completed;
 
-    // 1. Optimistic UI Update
     const updatedSubTasks = schedule.subTasks.map((task) =>
       task.id === subTaskId ? { ...task, completed: newCompletedState } : task
     );
     onUpdateSchedule(planId, { subTasks: updatedSubTasks });
 
     try {
-      // 2. API Call
       await updateSubPlan(planId, Number(subTaskId), { is_completed: newCompletedState });
-      // If successful, the optimistic update is now confirmed.
     } catch (error) {
       console.error("Failed to update sub-task:", error);
-      // 3. Revert UI on failure
       onUpdateSchedule(planId, { subTasks: schedule.subTasks });
-      // Optionally, show an error message to the user.
     }
   };
 
@@ -547,9 +551,10 @@ export const ScheduleTimeline = forwardRef<{
 
   const handleBubbleClick = (schedule: Schedule, e: React.MouseEvent) => {
     e.stopPropagation()
-    if (onEditSchedule) {
+    if (schedule.type === 'schedule' && onEditSchedule) {
       onEditSchedule(schedule)
     }
+    // Subgoal click can be handled here in the future
   }
 
   const formatTime = (dateString: string) => {
@@ -594,24 +599,24 @@ export const ScheduleTimeline = forwardRef<{
 
   return (
     <div className="h-full overflow-y-auto" ref={timelineRef}>
-      <div className="flex justify-center gap-2 p-4 border-b border-slate-200 dark:border-slate-700">
+      <div className="flex justify-center gap-2 p-4 border-b border-slate-200 dark:border-slate-700 sticky top-0 bg-slate-50/80 dark:bg-slate-900/80 backdrop-blur-sm z-30">
         <Button
           variant={filterType === 'all' ? 'default' : 'outline'}
-          onClick={() => setFilterType('all')}
+          onClick={() => onFilterTypeChange('all')}
           className="px-4 py-2 text-sm font-medium"
         >
           전체
         </Button>
         <Button
           variant={filterType === 'schedules' ? 'default' : 'outline'}
-          onClick={() => setFilterType('schedules')}
+          onClick={() => onFilterTypeChange('schedules')}
           className="px-4 py-2 text-sm font-medium"
         >
           일정
         </Button>
         <Button
           variant={filterType === 'subgoals' ? 'default' : 'outline'}
-          onClick={() => setFilterType('subgoals')}
+          onClick={() => onFilterTypeChange('subgoals')}
           className="px-4 py-2 text-sm font-medium"
         >
           세부목표
@@ -635,23 +640,23 @@ export const ScheduleTimeline = forwardRef<{
             <h3 className="text-sm font-medium text-slate-600 dark:text-slate-400 mb-4">하루 종일</h3>
             <div className="flex gap-2 sm:gap-4 overflow-x-auto pb-2">
               {allDaySchedules.map((schedule) => (
-                <div key={schedule.planId} className="flex-shrink-0 flex flex-col items-center gap-2">
+                <div key={`${schedule.type}-${schedule.planId}`} className="flex-shrink-0 flex flex-col items-center gap-2">
                   <div
                     className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full border-2 flex items-center justify-center ${getScheduleColor(schedule.color)} relative cursor-pointer`}
                     onClick={(e) => handleBubbleClick(schedule, e)}
                   >
-                    {React.createElement(getScheduleIcon(schedule.icon, schedule.title), { className: "h-4 w-4 sm:h-5 sm:w-5" })}
+                    {React.createElement(getScheduleIcon(schedule), { className: "h-4 w-4 sm:h-5 sm:w-5" })}
                     <Button
                       variant="ghost"
                       size="sm"
                       className="absolute -top-1 -right-1 h-4 w-4 sm:h-5 sm:w-5 p-0 bg-white dark:bg-slate-800 rounded-full shadow-sm"
                       onClick={(e) => {
                         e.stopPropagation()
-                        toggleComplete(schedule.planId, schedule.isCompleted)
+                        toggleComplete(schedule)
                       }}
                     >
                       {schedule.isCompleted ? (
-                        <CheckCircle2 className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-green-600" />
+                        <CheckCircle2 className={`h-2.5 w-2.5 sm:h-3 sm:w-3 ${schedule.type === 'subgoal' ? 'text-red-600' : 'text-green-600'}`} />
                       ) : (
                         <Circle className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-slate-400" />
                       )}
@@ -758,7 +763,7 @@ export const ScheduleTimeline = forwardRef<{
                     draggedItem === schedule.planId ? "scale-110 shadow-lg" : "hover:scale-105"
                   } z-10`}
                   data-schedule-id={schedule.planId}
-                  onMouseDown={(e) => handleMouseDown(e, schedule.planId)}
+                  onMouseDown={(e) => handleMouseDown(e, schedule)}
                   onClick={(e) => {
                     e.stopPropagation()
                     toggleCardVisibility(schedule.planId)
@@ -770,7 +775,7 @@ export const ScheduleTimeline = forwardRef<{
                     borderRadius: `${Math.min(iconWidth / 2, 20)}px`,
                   }}
                 >
-                  {React.createElement(getScheduleIcon(schedule.icon, schedule.title), {
+                  {React.createElement(getScheduleIcon(schedule), {
                     className: `${iconHeight > 48 ? "h-6 w-6" : "h-4 w-4"}`,
                   })}
                 </div>
@@ -838,7 +843,7 @@ export const ScheduleTimeline = forwardRef<{
                             className="h-6 w-6 p-0 hover:bg-black/10 dark:hover:bg-white/10 rounded-full"
                             onClick={(e) => {
                               e.stopPropagation()
-                              toggleComplete(schedule.planId, schedule.isCompleted)
+                              toggleComplete(schedule)
                             }}
                           >
                             {schedule.isCompleted ? (

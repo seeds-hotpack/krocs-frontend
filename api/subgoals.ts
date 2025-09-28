@@ -3,7 +3,10 @@ import axiosInstance from './axiosinstance';
 export interface SubGoal {
   subGoalId: number;
   title: string;
-  isCompleted: boolean;
+  is_completed: boolean;
+  is_time_selected: boolean;
+  start_date_time: string;
+  end_date_time: string;
 }
 
 export interface GetSubGoalsResponse {
@@ -40,12 +43,18 @@ export const getSubGoals = async (
 //---------------------------------소목표 생성 api---------------------------------
 export interface CreateSubGoalRequest {
   title: string;
+  is_time_selected?: boolean;
+  start_date_time?: string;
+  end_date_time?: string;
 }
 
 export interface CreatedSubGoal {
   subGoalId: number;
   title: string;
-  isCompleted: boolean;
+  is_completed: boolean;
+  is_time_selected: boolean;
+  start_date_time: string;
+  end_date_time: string;
 }
 
 export interface CreateSubGoalResponse {

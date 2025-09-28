@@ -21,8 +21,9 @@ export interface Goal {
 }
 
 
-export const getGoals = async (date: string): Promise<Goal[]> => {
-  const response = await axiosInstance.get('/goals', { params: { date } });
+export const getGoals = async (date?: string): Promise<Goal[]> => {
+  const params = date ? { date } : {};
+  const response = await axiosInstance.get('/goals', { params });
   const apiGoals = response.data.result;
 
   return apiGoals.map((g: any) => {
