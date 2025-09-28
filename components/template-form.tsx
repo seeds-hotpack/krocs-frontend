@@ -76,6 +76,8 @@ export function TemplateForm({ template, onSubmit, onCancel }: TemplateFormProps
       sub_template_id: Date.now(), // 임시 ID
       template_id: template?.templateId || 0,
       title: newSubTemplateTitle.trim(),
+      created_at: new Date().toISOString(), // 임시 값
+      updated_at: new Date().toISOString(), // 임시 값
     };
     setSubTemplates([...subTemplates, newSub]);
     setNewSubTemplateTitle('');

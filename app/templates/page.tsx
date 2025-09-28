@@ -17,25 +17,17 @@ import {
   getTemplates,
   deleteTemplate,
   deleteSubTemplate,
+  Template as ApiTemplate, // Import the new Template interface
 } from '@/api/templates';
 
-// API 명세에 따른 타입 정의
+// Use the Template type from the API file directly
+export type Template = ApiTemplate;
 export interface SubTemplate {
   sub_template_id: number;
   template_id: number;
   title: string;
-  created_at?: string;
-  updated_at?: string;
-}
-
-export interface Template {
-  templateId: number;
-  title: string;
-  priority: 'HIGH' | 'MEDIUM' | 'LOW';
-  duration: number;
-  subTemplates: SubTemplate[];
-  createdAt?: string;
-  updatedAt?: string;
+  created_at: string;
+  updated_at: string;
 }
 
 // Debounce custom hook
@@ -63,18 +55,19 @@ export default function TemplatesPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
-
   const debouncedSearchTerm = useDebounce(searchTerm, 500);
 
-  const [currentPage, setCurrentPage] = useState(1); // 현재 페이지 상태
-  const itemsPerPage = 6; // 페이지 당 항목 수
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(0);
+  const itemsPerPage = 6;
 
   useEffect(() => {
     const fetchTemplates = async () => {
       try {
         setIsLoading(true);
-        const fetchedTemplates = await getTemplates(debouncedSearchTerm);
-        setTemplates(fetchedTemplates as Template[]);
+        const response = await getTemplates(debouncedSearchTerm, { page: currentPage - 1, size: itemsPerPage, sort: ['createdAt,desc'] });
+        setTemplates(response.content);
+        setTotalPages(response.totalPages);
         setError(null);
       } catch (err) {
         setError("템플릿을 불러오는데 실패했습니다.");
@@ -84,13 +77,7 @@ export default function TemplatesPage() {
       }
     };
     fetchTemplates();
-  }, [debouncedSearchTerm]);
-
-  // 페이지네이션 로직
-  const indexOfLastItem = currentPage * itemsPerPage;
-  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentItems = templates.slice(indexOfFirstItem, indexOfLastItem);
-  const totalPages = Math.ceil(templates.length / itemsPerPage);
+  }, [debouncedSearchTerm, currentPage]);
 
   // 검색어가 변경될 때 현재 페이지를 1로 초기화
   useEffect(() => {
@@ -113,8 +100,13 @@ export default function TemplatesPage() {
     }
     try {
       await deleteTemplate(templateId);
-      setTemplates(prevTemplates => prevTemplates.filter((t) => t.templateId !== templateId));
-      // alert("템플릿이 성공적으로 삭제되었습니다."); // You might want a more subtle notification
+      // Re-fetch current page after deletion
+      const response = await getTemplates(debouncedSearchTerm, { page: currentPage - 1, size: itemsPerPage, sort: ['createdAt,desc'] });
+      setTemplates(response.content);
+      setTotalPages(response.totalPages);
+      if (response.content.length === 0 && currentPage > 1) {
+        setCurrentPage(currentPage - 1);
+      }
     } catch (err) {
       console.error("Failed to delete template:", err);
       alert("템플릿 삭제에 실패했습니다. 다시 시도해 주세요.");
@@ -163,8 +155,9 @@ export default function TemplatesPage() {
       }
       
       // SUCCESS: Re-fetch and close form
-      const fetchedTemplates = await getTemplates(debouncedSearchTerm);
-      setTemplates(fetchedTemplates as Template[]);
+      const response = await getTemplates(debouncedSearchTerm, { page: currentPage - 1, size: itemsPerPage, sort: ['createdAt,desc'] });
+      setTemplates(response.content);
+      setTotalPages(response.totalPages);
       setShowForm(false);
       setEditingTemplate(null);
 
@@ -246,7 +239,7 @@ export default function TemplatesPage() {
 
         {!isLoading && !error && templates.length > 0 && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {currentItems.map((template) => (
+            {templates.map((template) => (
               <TemplateCard
                 key={template.templateId}
                 template={template}
@@ -264,7 +257,7 @@ export default function TemplatesPage() {
             </div>
         )}
 
-        {!isLoading && !error && templates.length > itemsPerPage && (
+        {totalPages > 1 && (
           <div className="flex justify-center items-center gap-2 mt-8">
             <Button
               variant="outline"

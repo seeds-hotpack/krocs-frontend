@@ -110,24 +110,48 @@ export async function updateTemplate(
   }
 }
 
-export interface TemplateResponse {
+export interface Template {
   templateId: number;
-  userId: number;
   title: string;
-  priority: "HIGH" | "MEDIUM" | "LOW";
+  priority: "LOW" | "HIGH" | "MEDIUM";
   duration: number;
-  createdAt: string;
-  updatedAt: string;
-  subTemplates: SubTemplateResponse[];
+  createdAt?: string;
+  updatedAt?: string;
+  subTemplates: {
+    title: string;
+    sub_template_id: number;
+    template_id: number;
+    created_at: string;
+    updated_at: string;
+  }[];
 }
 
-export async function getTemplates(title?: string): Promise<TemplateResponse[]> {
+// Matches the overall API response structure
+export interface PaginatedTemplatesResponse {
+  content: Template[];
+  pageNumber: number;
+  pageSize: number;
+  totalElements: number;
+  totalPages: number;
+  last: boolean;
+}
+
+export interface PageableParams {
+    page?: number;
+    size?: number;
+    sort?: string[];
+}
+
+export async function getTemplates(
+  title?: string,
+  pageable?: PageableParams
+): Promise<PaginatedTemplatesResponse> {
   try {
-    const params: any = { _cacheBust: new Date().getTime() };
-    if (title) {
-      params.title = title;
-    }
-    const response = await axiosInstance.get<ApiResponse<TemplateResponse[]>>('/templates', {
+    const params = {
+      title,
+      ...pageable,
+    };
+    const response = await axiosInstance.get<ApiResponse<PaginatedTemplatesResponse>>('/templates', {
       params,
     });
     return response.data.result;
