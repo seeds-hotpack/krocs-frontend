@@ -264,6 +264,35 @@ export const deletePlan = async (planId: number): Promise<DeletePlanResponse> =>
   }
 };
 
+export interface DailyPlan {
+  date: string;
+  plans: Plan[];
+  plan_count: number;
+}
+
+export interface GetMonthlyPlansResponse {
+  isSuccess: boolean;
+  code: string;
+  message: string;
+  result: {
+    year: number;
+    month: number;
+    daily_plans: DailyPlan[];
+  };
+}
+
+export const getMonthlyPlans = async (year: number, month: number): Promise<DailyPlan[]> => {
+  try {
+    const response = await axiosInstance.get<GetMonthlyPlansResponse>("/plans/monthly", {
+      params: { year, month, _cacheBust: new Date().getTime() },
+    });
+    return response.data.result.daily_plans;
+  } catch (error) {
+    console.error("❌ getMonthlyPlans API 호출 실패:", error);
+    throw error;
+  }
+};
+
 //----------------------------------세부 일정 삭제 api---------------------------------
 export interface DeleteSubPlanResponse {
   isSuccess: boolean;

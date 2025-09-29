@@ -1,8 +1,9 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { ChevronLeft, ChevronRight, X } from "lucide-react"
+import { getMonthlyPlans, DailyPlan } from "@/api/subplan";
 
 interface Schedule {
   planId: number
@@ -22,6 +23,26 @@ interface ScheduleCalendarProps {
 
 export function ScheduleCalendar({ selectedDate, onDateSelect, schedules, onClose }: ScheduleCalendarProps) {
   const [currentMonth, setCurrentMonth] = useState(new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1))
+  const [monthlyPlans, setMonthlyPlans] = useState<DailyPlan[]>([]);
+  const [loadingMonthlyPlans, setLoadingMonthlyPlans] = useState(false);
+
+  useEffect(() => {
+    const fetchMonthlyPlans = async () => {
+      setLoadingMonthlyPlans(true);
+      try {
+        const year = currentMonth.getFullYear();
+        const month = currentMonth.getMonth() + 1; // Month is 0-indexed in JS Date
+        const data = await getMonthlyPlans(year, month);
+        setMonthlyPlans(data);
+      } catch (error) {
+        console.error("Failed to fetch monthly plans:", error);
+        setMonthlyPlans([]);
+      } finally {
+        setLoadingMonthlyPlans(false);
+      }
+    };
+    fetchMonthlyPlans();
+  }, [currentMonth]);
 
   const daysInMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0).getDate()
   const firstDayOfMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1).getDay()
@@ -166,6 +187,31 @@ export function ScheduleCalendar({ selectedDate, onDateSelect, schedules, onClos
       </div>
 
       <div className="grid grid-cols-7 gap-1">{renderCalendarDays()}</div>
+
+      <div className="mt-8 border-t pt-4 border-slate-200 dark:border-slate-700">
+        <h3 className="text-lg font-semibold text-slate-900 mb-4">월별 일정</h3>
+        {loadingMonthlyPlans ? (
+          <div className="text-slate-500">월별 일정을 불러오는 중...</div>
+        ) : monthlyPlans.length === 0 ? (
+          <div className="text-slate-500">이번 달에는 일정이 없습니다.</div>
+        ) : (
+          <div className="space-y-4">
+            {monthlyPlans.map((dailyPlan) => (
+              <div key={dailyPlan.date}>
+                <h4 className="text-md font-medium text-slate-800 dark:text-slate-200 mb-2">{dailyPlan.date} ({dailyPlan.plan_count}개)</h4>
+                <div className="space-y-2 pl-4 border-l-2 border-slate-200 dark:border-slate-700">
+                  {dailyPlan.plans.map((plan) => (
+                    <div key={plan.plan_id} className="flex items-center gap-2">
+                      <div className={`w-2 h-2 rounded-full ${plan.color === 'BLUE' ? 'bg-blue-500' : plan.color === 'RED' ? 'bg-red-500' : 'bg-gray-500'}`}></div>
+                      <span className={`text-sm ${plan.is_completed ? 'line-through text-slate-500' : 'text-slate-700 dark:text-slate-300'}`}>{plan.title}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   )
 }
