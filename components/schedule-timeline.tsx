@@ -98,6 +98,7 @@ export const ScheduleTimeline = forwardRef<{
   const [visibleCards, setVisibleCards] = useState<Set<number>>(new Set())
   const [showBackToCurrentTime, setShowBackToCurrentTime] = useState(false)
   const timelineRef = useRef<HTMLDivElement>(null)
+  const justScrolledToPlanRef = useRef(false); // New ref to track if we just scrolled to a specific plan
 
   const getCurrentTimePosition = useCallback(() => {
     const currentHour = currentTime.getHours() + currentTime.getMinutes() / 60
@@ -114,6 +115,7 @@ export const ScheduleTimeline = forwardRef<{
           behavior: 'smooth',
           block: 'center',
         });
+        justScrolledToPlanRef.current = true; // Set ref after scrolling to plan
       }
     },
   }));
@@ -126,6 +128,7 @@ export const ScheduleTimeline = forwardRef<{
           behavior: 'smooth',
           block: 'center',
         });
+        justScrolledToPlanRef.current = true; // Set ref after scrolling to plan
         onScrollToPlanIdProcessed();
       }
     }
@@ -143,7 +146,7 @@ export const ScheduleTimeline = forwardRef<{
       const today = new Date()
       const isToday = selectedDate.toDateString() === today.toDateString()
       
-      if (isToday) {
+      if (isToday && !justScrolledToPlanRef.current) { // Only scroll to current time if not just scrolled to a plan
         const now = new Date();
         const currentHour = now.getHours() + now.getMinutes() / 60
         const slotHeight = 24
@@ -157,8 +160,10 @@ export const ScheduleTimeline = forwardRef<{
           behavior: 'smooth'
         })
       }
+      // Reset the ref after the effect has run, so subsequent changes can trigger current time scroll if needed
+      justScrolledToPlanRef.current = false;
     }
-  }, [loading, selectedDate, scrollToPlanId])
+  }, [loading, selectedDate, scrollToPlanId]);
 
   useEffect(() => {
     const timelineElement = timelineRef.current
