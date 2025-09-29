@@ -31,6 +31,7 @@ import {
   Trash2
 } from "lucide-react"
 import type { Goal } from "@/api/goals"
+import { ConfirmationModal } from "@/components/ui/confirmation-modal";
 
 interface SubTask {
   id: string
@@ -126,6 +127,8 @@ export function ScheduleForm({ schedule, onSubmit, onCancel, onDelete, defaultDa
       color: schedule?.color || "blue",
     };
   });
+
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   useEffect(() => {
     setSubTasks(schedule?.subTasks || []);
@@ -614,11 +617,7 @@ export function ScheduleForm({ schedule, onSubmit, onCancel, onDelete, defaultDa
             <Button
               type="button"
               variant="destructive"
-              onClick={() => {
-                if (window.confirm("정말로 이 일정을 삭제하시겠습니까?")) {
-                  onDelete(schedule.planId!)
-                }
-              }}
+              onClick={() => setShowDeleteModal(true)}
               className="bg-red-600 hover:bg-red-700 text-white"
             >
               <Trash2 className="h-4 w-4 mr-2" />
@@ -627,6 +626,20 @@ export function ScheduleForm({ schedule, onSubmit, onCancel, onDelete, defaultDa
           )}
         </div>
       </form>
+
+      <ConfirmationModal
+        isOpen={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        onConfirm={() => {
+          if (schedule?.planId && onDelete) {
+            onDelete(schedule.planId);
+          }
+          setShowDeleteModal(false);
+        }}
+        title="일정 삭제 확인"
+        message="정말로 이 일정을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다."
+        confirmText="삭제"
+      />
     </div>
   )
 }

@@ -10,6 +10,7 @@ import { TemplateForm } from '@/components/template-form';
 import Link from 'next/link';
 import { useTheme } from 'next-themes';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { ConfirmationModal } from '@/components/ui/confirmation-modal';
 import {
   createTemplate,
   updateTemplate,
@@ -61,6 +62,9 @@ export default function TemplatesPage() {
   const [totalPages, setTotalPages] = useState(0);
   const itemsPerPage = 6;
 
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [templateToDelete, setTemplateToDelete] = useState<number | null>(null);
+
   useEffect(() => {
     const fetchTemplates = async () => {
       try {
@@ -94,21 +98,29 @@ export default function TemplatesPage() {
     setShowForm(true);
   };
 
-  const handleDelete = async (templateId: number) => {
-    if (!confirm("정말로 이 템플릿을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.")) {
-      return;
-    }
+  const handleDelete = (templateId: number) => {
+    setTemplateToDelete(templateId);
+    setShowDeleteModal(true);
+  };
+
+  const confirmDeleteTemplate = async () => {
+    if (templateToDelete === null) return;
+
     try {
-      await deleteTemplate(templateId);
+      await deleteTemplate(templateToDelete);
       const response = await getTemplates(debouncedSearchTerm, { page: currentPage - 1, size: itemsPerPage, sort: 'createdAt,desc' });
       setTemplates(response.content);
       setTotalPages(response.totalPages);
       if (response.content.length === 0 && currentPage > 1) {
         setCurrentPage(currentPage - 1);
       }
+      setShowDeleteModal(false);
+      setTemplateToDelete(null);
     } catch (err) {
       console.error("Failed to delete template:", err);
       alert("템플릿 삭제에 실패했습니다. 다시 시도해 주세요.");
+      setShowDeleteModal(false);
+      setTemplateToDelete(null);
     }
   };
 
@@ -295,6 +307,15 @@ export default function TemplatesPage() {
             </div>
         </div>
       )}
+
+      <ConfirmationModal
+        isOpen={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        onConfirm={confirmDeleteTemplate}
+        title="템플릿 삭제 확인"
+        message="정말로 이 템플릿을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다."
+        confirmText="삭제"
+      />
     </div>
   );
 }

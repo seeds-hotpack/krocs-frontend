@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { X, Plus, Pencil, Trash2 } from 'lucide-react';
 import type { Template, SubTemplate } from '@/app/templates/page';
 import { updateSubTemplate, deleteSubTemplate } from '@/api/templates';
+import { ConfirmationModal } from '@/components/ui/confirmation-modal';
 
 interface TemplateFormProps {
   template?: Template | null;
@@ -25,6 +26,9 @@ export function TemplateForm({ template, onSubmit, onCancel }: TemplateFormProps
   const [editingSubTemplate, setEditingSubTemplate] = useState<SubTemplate | null>(null);
   const [editingSubTemplateTitle, setEditingSubTemplateTitle] = useState('');
   const [durationError, setDurationError] = useState<string | null>(null);
+
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [subTemplateToDelete, setSubTemplateToDelete] = useState<number | null>(null);
 
   useEffect(() => {
     if (template) {
@@ -84,10 +88,16 @@ export function TemplateForm({ template, onSubmit, onCancel }: TemplateFormProps
   };
 
   const handleRemoveSubTemplate = (id: number) => {
-    if (!confirm("정말로 이 하위 템플릿을 삭제하시겠습니까?")) {
-      return; // User cancelled, do nothing
-    }
-    setSubTemplates(subTemplates.filter((st) => st.sub_template_id !== id));
+    setSubTemplateToDelete(id);
+    setShowDeleteModal(true);
+  };
+
+  const confirmRemoveSubTemplate = () => {
+    if (subTemplateToDelete === null) return;
+
+    setSubTemplates(subTemplates.filter((st) => st.sub_template_id !== subTemplateToDelete));
+    setShowDeleteModal(false);
+    setSubTemplateToDelete(null);
   };
 
   const handleStartEditSubTemplate = (sub: SubTemplate) => {
@@ -258,6 +268,15 @@ export function TemplateForm({ template, onSubmit, onCancel }: TemplateFormProps
           취소
         </Button>
       </div>
+
+      <ConfirmationModal
+        isOpen={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        onConfirm={confirmRemoveSubTemplate}
+        title="하위 템플릿 삭제 확인"
+        message="정말로 이 하위 템플릿을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다."
+        confirmText="삭제"
+      />
     </form>
   );
 }
