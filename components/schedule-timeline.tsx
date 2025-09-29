@@ -64,10 +64,13 @@ interface ScheduleTimelineProps {
   onScrollToCurrentTime?: () => void
   filterType: 'all' | 'schedules' | 'subgoals';
   onFilterTypeChange: (type: 'all' | 'schedules' | 'subgoals') => void;
+  scrollToPlanId: number | null;
+  onScrollToPlanIdProcessed: () => void;
 }
 
 export const ScheduleTimeline = forwardRef<{
-  scrollToCurrentTime: () => void
+  scrollToCurrentTime: () => void;
+  scrollToSchedule: (planId: number) => void;
 }, ScheduleTimelineProps>(({ 
   schedules, 
   selectedDate, 
@@ -78,7 +81,9 @@ export const ScheduleTimeline = forwardRef<{
   loading, 
   onScrollToCurrentTime, 
   filterType, 
-  onFilterTypeChange 
+  onFilterTypeChange,
+  scrollToPlanId,
+  onScrollToPlanIdProcessed,
 }, ref) => {
   const [draggedItem, setDraggedItem] = useState<number | null>(null)
   const [isDragging, setIsDragging] = useState(false); // 드래그 상태
@@ -101,8 +106,30 @@ export const ScheduleTimeline = forwardRef<{
   }, [currentTime]);
 
   useImperativeHandle(ref, () => ({
-    scrollToCurrentTime
-  }))
+    scrollToCurrentTime,
+    scrollToSchedule: (planId: number) => {
+      const scheduleElement = timelineRef.current?.querySelector(`[data-schedule-id="${planId}"]`) as HTMLElement;
+      if (scheduleElement) {
+        scheduleElement.scrollIntoView({
+          behavior: 'smooth',
+          block: 'center',
+        });
+      }
+    },
+  }));
+
+  useEffect(() => {
+    if (scrollToPlanId && timelineRef.current) {
+      const scheduleElement = timelineRef.current.querySelector(`[data-schedule-id="${scrollToPlanId}"]`) as HTMLElement;
+      if (scheduleElement) {
+        scheduleElement.scrollIntoView({
+          behavior: 'smooth',
+          block: 'center',
+        });
+        onScrollToPlanIdProcessed();
+      }
+    }
+  }, [scrollToPlanId, onScrollToPlanIdProcessed]);
 
   useEffect(() => {
     const timer = setInterval(() => {

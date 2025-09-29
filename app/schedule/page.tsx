@@ -61,9 +61,17 @@ export default function SchedulePage() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [refreshTrigger, setRefreshTrigger] = useState(0)
   const [expandedSummary, setExpandedSummary] = useState<string | null>(null); // State for expanded summary
-  const timelineRef = useRef<{ scrollToCurrentTime: () => void }>(null)
+  const timelineRef = useRef<{ scrollToCurrentTime: () => void; scrollToSchedule: (planId: number) => void }>(null)
   const { theme, setTheme } = useTheme()
   const [filterType, setFilterType] = useState<'all' | 'schedules' | 'subgoals'>('schedules');
+  const [scrollToPlanId, setScrollToPlanId] = useState<number | null>(null);
+
+  const handleViewScheduleInTimeline = (schedule: Schedule) => {
+    setSelectedDate(new Date(schedule.startDateTime));
+    setScrollToPlanId(schedule.planId);
+    setShowCalendar(false); // Close calendar if open
+    setSidebarOpen(false); // Close sidebar if open
+  };
 
 
   // 일정 목록 가져오기
@@ -476,7 +484,7 @@ export default function SchedulePage() {
             <h3 className="text-sm font-medium text-slate-900 dark:text-slate-100 mb-3">다가오는 일정</h3>
             <div className="space-y-3">
               {todaySchedules.filter((schedule) => !schedule.isCompleted).slice(0, 5).map((schedule) => (
-                  <Card key={schedule.planId} className="border-0 shadow-sm hover:shadow-md transition-shadow dark:bg-slate-700 cursor-pointer" onClick={() => handleEditSchedule(schedule)}>
+                  <Card key={schedule.planId} className="border-0 shadow-sm hover:shadow-md transition-shadow dark:bg-slate-700 cursor-pointer" onClick={() => handleViewScheduleInTimeline(schedule)}>
                     <CardContent className="p-4">
                       <div className="flex items-start gap-3">
                         <div className="w-3 h-3 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
@@ -531,20 +539,21 @@ export default function SchedulePage() {
               </div>
             )}
             {!error && (
-              <ScheduleTimeline
-                ref={timelineRef}
-                schedules={timelineItems}
-                selectedDate={selectedDate}
-                onUpdateSchedule={updateSchedule}
-                onDeleteSchedule={deleteSchedule}
-                onEditSchedule={handleEditSchedule}
-                loading={loading}
-                onScrollToCurrentTime={() => {}}
-                filterType={filterType}
-                onFilterTypeChange={setFilterType}
-                onUpdateSubGoal={onUpdateSubGoal}
-              />
-            )}
+                              <ScheduleTimeline
+                                ref={timelineRef}
+                                schedules={timelineItems}
+                                selectedDate={selectedDate}
+                                onUpdateSchedule={updateSchedule}
+                                onDeleteSchedule={deleteSchedule}
+                                onEditSchedule={handleEditSchedule}
+                                loading={loading}
+                                onScrollToCurrentTime={() => {}}
+                                filterType={filterType}
+                                onFilterTypeChange={setFilterType}
+                                onUpdateSubGoal={onUpdateSubGoal}
+                                scrollToPlanId={scrollToPlanId}
+                                onScrollToPlanIdProcessed={() => setScrollToPlanId(null)}
+                              />            )}
           </div>
         </div>
       </div>
