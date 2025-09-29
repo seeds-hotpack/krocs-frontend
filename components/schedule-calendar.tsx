@@ -56,26 +56,11 @@ export function ScheduleCalendar({ selectedDate, onDateSelect, schedules, onClos
     setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1))
   }
 
-  const getSchedulesForDate = (date: Date) => {
-    const targetDate = new Date(date);
-    targetDate.setHours(0, 0, 0, 0);
-
-    return schedules.filter((schedule) => {
-      const startDate = new Date(schedule.startDateTime);
-      startDate.setHours(0, 0, 0, 0);
-      
-      const endDate = new Date(schedule.endDateTime);
-      endDate.setHours(0, 0, 0, 0);
-
-      // Handle schedules that end on the same day they start
-      if (startDate.getTime() === endDate.getTime()) {
-        return startDate.getTime() === targetDate.getTime();
-      }
-
-      // For multi-day events, check if the target date is within the range
-      return targetDate.getTime() >= startDate.getTime() && targetDate.getTime() <= endDate.getTime();
-    });
-  }
+  const getMonthlySchedulesForDate = (date: Date) => {
+    const formattedDate = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+    const dailyPlan = monthlyPlans.find(dp => dp.date === formattedDate);
+    return dailyPlan ? dailyPlan.plans : [];
+  };
 
   const renderCalendarDays = () => {
     const days = []
@@ -100,7 +85,7 @@ export function ScheduleCalendar({ selectedDate, onDateSelect, schedules, onClos
       const date = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day)
       const isToday = date.toDateString() === today.toDateString()
       const isSelected = date.toDateString() === selectedDate.toDateString()
-      const daySchedules = getSchedulesForDate(date)
+      const daySchedules = getMonthlySchedulesForDate(date)
 
       days.push(
         <button
@@ -187,31 +172,6 @@ export function ScheduleCalendar({ selectedDate, onDateSelect, schedules, onClos
       </div>
 
       <div className="grid grid-cols-7 gap-1">{renderCalendarDays()}</div>
-
-      <div className="mt-8 border-t pt-4 border-slate-200 dark:border-slate-700">
-        <h3 className="text-lg font-semibold text-slate-900 mb-4">월별 일정</h3>
-        {loadingMonthlyPlans ? (
-          <div className="text-slate-500">월별 일정을 불러오는 중...</div>
-        ) : monthlyPlans.length === 0 ? (
-          <div className="text-slate-500">이번 달에는 일정이 없습니다.</div>
-        ) : (
-          <div className="space-y-4">
-            {monthlyPlans.map((dailyPlan) => (
-              <div key={dailyPlan.date}>
-                <h4 className="text-md font-medium text-slate-800 dark:text-slate-200 mb-2">{dailyPlan.date} ({dailyPlan.plan_count}개)</h4>
-                <div className="space-y-2 pl-4 border-l-2 border-slate-200 dark:border-slate-700">
-                  {dailyPlan.plans.map((plan) => (
-                    <div key={plan.plan_id} className="flex items-center gap-2">
-                      <div className={`w-2 h-2 rounded-full ${plan.color === 'BLUE' ? 'bg-blue-500' : plan.color === 'RED' ? 'bg-red-500' : 'bg-gray-500'}`}></div>
-                      <span className={`text-sm ${plan.is_completed ? 'line-through text-slate-500' : 'text-slate-700 dark:text-slate-300'}`}>{plan.title}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
     </div>
   )
 }
