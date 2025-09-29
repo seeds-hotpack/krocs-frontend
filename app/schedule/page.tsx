@@ -67,7 +67,12 @@ export default function SchedulePage() {
   const [scrollToPlanId, setScrollToPlanId] = useState<number | null>(null);
 
   const handleViewScheduleInTimeline = (schedule: Schedule) => {
-    setSelectedDate(new Date(schedule.startDateTime));
+    const newSelectedDate = new Date(schedule.startDateTime);
+    // Only update selectedDate if it's a different date
+    if (newSelectedDate.toDateString() !== selectedDate.toDateString()) {
+      setSelectedDate(newSelectedDate);
+    }
+    // Always set scrollToPlanId, as it's cleared after processing
     setScrollToPlanId(schedule.planId);
     setShowCalendar(false); // Close calendar if open
     setSidebarOpen(false); // Close sidebar if open

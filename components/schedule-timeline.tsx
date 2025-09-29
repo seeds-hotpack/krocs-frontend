@@ -139,7 +139,7 @@ export const ScheduleTimeline = forwardRef<{
   }, [])
 
   useEffect(() => {
-    if (!loading && timelineRef.current) {
+    if (!loading && timelineRef.current && !scrollToPlanId) {
       const today = new Date()
       const isToday = selectedDate.toDateString() === today.toDateString()
       
@@ -158,7 +158,7 @@ export const ScheduleTimeline = forwardRef<{
         })
       }
     }
-  }, [loading, selectedDate])
+  }, [loading, selectedDate, scrollToPlanId])
 
   useEffect(() => {
     const timelineElement = timelineRef.current
