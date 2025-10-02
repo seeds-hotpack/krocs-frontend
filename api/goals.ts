@@ -1,7 +1,7 @@
 import axiosInstance from './axiosinstance';
 
 export interface SubGoal {
-  subGoalId: number;
+  sub_goal_id: number;
   title: string;
   completed: boolean;
 }
@@ -51,7 +51,7 @@ export const getGoals = async (params: GetGoalsParams): Promise<Goal[]> => {
       duration: duration, // 계산된 duration 추가
       completed: g.isCompleted,
       subGoals: (g.subGoals || []).map((sg: any) => ({
-        subGoalId: sg.subGoalId,
+        sub_goal_id: sg.sub_goal_id,
         title: sg.title,
         completed: sg.is_completed, // isCompleted -> is_completed
       })),
@@ -109,7 +109,7 @@ export const getGoalById = async (goalId: number): Promise<Goal> => {
         duration: duration,
         completed: g.isCompleted,
         subGoals: (g.subGoals || []).map((sg: any) => ({
-            subGoalId: sg.subGoalId,
+            sub_goal_id: sg.sub_goal_id,
             title: sg.title,
             completed: sg.is_completed,
         })),

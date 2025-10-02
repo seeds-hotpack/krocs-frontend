@@ -23,7 +23,7 @@ import {
 import { SubGoalModal } from "./subgoal-modal"
 
 interface SubGoal {
-  subGoalId: number
+  sub_goal_id: number
   title: string
   completed: boolean
 }
@@ -64,11 +64,11 @@ export function GoalDetail({ goal, onBack, onUpdate }: GoalDetailProps) {
       setSubGoals(
         res.result.subGoals
           .map((sg: APISubGoal) => ({
-            subGoalId: sg.subGoalId,
+            sub_goal_id: sg.sub_goal_id,
             title: sg.title,
             completed: sg.is_completed,
           }))
-          .sort((a, b) => a.subGoalId - b.subGoalId),
+          .sort((a, b) => a.sub_goal_id - b.sub_goal_id),
       )
     } catch (e: any) {
       setError(e.message)
@@ -81,23 +81,23 @@ export function GoalDetail({ goal, onBack, onUpdate }: GoalDetailProps) {
     fetchSubGoals()
   }, [fetchSubGoals])
 
-  const toggleSubGoal = async (subGoalId: number) => {
+  const toggleSubGoal = async (sub_goal_id: number) => {
     const originalSubGoals = [...subGoals]
-    const subGoalToUpdate = subGoals.find((sg) => sg.subGoalId === subGoalId)
+    const subGoalToUpdate = subGoals.find((sg) => sg.sub_goal_id === sub_goal_id)
     if (!subGoalToUpdate) return
 
     const newCompletedStatus = !subGoalToUpdate.completed
 
     // Optimistic update
     const updatedSubGoals = subGoals.map((sg) =>
-      sg.subGoalId === subGoalId
+      sg.sub_goal_id === sub_goal_id
         ? { ...sg, completed: newCompletedStatus }
         : sg,
     )
     setSubGoals(updatedSubGoals)
 
     try {
-      await updateSubGoal(goal.goalId, subGoalId, {
+      await updateSubGoal(goal.goalId, sub_goal_id, {
         title: subGoalToUpdate.title,
         is_completed: newCompletedStatus,
       })
@@ -108,15 +108,15 @@ export function GoalDetail({ goal, onBack, onUpdate }: GoalDetailProps) {
     }
   }
 
-  const handleDeleteSubGoal = async (subGoalId: number) => {
+  const handleDeleteSubGoal = async (sub_goal_id: number) => {
     const originalSubGoals = [...subGoals]
     const updatedSubGoals = subGoals.filter(
-      (sg) => sg.subGoalId !== subGoalId,
+      (sg) => sg.sub_goal_id !== sub_goal_id,
     )
     setSubGoals(updatedSubGoals)
 
     try {
-      await deleteSubGoal(goal.goalId, subGoalId)
+      await deleteSubGoal(goal.goalId, sub_goal_id)
     } catch (e: any) {
       setSubGoals(originalSubGoals)
       setError(e.message)
@@ -166,7 +166,7 @@ export function GoalDetail({ goal, onBack, onUpdate }: GoalDetailProps) {
     subGoals.length > 0 ? (completedSubGoals / subGoals.length) * 100 : 0
 
   const startInlineEdit = (subGoal: SubGoal) => {
-    setEditingSubGoalId(subGoal.subGoalId)
+    setEditingSubGoalId(subGoal.sub_goal_id)
     setEditingSubGoalTitle(subGoal.title)
   }
 
@@ -180,7 +180,7 @@ export function GoalDetail({ goal, onBack, onUpdate }: GoalDetailProps) {
 
     const originalSubGoals = [...subGoals]
     const updatedSubGoals = subGoals.map((sg) =>
-      sg.subGoalId === subGoal.subGoalId
+      sg.sub_goal_id === subGoal.sub_goal_id
         ? { ...sg, title: editingSubGoalTitle.trim() }
         : sg,
     )
@@ -188,7 +188,7 @@ export function GoalDetail({ goal, onBack, onUpdate }: GoalDetailProps) {
     cancelInlineEdit()
 
     try {
-      await updateSubGoal(goal.goalId, subGoal.subGoalId, {
+      await updateSubGoal(goal.goalId, subGoal.sub_goal_id, {
         title: editingSubGoalTitle.trim(),
         is_completed: subGoal.completed,
       })
@@ -358,7 +358,7 @@ export function GoalDetail({ goal, onBack, onUpdate }: GoalDetailProps) {
                 <div className="space-y-3">
                   {subGoals.map((subGoal, index) => (
                     <div
-                      key={subGoal.subGoalId}
+                      key={subGoal.sub_goal_id}
                       className="group flex items-center gap-4 p-4 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 transition-all duration-200"
                     >
                       <div className="flex items-center justify-center w-6 h-6 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400 text-sm font-medium">
@@ -367,7 +367,7 @@ export function GoalDetail({ goal, onBack, onUpdate }: GoalDetailProps) {
 
                       <Checkbox
                         checked={subGoal.completed}
-                        onCheckedChange={() => toggleSubGoal(subGoal.subGoalId)}
+                        onCheckedChange={() => toggleSubGoal(subGoal.sub_goal_id)}
                         className="w-5 h-5"
                       />
 
@@ -378,7 +378,7 @@ export function GoalDetail({ goal, onBack, onUpdate }: GoalDetailProps) {
                             : "text-slate-900 dark:text-slate-100"
                         }`}
                       >
-                        {editingSubGoalId === subGoal.subGoalId ? (
+                        {editingSubGoalId === subGoal.sub_goal_id ? (
                           <Input
                             value={editingSubGoalTitle}
                             onChange={(e) =>
@@ -406,13 +406,13 @@ export function GoalDetail({ goal, onBack, onUpdate }: GoalDetailProps) {
                         variant="ghost"
                         size="sm"
                         onClick={() =>
-                          editingSubGoalId === subGoal.subGoalId
+                          editingSubGoalId === subGoal.sub_goal_id
                             ? saveInlineEdit(subGoal)
                             : startInlineEdit(subGoal)
                         }
                         className="opacity-0 group-hover:opacity-100 h-8 w-8 p-0 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-md"
                       >
-                        {editingSubGoalId === subGoal.subGoalId ? (
+                        {editingSubGoalId === subGoal.sub_goal_id ? (
                           <span className="text-xs text-slate-600 dark:text-slate-400">
                             저장
                           </span>
@@ -420,7 +420,7 @@ export function GoalDetail({ goal, onBack, onUpdate }: GoalDetailProps) {
                           <Pencil className="h-4 w-4 text-slate-600" />
                         )}
                       </Button>
-                      {editingSubGoalId === subGoal.subGoalId && (
+                      {editingSubGoalId === subGoal.sub_goal_id && (
                         <Button
                           variant="ghost"
                           size="sm"
@@ -435,7 +435,7 @@ export function GoalDetail({ goal, onBack, onUpdate }: GoalDetailProps) {
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => handleDeleteSubGoal(subGoal.subGoalId)}
+                        onClick={() => handleDeleteSubGoal(subGoal.sub_goal_id)}
                         className="opacity-0 group-hover:opacity-100 h-8 w-8 p-0 hover:bg-slate-100 rounded-md transition-all duration-200"
                       >
                         <Trash2 className="h-4 w-4 text-slate-600" />

@@ -166,7 +166,7 @@ export default function SchedulePage() {
             const sgDate = sg.start_date_time.split('T')[0];
             if (sg.is_time_selected && sgDate === selectedDay) {
               timeSelectedSubGoals.push({
-                planId: sg.subGoalId,
+                planId: sg.sub_goal_id,
                 goalId: goalId,
                 title: sg.title,
                 startDateTime: sg.start_date_time,

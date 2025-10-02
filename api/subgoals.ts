@@ -1,7 +1,7 @@
 import axiosInstance from './axiosinstance';
 //---------------------------------소목표 호출 api---------------------------------
 export interface SubGoal {
-  subGoalId: number;
+  sub_goal_id: number;
   title: string;
   is_completed: boolean;
   is_time_selected: boolean;
@@ -49,7 +49,7 @@ export interface CreateSubGoalRequest {
 }
 
 export interface CreatedSubGoal {
-  subGoalId: number;
+  sub_goal_id: number;
   title: string;
   is_completed: boolean;
   is_time_selected: boolean;

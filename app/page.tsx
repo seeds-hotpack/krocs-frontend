@@ -130,7 +130,7 @@ export default function GoalManagementApp() {
         endDate: updatedGoalFromApi.endDate,
         completed: updatedGoalFromApi.isCompleted,
         subGoals: (updatedGoalFromApi.subGoals || []).map((sg: any) => ({
-          subGoalId: sg.subGoalId,
+          sub_goal_id: sg.subGoalId,
           title: sg.title,
           completed: sg.isCompleted,
         })),
