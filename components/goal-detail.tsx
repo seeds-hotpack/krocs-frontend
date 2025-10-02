@@ -26,6 +26,9 @@ interface SubGoal {
   sub_goal_id: number
   title: string
   completed: boolean
+  is_time_selected?: boolean;
+  start_date_time?: string;
+  end_date_time?: string;
 }
 
 interface Goal {
@@ -100,6 +103,9 @@ export function GoalDetail({ goal, onBack, onUpdate }: GoalDetailProps) {
       await updateSubGoal(goal.goalId, sub_goal_id, {
         title: subGoalToUpdate.title,
         is_completed: newCompletedStatus,
+        is_time_selected: subGoalToUpdate.is_time_selected,
+        start_date_time: subGoalToUpdate.start_date_time,
+        end_date_time: subGoalToUpdate.end_date_time,
       })
     } catch (e: any) {
       // Revert on error
@@ -191,6 +197,9 @@ export function GoalDetail({ goal, onBack, onUpdate }: GoalDetailProps) {
       await updateSubGoal(goal.goalId, subGoal.sub_goal_id, {
         title: editingSubGoalTitle.trim(),
         is_completed: subGoal.completed,
+        is_time_selected: subGoal.is_time_selected,
+        start_date_time: subGoal.start_date_time,
+        end_date_time: subGoal.end_date_time,
       })
     } catch (e: any) {
       setSubGoals(originalSubGoals)
