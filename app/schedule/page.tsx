@@ -270,16 +270,6 @@ export default function SchedulePage() {
   }
 
   const updateSchedule = async (planId: number, updates: Partial<Schedule>) => {
-    // Handle sub-task only updates locally for immediate UI feedback
-    if (updates.subTasks && Object.keys(updates).length === 1) {
-      setSchedules(prevSchedules =>
-        prevSchedules.map(s =>
-          s.planId === planId ? { ...s, subTasks: updates.subTasks } : s
-        )
-      );
-      return;
-    }
-
     const originalSchedule = schedules.find(s => s.planId === planId);
     if (!originalSchedule) {
       console.error("Schedule not found for update");
@@ -287,7 +277,6 @@ export default function SchedulePage() {
       return;
     }
 
-    const apiPayload: Partial<UpdatePlanRequest> = {};
     const categoryMap: { [key: string]: string } = {
       Briefcase: "WORK",
       Book: "STUDY",
@@ -301,18 +290,20 @@ export default function SchedulePage() {
       Gamepad2: "GAME",
     };
 
-    if (updates.title !== undefined) apiPayload.title = updates.title;
-    if (updates.startDateTime !== undefined) apiPayload.start_date_time = updates.startDateTime;
-    if (updates.endDateTime !== undefined) apiPayload.end_date_time = updates.endDateTime;
-    if (updates.allDay !== undefined) apiPayload.all_day = updates.allDay;
-    if (updates.isCompleted !== undefined) apiPayload.is_completed = updates.isCompleted;
-    if (updates.color !== undefined) apiPayload.color = updates.color;
-    if (updates.icon !== undefined) apiPayload.plan_category = categoryMap[updates.icon || ''] || 'ETC';
+    const updatedSchedule = { ...originalSchedule, ...updates };
+
+    const apiPayload: UpdatePlanRequest = {
+      title: updatedSchedule.title,
+      start_date_time: updatedSchedule.startDateTime,
+      end_date_time: updatedSchedule.endDateTime,
+      all_day: updatedSchedule.allDay,
+      is_completed: updatedSchedule.isCompleted,
+      color: updatedSchedule.color || '#2196f3',
+      plan_category: categoryMap[updatedSchedule.icon || ''] || 'ETC',
+    };
 
     try {
-      if (Object.keys(apiPayload).length > 0) {
-        await updatePlan(planId, apiPayload);
-      }
+      await updatePlan(planId, apiPayload);
       
       setRefreshTrigger(prev => prev + 1);
       setShowForm(false);

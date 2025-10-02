@@ -139,7 +139,7 @@ export interface UpdatePlanResponse {
 
 export const updatePlan = async (
   planId: number,
-  planData: Partial<UpdatePlanRequest>
+  planData: UpdatePlanRequest
 ): Promise<UpdatePlanResponse["result"]> => {
   try {
     const response = await axiosInstance.patch<UpdatePlanResponse>(
