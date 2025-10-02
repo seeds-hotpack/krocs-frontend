@@ -21,6 +21,7 @@ interface Goal {
   subGoals: any[]
   createdAt: string
   updatedAt: string
+  color: string
 }
 
 interface GoalFormProps {
@@ -36,7 +37,19 @@ export function GoalForm({ goal, onSubmit, onCancel }: GoalFormProps) {
     startDate: goal?.startDate || new Date().toISOString().split("T")[0],
     endDate: goal?.endDate || new Date().toISOString().split("T")[0],
     duration: goal?.duration || 0,
+    color: goal?.color || "#bbdefb",
   })
+
+  const goalColors = [
+    { name: "GOAL_BLUE", color: "#bbdefb" },
+    { name: "GOAL_RED", color: "#ffcdd2" },
+    { name: "GOAL_GREEN", color: "#c8e6c9" },
+    { name: "GOAL_PURPLE", color: "#e1bee7" },
+    { name: "GOAL_ORANGE", color: "#ffe0b2" },
+    { name: "GOAL_PINK", color: "#f8bbd0" },
+    { name: "GOAL_YELLOW", color: "#fff9c4" },
+    { name: "GOAL_NAVY", color: "#BDBDBD" },
+  ]
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -111,6 +124,21 @@ export function GoalForm({ goal, onSubmit, onCancel }: GoalFormProps) {
                 <SelectItem value="LOW">Low</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label className="text-sm font-medium text-slate-700">Color</Label>
+            <div className="flex gap-2 pt-2">
+              {goalColors.map(({ name, color }) => (
+                <button
+                  key={name}
+                  type="button"
+                  className={`h-8 w-8 rounded-full border-2 ${formData.color === color ? "border-slate-900" : "border-transparent"}`}
+                  style={{ backgroundColor: color }}
+                  onClick={() => setFormData({ ...formData, color })}
+                />
+              ))}
+            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

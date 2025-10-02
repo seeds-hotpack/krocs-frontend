@@ -5,6 +5,7 @@ interface CreateGoalRequest {
   priority: 'LOW' | 'MEDIUM' | 'HIGH';
   startDate: string; // YYYY-MM-DD
   endDate: string;   // YYYY-MM-DD
+  color: string;
 }
 
 interface SubGoal {

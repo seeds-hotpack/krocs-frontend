@@ -79,14 +79,14 @@ const iconOptions = [
 ]
 
 const colorOptions = [
-  { value: "blue", label: "파랑", class: "bg-blue-100 text-blue-600 border-blue-200" },
-  { value: "red", label: "빨강", class: "bg-red-100 text-red-600 border-red-200" },
-  { value: "green", label: "초록", class: "bg-green-100 text-green-600 border-green-200" },
-  { value: "purple", label: "보라", class: "bg-purple-100 text-purple-600 border-purple-200" },
-  { value: "orange", label: "주황", class: "bg-orange-100 text-orange-600 border-orange-200" },
-  { value: "pink", label: "분홍", class: "bg-pink-100 text-pink-600 border-pink-200" },
-  { value: "yellow", label: "노랑", class: "bg-yellow-100 text-yellow-600 border-yellow-200" },
-  { value: "indigo", label: "남색", class: "bg-indigo-100 text-indigo-600 border-indigo-200" },
+  { name: "PLAN_BLUE", color: "#2196f3" },
+  { name: "PLAN_RED", color: "#F44336" },
+  { name: "PLAN_GREEN", color: "#4caf50" },
+  { name: "PLAN_PURPLE", color: "#9c27b0" },
+  { name: "PLAN_ORANGE", color: "#ff9800" },
+  { name: "PLAN_PINK", color: "#e91e63" },
+  { name: "PLAN_YELLOW", color: "#ffeb3b" },
+  { name: "PLAN_NAVY", color: "#607d8b" },
 ]
 
 const formatLocalDatetime = (date: Date) => {
@@ -124,7 +124,7 @@ export function ScheduleForm({ schedule, onSubmit, onCancel, onDelete, defaultDa
       allDay: schedule?.allDay || false,
       reminderMinutes: schedule?.reminderMinutes,
       icon: schedule?.icon || "User",
-      color: schedule?.color || "blue",
+      color: schedule?.color || "#2196f3",
     };
   });
 
@@ -150,7 +150,7 @@ export function ScheduleForm({ schedule, onSubmit, onCancel, onDelete, defaultDa
         allDay: schedule?.allDay || false,
         reminderMinutes: schedule?.reminderMinutes,
         icon: schedule?.icon || "User",
-        color: schedule?.color || "blue",
+        color: schedule?.color || "#2196f3",
       };
     });
   }, [schedule, defaultDate]);
@@ -311,7 +311,6 @@ export function ScheduleForm({ schedule, onSubmit, onCancel, onDelete, defaultDa
   }
 
   const selectedIcon = iconOptions.find((option) => option.value === formData.icon)
-  const selectedColor = colorOptions.find((option) => option.value === formData.color)
 
   return (
     <div className="p-6 max-h-[90vh] overflow-y-auto">
@@ -367,30 +366,26 @@ export function ScheduleForm({ schedule, onSubmit, onCancel, onDelete, defaultDa
 
           <div className="space-y-2">
             <Label className="text-sm font-medium text-slate-700 dark:text-slate-300">색상</Label>
-            <Select value={formData.color} onValueChange={(value) => setFormData({ ...formData, color: value })}>
-              <SelectTrigger className="h-10 border-slate-300 focus:border-slate-900 focus:ring-slate-900 dark:border-slate-600 dark:bg-slate-800">
-                <div className="flex items-center gap-2">
-                  <div className={`w-4 h-4 rounded-full ${selectedColor?.class.split(" ")[0]}`}></div>
-                  <span>{selectedColor?.label}</span>
-                </div>
-              </SelectTrigger>
-              <SelectContent>
-                {colorOptions.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    <div className="flex items-center gap-2">
-                      <div className={`w-4 h-4 rounded-full ${option.class.split(" ")[0]}`}></div>
-                      <span>{option.label}</span>
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div className="flex gap-2 pt-2">
+              {colorOptions.map(({ name, color }) => (
+                <button
+                  key={name}
+                  type="button"
+                  className={`h-8 w-8 rounded-full border-2 ${formData.color === color ? "border-slate-900" : "border-transparent"}`}
+                  style={{ backgroundColor: color }}
+                  onClick={() => setFormData({ ...formData, color })}
+                />
+              ))}
+            </div>
           </div>
         </div>
 
         <div className="p-3 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
           <div className="flex items-center gap-3">
-            <div className={`w-10 h-10 rounded-full border-2 flex items-center justify-center ${selectedColor?.class}`}>
+            <div
+              className="w-10 h-10 rounded-full border-2 flex items-center justify-center text-white"
+              style={{ backgroundColor: formData.color }}
+            >
               {selectedIcon && React.createElement(selectedIcon.icon, { className: "h-5 w-5" })}
             </div>
             <div>

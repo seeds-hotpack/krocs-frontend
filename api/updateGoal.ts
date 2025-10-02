@@ -12,6 +12,7 @@ export interface UpdateGoalRequest {
   startDate: string; // YYYY-MM-DD
   endDate: string;   // YYYY-MM-DD
   isCompleted: boolean;
+  color?: string;
 }
 
 interface UpdateGoalResponse {

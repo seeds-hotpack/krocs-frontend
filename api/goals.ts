@@ -10,6 +10,7 @@ export interface Goal {
   goalId: number;
   title: string;
   priority: 'HIGH' | 'MEDIUM' | 'LOW';
+  color: string;
   startDate: string;
   endDate: string;
   duration: number;
@@ -44,6 +45,7 @@ export const getGoals = async (params: GetGoalsParams): Promise<Goal[]> => {
       goalId: g.goalId,
       title: g.title,
       priority: g.priority,
+      color: g.color,
       startDate: g.startDate,
       endDate: g.endDate,
       duration: duration, // 계산된 duration 추가
@@ -101,6 +103,7 @@ export const getGoalById = async (goalId: number): Promise<Goal> => {
         goalId: g.goalId,
         title: g.title,
         priority: g.priority,
+        color: g.color,
         startDate: g.startDate,
         endDate: g.endDate,
         duration: duration,

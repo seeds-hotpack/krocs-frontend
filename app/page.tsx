@@ -76,7 +76,7 @@ export default function GoalManagementApp() {
     }
   }, [router])
 
-  const createGoal = async (goalData: Omit<Goal, "goalId" | "completed" | "subGoals" | "createdAt" | "updatedAt">) => {
+  const createGoal = async (goalData: Omit<Goal, "goalId" | "completed" | "subGoals" | "createdAt" | "updatedAt"> & { color: string }) => {
     setLoading(true)
     try {
       const apiData = {
@@ -84,6 +84,7 @@ export default function GoalManagementApp() {
         priority: goalData.priority,
         startDate: goalData.startDate,
         endDate: goalData.endDate,
+        color: goalData.color,
       }
       await createGoalApi(1, apiData)
       await fetchGoals(selectedDate, filterStatus)
@@ -111,6 +112,7 @@ export default function GoalManagementApp() {
     if (goalData.startDate !== undefined) apiPayload.startDate = goalData.startDate;
     if (goalData.endDate !== undefined) apiPayload.endDate = goalData.endDate;
     if (goalData.completed !== undefined) apiPayload.isCompleted = goalData.completed;
+    if (goalData.color !== undefined) apiPayload.color = goalData.color;
 
     try {
       const response = await updateGoalApi(goalId, 1, apiPayload);
