@@ -5,7 +5,7 @@ import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { GoalDetail } from "@/components/goal-detail"
 import { getGoalById, Goal } from '@/api/goals'
-import { update_Goal } from '@/api/updateGoal'
+import { update_Goal, type UpdateGoalRequest } from '@/api/updateGoal'
 
 // goal-detail.tsx에서 사용하는 onUpdate와 동일한 인터페이스를 정의합니다.
 interface UpdateGoalData {
@@ -62,12 +62,18 @@ export default function GoalDetailPage() {
   const handleUpdate = async (updatedData: Partial<UpdateGoalData>) => {
     if (!goal) return;
 
-    const apiPayload = {
-        ...(updatedData.title && { title: updatedData.title }),
-        ...(updatedData.priority && { priority: updatedData.priority }),
-        ...(updatedData.startDate && { startDate: updatedData.startDate }),
-        ...(updatedData.endDate && { endDate: updatedData.endDate }),
-        ...(updatedData.completed !== undefined && { isCompleted: updatedData.completed }),
+    const payload = {
+      ...goal,
+      ...updatedData,
+    };
+
+    const apiPayload: UpdateGoalRequest = {
+      title: payload.title,
+      priority: payload.priority,
+      startDate: payload.startDate,
+      endDate: payload.endDate,
+      isCompleted: payload.completed,
+      color: payload.color,
     };
 
     try {

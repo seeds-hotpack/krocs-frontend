@@ -60,6 +60,7 @@ export function GoalDetail({ goal, onBack, onUpdate }: GoalDetailProps) {
     setError(null)
     try {
       const res = await getSubGoals(goal.goalId)
+      console.log("Fetched sub-goals:", res.result.subGoals);
       setSubGoals(
         res.result.subGoals
           .map((sg: APISubGoal) => ({

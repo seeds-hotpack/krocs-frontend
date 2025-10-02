@@ -110,6 +110,9 @@ export const deleteSubGoal = async (
 export interface UpdateSubGoalRequest {
   title: string;
   is_completed: boolean;
+  is_time_selected?: boolean;
+  start_date_time?: string;
+  end_date_time?: string;
 }
 
 // 응답 Result 타입 정의

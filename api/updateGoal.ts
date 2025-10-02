@@ -12,7 +12,7 @@ export interface UpdateGoalRequest {
   startDate: string; // YYYY-MM-DD
   endDate: string;   // YYYY-MM-DD
   isCompleted: boolean;
-  color?: string;
+  color: string;
 }
 
 interface UpdateGoalResponse {
@@ -36,7 +36,7 @@ interface UpdateGoalResponse {
 export const update_Goal = async (
   goalId: number,
   userId: number,
-  goalData: Partial<UpdateGoalRequest>
+  goalData: UpdateGoalRequest
 ): Promise<UpdateGoalResponse> => {
   try {
     const response = await axiosInstance.patch<UpdateGoalResponse>(

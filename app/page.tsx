@@ -105,14 +105,16 @@ export default function GoalManagementApp() {
     const optimisticUpdatedGoal = { ...originalGoal, ...goalData };
     setGoals(prevGoals => prevGoals.map(g => g.goalId === goalId ? optimisticUpdatedGoal : g));
 
-    // Build the partial payload for the PATCH request
-    const apiPayload: Partial<UpdateGoalRequest> = {};
-    if (goalData.title !== undefined) apiPayload.title = goalData.title;
-    if (goalData.priority !== undefined) apiPayload.priority = goalData.priority;
-    if (goalData.startDate !== undefined) apiPayload.startDate = goalData.startDate;
-    if (goalData.endDate !== undefined) apiPayload.endDate = goalData.endDate;
-    if (goalData.completed !== undefined) apiPayload.isCompleted = goalData.completed;
-    if (goalData.color !== undefined) apiPayload.color = goalData.color;
+    const updatedGoal = { ...originalGoal, ...goalData };
+
+    const apiPayload: UpdateGoalRequest = {
+      title: updatedGoal.title,
+      priority: updatedGoal.priority,
+      startDate: updatedGoal.startDate,
+      endDate: updatedGoal.endDate,
+      isCompleted: updatedGoal.completed,
+      color: updatedGoal.color,
+    };
 
     try {
       const response = await updateGoalApi(goalId, 1, apiPayload);

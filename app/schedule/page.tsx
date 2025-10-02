@@ -290,6 +290,17 @@ export default function SchedulePage() {
       Gamepad2: "GAME",
     };
 
+    const colorNameToHexMap: { [key: string]: string } = {
+      "blue": "#2196f3",
+      "red": "#f44336",
+      "green": "#4caf50",
+      "purple": "#9c27b0",
+      "orange": "#ff9800",
+      "pink": "#e91e63",
+      "yellow": "#ffeb3b",
+      "indigo": "#607d8b",
+    };
+
     const updatedSchedule = { ...originalSchedule, ...updates };
 
     const apiPayload: UpdatePlanRequest = {
@@ -298,7 +309,7 @@ export default function SchedulePage() {
       end_date_time: updatedSchedule.endDateTime,
       all_day: updatedSchedule.allDay,
       is_completed: updatedSchedule.isCompleted,
-      color: updatedSchedule.color || '#2196f3',
+      color: colorNameToHexMap[updatedSchedule.color || 'blue'] || '#2196f3',
       plan_category: categoryMap[updatedSchedule.icon || ''] || 'ETC',
     };
 
