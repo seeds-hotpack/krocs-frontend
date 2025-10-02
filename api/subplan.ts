@@ -67,12 +67,10 @@ export interface CreatePlanResponse {
   message: string;
   result: {
     title: string;
-    color: string;            // ✅ 추가
+    color: string;
     plan_id: number;
-    goal_id: number;
-    sub_goal_id: number;
-    sub_plans: SubPlan[];     // ✅ 타입 명확히
-    plan_category: string;    // ✅ 추가
+    sub_plans: SubPlan[];
+    plan_category: string;
     start_date_time: string;
     end_date_time: string;
     all_day: boolean;
