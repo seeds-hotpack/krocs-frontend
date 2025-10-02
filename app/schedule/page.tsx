@@ -88,11 +88,6 @@ export default function SchedulePage() {
         const formattedDate = formatDateToYYYYMMDD(selectedDate)
         const fetchedPlans: Plan[] = await getPlans(formattedDate)
 
-        const reverseColorMap: { [key: string]: string } = {
-          BLUE: "blue", RED: "red", GREEN: "green", PURPLE: "purple",
-          ORANGE: "orange", PINK: "pink", YELLOW: "yellow", NAVY: "indigo",
-        };
-
         const reverseCategoryMap: { [key: string]: string } = {
           WORK: "Briefcase",
           STUDY: "Book",
@@ -111,7 +106,7 @@ export default function SchedulePage() {
           goalId: plan.goal_id,
           subGoalId: plan.sub_goal_id,
           title: plan.title,
-          color: reverseColorMap[plan.color] || "blue",
+          color: plan.color || "#2196f3",
           icon: reverseCategoryMap[plan.plan_category] || "User",
           subTasks: plan.sub_plans.map(subPlan => ({
             id: String(subPlan.sub_plan_id),
@@ -226,12 +221,7 @@ export default function SchedulePage() {
 
 
   const createSchedule = async (scheduleData: Omit<Schedule, 'planId' | 'isCompleted' | 'createdAt' | 'updatedAt' | 'type'>) => {
-    const colorMap: { [key: string]: string } = {
-      blue: "BLUE", red: "RED", green: "GREEN", purple: "PURPLE",
-      orange: "ORANGE", pink: "PINK", yellow: "YELLOW", indigo: "NAVY",
-    };
-
-    const categoryMap: { [key: string]: string } = {
+    const categoryMap: { [key:string]: string } = {
       Briefcase: "WORK",
       Book: "STUDY",
       Dumbbell: "WORKOUT",
@@ -243,16 +233,14 @@ export default function SchedulePage() {
       Camera: "PHOTO",
       Gamepad2: "GAME",
     };
-
-    const apiPayload: CreatePlanRequest = {
-      title: scheduleData.title,
-      start_date_time: scheduleData.startDateTime,
-      end_date_time: scheduleData.endDateTime,
-      all_day: scheduleData.allDay,
-      color: colorMap[scheduleData.color || 'blue'] || "BLUE",
-      plan_category: categoryMap[scheduleData.icon || ''] || "ETC",
-    };
-
+        const apiPayload: CreatePlanRequest = {
+          title: scheduleData.title,
+          start_date_time: scheduleData.startDateTime,
+          end_date_time: scheduleData.endDateTime,
+          all_day: scheduleData.allDay,
+          color: scheduleData.color || '#2196f3',
+          plan_category: categoryMap[scheduleData.icon || ''] || "ETC",
+        };
     try {
       const newPlanFromApi = await createPlan(apiPayload);
 
@@ -289,7 +277,6 @@ export default function SchedulePage() {
     }
 
     const apiPayload: Partial<UpdatePlanRequest> = {};
-    const colorMap: { [key: string]: string } = { blue: "BLUE", red: "RED", green: "GREEN", purple: "PURPLE", orange: "ORANGE", pink: "PINK", yellow: "YELLOW", indigo: "NAVY" };
     const categoryMap: { [key: string]: string } = {
       Briefcase: "WORK",
       Book: "STUDY",
@@ -308,7 +295,7 @@ export default function SchedulePage() {
     if (updates.endDateTime !== undefined) apiPayload.end_date_time = updates.endDateTime;
     if (updates.allDay !== undefined) apiPayload.all_day = updates.allDay;
     if (updates.isCompleted !== undefined) apiPayload.is_completed = updates.isCompleted;
-    if (updates.color !== undefined) apiPayload.color = colorMap[updates.color || 'blue'] || 'BLUE';
+    if (updates.color !== undefined) apiPayload.color = updates.color;
     if (updates.icon !== undefined) apiPayload.plan_category = categoryMap[updates.icon || ''] || 'ETC';
 
     try {
