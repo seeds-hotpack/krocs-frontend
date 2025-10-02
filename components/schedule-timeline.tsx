@@ -304,6 +304,7 @@ export const ScheduleTimeline = forwardRef<{
   }
 
   const getScheduleColor = (color?: string) => {
+    console.log("getScheduleColor received color:", color);
     const colorMap = {
       blue: "bg-blue-500 border-blue-600 text-white",
       red: "bg-red-500 border-red-600 text-white",
@@ -318,6 +319,7 @@ export const ScheduleTimeline = forwardRef<{
   }
 
   const getBubbleColor = (color?: string) => {
+    console.log("getBubbleColor received color:", color);
     const colorMap = {
       blue: "bg-blue-50 border-blue-200 text-blue-900 dark:bg-blue-950 dark:border-blue-800 dark:text-blue-100",
       red: "bg-red-50 border-red-200 text-red-900 dark:bg-red-950 dark:border-red-800 dark:text-red-100",
