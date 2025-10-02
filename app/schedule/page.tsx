@@ -88,6 +88,17 @@ export default function SchedulePage() {
         const formattedDate = formatDateToYYYYMMDD(selectedDate)
         const fetchedPlans: Plan[] = await getPlans(formattedDate)
 
+        const hexToColorNameMap: { [key: string]: string } = {
+          "#2196f3": "blue",
+          "#f44336": "red",
+          "#4caf50": "green",
+          "#9c27b0": "purple",
+          "#ff9800": "orange",
+          "#e91e63": "pink",
+          "#ffeb3b": "yellow",
+          "#607d8b": "indigo",
+        };
+
         const reverseCategoryMap: { [key: string]: string } = {
           WORK: "Briefcase",
           STUDY: "Book",
@@ -106,7 +117,7 @@ export default function SchedulePage() {
           goalId: plan.goal_id,
           subGoalId: plan.sub_goal_id,
           title: plan.title,
-          color: plan.color || "#2196f3",
+          color: hexToColorNameMap[plan.color.toLowerCase()] || "blue",
           icon: reverseCategoryMap[plan.plan_category] || "User",
           subTasks: plan.sub_plans.map(subPlan => ({
             id: String(subPlan.sub_plan_id),
