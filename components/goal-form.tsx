@@ -80,85 +80,104 @@ export function GoalForm({ goal, onSubmit, onCancel }: GoalFormProps) {
   }
 
   return (
-    <Card className="w-full border-0">
-      <CardHeader className="border-b border-slate-200">
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-xl font-semibold text-slate-900">{goal ? "Edit Goal" : "New Goal"}</CardTitle>
-          <Button variant="ghost" size="sm" onClick={onCancel} className="hover:bg-slate-100 rounded-md">
-            <X className="h-5 w-5" />
-          </Button>
+    <Card className="w-full border border-[#D3E6ED] bg-white/95 shadow-lg">
+      <CardHeader className="flex flex-row items-center justify-between border-b border-[#D3E6ED] bg-[#EEF5F7] px-6 py-4">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-wide text-[#5D6E72]">
+            {goal ? "목표 수정" : "새 목표"}
+          </p>
+          <CardTitle className="mt-1 text-2xl font-semibold text-[#0F1C21]">
+            {goal ? "목표 내용을 업데이트할게요" : "어떤 목표를 세울까요?"}
+          </CardTitle>
         </div>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={onCancel}
+          className="h-9 w-9 rounded-full border border-[#99C6D6] bg-white text-[#0F1C21] shadow-sm hover:bg-white/80"
+        >
+          <X className="h-4 w-4" />
+        </Button>
       </CardHeader>
-      <CardContent className="p-6">
+
+      <CardContent className="px-6 pb-6 pt-5">
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-2">
-            <Label htmlFor="title" className="text-sm font-medium text-slate-700">
-              Goal Title
+            <Label htmlFor="title" className="text-sm font-semibold text-[#0F1C21]">
+              목표 이름
             </Label>
             <Input
               id="title"
               value={formData.title}
               onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-              placeholder="Enter your goal"
-              className="h-10 border-slate-300 focus:border-slate-900 focus:ring-slate-900"
+              placeholder="예: 매일 아침 20분 스트레칭"
+              className="h-11 rounded-xl border-[#D3E6ED] bg-[#EEF5F7] text-sm text-[#0F1C21] placeholder:text-[#5D6E72] focus:border-[#99C6D6] focus:ring-[#99C6D6]"
               required
-              onInvalid={(e) => (e.target as HTMLInputElement).setCustomValidity("목표명을 입력해 주세요.")}
+              onInvalid={(e) => (e.target as HTMLInputElement).setCustomValidity("목표 이름을 입력해 주세요.")}
               onInput={(e) => (e.target as HTMLInputElement).setCustomValidity("")}
             />
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="priority" className="text-sm font-medium text-slate-700">
-              Priority
-            </Label>
-            <Select
-              value={formData.priority}
-              onValueChange={(value: "LOW" | "MEDIUM" | "HIGH") => setFormData({ ...formData, priority: value })}
-            >
-              <SelectTrigger className="h-10 border-slate-300 focus:border-slate-900 focus:ring-slate-900">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="HIGH">High</SelectItem>
-                <SelectItem value="MEDIUM">Medium</SelectItem>
-                <SelectItem value="LOW">Low</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="priority" className="text-sm font-semibold text-[#0F1C21]">
+                중요도
+              </Label>
+              <Select
+                value={formData.priority}
+                onValueChange={(value: "LOW" | "MEDIUM" | "HIGH") => setFormData({ ...formData, priority: value })}
+              >
+                <SelectTrigger className="h-11 rounded-xl border-[#D3E6ED] bg-[#EEF5F7] text-sm text-[#0F1C21] focus:border-[#99C6D6] focus:ring-[#99C6D6]">
+                  <SelectValue placeholder="중요도를 선택하세요" />
+                </SelectTrigger>
+                <SelectContent className="rounded-2xl border border-[#D3E6ED] bg-white text-[#0F1C21]">
+                  <SelectItem value="HIGH">높음</SelectItem>
+                  <SelectItem value="MEDIUM">보통</SelectItem>
+                  <SelectItem value="LOW">낮음</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
-          <div className="space-y-2">
-            <Label className="text-sm font-medium text-slate-700">Color</Label>
-            <div className="flex gap-2 pt-2">
-              {goalColors.map(({ name, color }) => (
-                <button
-                  key={name}
-                  type="button"
-                  className={`h-8 w-8 rounded-full border-2 ${formData.color === color ? "border-slate-900" : "border-transparent"}`}
-                  style={{ backgroundColor: color }}
-                  onClick={() => setFormData({ ...formData, color })}
-                />
-              ))}
+            <div className="space-y-2">
+              <Label className="text-sm font-semibold text-[#0F1C21]">카드 컬러</Label>
+              <div className="flex flex-wrap gap-2">
+                {goalColors.map(({ name, color }) => {
+                  const isSelected = formData.color === color
+                  return (
+                    <button
+                      key={name}
+                      type="button"
+                      className={`h-9 w-9 rounded-full border-2 transition ${
+                        isSelected ? "border-[#0F1C21] shadow-sm" : "border-transparent"
+                      }`}
+                      style={{ backgroundColor: color }}
+                      onClick={() => setFormData({ ...formData, color })}
+                      aria-label={`${name} 선택`}
+                    />
+                  )
+                })}
+              </div>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="startDate" className="text-sm font-medium text-slate-700">
-                Start Date
+              <Label htmlFor="startDate" className="text-sm font-semibold text-[#0F1C21]">
+                시작일
               </Label>
               <Input
                 id="startDate"
                 type="date"
                 value={formData.startDate}
                 onChange={(e) => handleDateChange("startDate", e.target.value)}
-                className="h-10 border-slate-300 focus:border-slate-900 focus:ring-slate-900"
+                className="h-11 rounded-xl border-[#D3E6ED] bg-[#EEF5F7] text-sm text-[#0F1C21] focus:border-[#99C6D6] focus:ring-[#99C6D6]"
                 required
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="endDate" className="text-sm font-medium text-slate-700">
-                End Date
+              <Label htmlFor="endDate" className="text-sm font-semibold text-[#0F1C21]">
+                종료일
               </Label>
               <Input
                 id="endDate"
@@ -166,29 +185,30 @@ export function GoalForm({ goal, onSubmit, onCancel }: GoalFormProps) {
                 value={formData.endDate}
                 onChange={(e) => handleDateChange("endDate", e.target.value)}
                 min={formData.startDate}
-                className="h-10 border-slate-300 focus:border-slate-900 focus:ring-slate-900"
+                className="h-11 rounded-xl border-[#D3E6ED] bg-[#EEF5F7] text-sm text-[#0F1C21] focus:border-[#99C6D6] focus:ring-[#99C6D6]"
                 required
               />
             </div>
           </div>
 
-          <div className="space-y-2">
-            <p className="text-sm font-medium text-slate-700">
-              Duration : {formData.duration} (days)
-            </p>
+          <div className="rounded-2xl border border-dashed border-[#D3E6ED] bg-[#EEF5F7] px-4 py-3 text-sm text-[#5D6E72]">
+            선택한 기간은 총 <span className="font-semibold text-[#0F1C21]">{formData.duration}</span>일이에요.
           </div>
 
-          <div className="flex gap-3 pt-4">
-            <Button type="submit" className="flex-1 bg-slate-900 hover:bg-slate-800 text-white font-medium">
-              {goal ? "Update Goal" : "Create Goal"}
+          <div className="flex flex-col gap-2 pt-2 sm:flex-row">
+            <Button
+              type="submit"
+              className="flex-1 rounded-full bg-[#BBDCE5] px-4 py-2 text-sm font-semibold text-[#0F1C21] shadow-sm hover:bg-[#BBDCE5]/80"
+            >
+              {goal ? "목표 수정하기" : "목표 만들기"}
             </Button>
             <Button
               type="button"
-              variant="outline"
+              variant="ghost"
               onClick={onCancel}
-              className="border-slate-300 hover:bg-slate-50 bg-transparent"
+              className="flex-1 rounded-full border border-[#99C6D6] bg-white px-4 py-2 text-sm font-semibold text-[#0F1C21] shadow-sm hover:bg-white/80"
             >
-              Cancel
+              취소
             </Button>
           </div>
         </form>

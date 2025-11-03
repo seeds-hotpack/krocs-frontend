@@ -4,7 +4,7 @@ import { useParams } from 'next/navigation';
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { GoalDetail } from "@/components/goal-detail"
-import { getGoalById, Goal } from '@/api/goals'
+import { getGoalById, Goal, deleteBigGoal } from '@/api/goals'
 import { update_Goal, type UpdateGoalRequest } from '@/api/updateGoal'
 
 // goal-detail.tsx에서 사용하는 onUpdate와 동일한 인터페이스를 정의합니다.
@@ -14,6 +14,7 @@ interface UpdateGoalData {
   startDate?: string;
   endDate?: string;
   completed?: boolean;
+  color?: string;
 }
 
 export default function GoalDetailPage() {
@@ -82,6 +83,10 @@ export default function GoalDetailPage() {
       
       setGoal(prevGoal => {
         if (!prevGoal) return null;
+        const start = new Date(updatedGoalFromApi.startDate);
+        const end = new Date(updatedGoalFromApi.endDate);
+        const calculatedDuration = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+
         return {
             ...prevGoal,
             title: updatedGoalFromApi.title,
@@ -89,11 +94,25 @@ export default function GoalDetailPage() {
             startDate: updatedGoalFromApi.startDate,
             endDate: updatedGoalFromApi.endDate,
             completed: updatedGoalFromApi.isCompleted,
+            color: updatedGoalFromApi.color,
+            duration: calculatedDuration,
         };
       });
     } catch (err) {
       console.error("Failed to update goal:", err);
       setError("목표 업데이트에 실패했습니다.");
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!goal) return;
+    try {
+      await deleteBigGoal(goal.goalId);
+      alert("목표가 삭제되었습니다.");
+      router.push('/');
+    } catch (err: any) {
+      console.error("Failed to delete goal:", err);
+      alert(err?.response?.data?.message || "목표 삭제에 실패했습니다.");
     }
   };
 
@@ -114,6 +133,7 @@ export default function GoalDetailPage() {
       goal={goal}
       onBack={() => router.push('/')}
       onUpdate={handleUpdate}
+      onDelete={handleDelete}
     />
   );
 }

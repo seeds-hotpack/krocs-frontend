@@ -1,56 +1,73 @@
-'use client'
+"use client"
 
 import { useState, useEffect, useRef, useMemo } from "react"
+import Link from "next/link"
+
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Calendar, ChevronDown, ChevronUp, Plus, Settings, Bell, Sun, Moon, Monitor, Menu, X, AlertCircle } from "lucide-react"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+
+import { Calendar, CheckCircle2, ChevronDown, Clock, Plus, Target } from "lucide-react"
+
 import { ScheduleTimeline } from "@/components/schedule-timeline"
 import { ScheduleCalendar } from "@/components/schedule-calendar"
 import { ScheduleForm } from "@/components/schedule-form"
-import { useTheme } from "next-themes"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import Link from "next/link"
-import { getGoals, type Goal } from "@/api/goals";
-import { getSubGoals, updateSubGoal } from "@/api/subgoals";
-import { getPlans, Plan, SubPlan, createPlan, updatePlan, deletePlan, createSubPlans, type CreatePlanRequest, type UpdatePlanRequest } from "@/api/subplan"
 
-// 컴포넌트에서 사용할 데이터 인터페이스
+import { getGoals, type Goal } from "@/api/goals"
+import { getSubGoals, updateSubGoal } from "@/api/subgoals"
+import {
+  getPlans,
+  createPlan,
+  updatePlan,
+  deletePlan,
+  createSubPlans,
+  type Plan,
+  type CreatePlanRequest,
+  type UpdatePlanRequest,
+} from "@/api/subplan"
+
 export interface SubTask {
-  id: string;
-  title: string;
-  completed: boolean;
-}
-export interface Schedule {
-  planId: number;
-  goalId?: number;
-  subGoalId?: number;
-  title: string;
-  subTasks?: SubTask[];
-  startDateTime: string;
-  endDateTime: string;
-  allDay: boolean;
-  isCompleted: boolean;
-  completedAt?: string | null;
-  createdAt: string;
-  updatedAt: string;
-  icon?: string;
-  color?: string;
-  reminderMinutes?: number;
-  type: 'schedule' | 'subgoal';
+  id: string
+  title: string
+  completed: boolean
 }
 
-// YYYY-MM-DD 형식으로 날짜를 변환하는 헬퍼 함수
+export interface Schedule {
+  planId: number
+  goalId?: number
+  subGoalId?: number
+  title: string
+  subTasks?: SubTask[]
+  startDateTime: string
+  endDateTime: string
+  allDay: boolean
+  isCompleted: boolean
+  completedAt?: string | null
+  createdAt: string
+  updatedAt: string
+  icon?: string
+  color?: string
+  reminderMinutes?: number
+  type: "schedule" | "subgoal"
+  isTimeSelected?: boolean
+}
+
 const formatDateToYYYYMMDD = (date: Date): string => {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-};
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, "0")
+  const day = String(date.getDate()).padStart(2, "0")
+  return `${year}-${month}-${day}`
+}
+
+const FILTER_LABELS: Record<"all" | "schedules" | "subgoals", string> = {
+  all: "전체 보기",
+  schedules: "일정만",
+  subgoals: "소목표만",
+}
 
 export default function SchedulePage() {
   const [schedules, setSchedules] = useState<Schedule[]>([])
-  const [subGoalSchedules, setSubGoalSchedules] = useState<Schedule[]>([]);
+  const [subGoalSchedules, setSubGoalSchedules] = useState<Schedule[]>([])
   const [goalList, setGoalList] = useState<Goal[]>([])
   const [selectedDate, setSelectedDate] = useState(new Date())
   const [showCalendar, setShowCalendar] = useState(false)
@@ -58,28 +75,14 @@ export default function SchedulePage() {
   const [editingSchedule, setEditingSchedule] = useState<Schedule | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [sidebarOpen, setSidebarOpen] = useState(false)
   const [refreshTrigger, setRefreshTrigger] = useState(0)
-  const [expandedSummary, setExpandedSummary] = useState<string | null>(null); // State for expanded summary
-  const timelineRef = useRef<{ scrollToCurrentTime: () => void; scrollToSchedule: (planId: number) => void }>(null)
-  const { theme, setTheme } = useTheme()
-  const [filterType, setFilterType] = useState<'all' | 'schedules' | 'subgoals'>('schedules');
-  const [scrollToPlanId, setScrollToPlanId] = useState<number | null>(null);
+  const [filterType, setFilterType] = useState<"all" | "schedules" | "subgoals">("all")
 
-  const handleViewScheduleInTimeline = (schedule: Schedule) => {
-    const newSelectedDate = new Date(schedule.startDateTime);
-    // Only update selectedDate if it's a different date
-    if (newSelectedDate.toDateString() !== selectedDate.toDateString()) {
-      setSelectedDate(newSelectedDate);
-    }
-    // Always set scrollToPlanId, as it's cleared after processing
-    setScrollToPlanId(schedule.planId);
-    setShowCalendar(false); // Close calendar if open
-    setSidebarOpen(false); // Close sidebar if open
-  };
+  const timelineRef = useRef<{
+    scrollToCurrentTime: () => void
+    scrollToSchedule: (planId: number) => void
+  }>(null)
 
-
-  // 일정 목록 가져오기
   useEffect(() => {
     const fetchSchedules = async () => {
       setLoading(true)
@@ -88,7 +91,7 @@ export default function SchedulePage() {
         const formattedDate = formatDateToYYYYMMDD(selectedDate)
         const fetchedPlans: Plan[] = await getPlans(formattedDate)
 
-        const hexToColorNameMap: { [key: string]: string } = {
+        const hexToColorNameMap: Record<string, string> = {
           "#2196f3": "blue",
           "#f44336": "red",
           "#4caf50": "green",
@@ -97,9 +100,9 @@ export default function SchedulePage() {
           "#e91e63": "pink",
           "#ffeb3b": "yellow",
           "#607d8b": "indigo",
-        };
+        }
 
-        const reverseCategoryMap: { [key: string]: string } = {
+        const reverseCategoryMap: Record<string, string> = {
           WORK: "Briefcase",
           STUDY: "Book",
           WORKOUT: "Dumbbell",
@@ -110,20 +113,22 @@ export default function SchedulePage() {
           MUSIC: "Music",
           PHOTO: "Camera",
           GAME: "Gamepad2",
-        };
+        }
 
-        const adaptedSchedules: Schedule[] = fetchedPlans.map(plan => ({
+        const adaptedSchedules: Schedule[] = fetchedPlans.map((plan) => ({
           planId: plan.plan_id,
           goalId: plan.goal_id,
           subGoalId: plan.sub_goal_id,
           title: plan.title,
           color: hexToColorNameMap[plan.color.toLowerCase()] || "blue",
           icon: reverseCategoryMap[plan.plan_category] || "User",
-          subTasks: plan.sub_plans.map(subPlan => ({
-            id: String(subPlan.sub_plan_id),
-            title: subPlan.title,
-            completed: subPlan.is_completed,
-          })).sort((a, b) => Number(a.id) - Number(b.id)), // Sub-tasks sorted by ID
+          subTasks: plan.sub_plans
+            .map((subPlan) => ({
+              id: String(subPlan.sub_plan_id),
+              title: subPlan.title,
+              completed: subPlan.is_completed,
+            }))
+            .sort((a, b) => Number(a.id) - Number(b.id)),
           startDateTime: plan.start_date_time,
           endDateTime: plan.end_date_time,
           allDay: plan.all_day,
@@ -131,13 +136,13 @@ export default function SchedulePage() {
           completedAt: plan.completed_at,
           createdAt: plan.created_at,
           updatedAt: plan.updated_at,
-          type: 'schedule',
-        }));
+          type: "schedule",
+        }))
 
         setSchedules(adaptedSchedules)
       } catch (err) {
         setError("일정을 불러오는 데 실패했습니다. 다시 시도해 주세요.")
-        setSchedules([]);
+        setSchedules([])
         console.error(err)
       } finally {
         setLoading(false)
@@ -147,92 +152,91 @@ export default function SchedulePage() {
     fetchSchedules()
   }, [selectedDate, refreshTrigger])
 
-  // 목표 목록 및 세부 목표 가져오기
   useEffect(() => {
     const fetchGoalsAndSubGoals = async () => {
       try {
-        const goals = await getGoals({ searchDate: formatDateToYYYYMMDD(selectedDate) });
-        setGoalList(goals);
+        const goals = await getGoals({ searchDate: formatDateToYYYYMMDD(selectedDate) })
+        setGoalList(goals)
 
-        const subGoalPromises = goals.map(goal => getSubGoals(goal.goalId));
-        const subGoalResponses = await Promise.all(subGoalPromises);
-        
-        const timeSelectedSubGoals: Schedule[] = [];
-        const selectedDay = formatDateToYYYYMMDD(selectedDate);
+        const subGoalResponses = await Promise.all(goals.map((goal) => getSubGoals(goal.goalId)))
+
+        const timeSelectedSubGoals: Schedule[] = []
+        const selectedDay = formatDateToYYYYMMDD(selectedDate)
 
         subGoalResponses.forEach((res, index) => {
-          const goalId = goals[index].goalId;
-          res.result.subGoals.forEach(sg => {
-            const sgDate = sg.start_date_time.split('T')[0];
-            if (sg.is_time_selected && sgDate === selectedDay) {
+          const goalId = goals[index].goalId
+          res.result.subGoals.forEach((sg) => {
+            if (!sg.is_time_selected) {
+              return
+            }
+            const startDate = sg.start_date_time?.split("T")[0]
+            if (startDate === selectedDay) {
               timeSelectedSubGoals.push({
                 planId: sg.sub_goal_id,
-                goalId: goalId,
+                goalId,
+                subGoalId: sg.sub_goal_id,
                 title: sg.title,
                 startDateTime: sg.start_date_time,
                 endDateTime: sg.end_date_time,
                 isCompleted: sg.is_completed,
                 allDay: true,
-                color: 'red',
-                type: 'subgoal',
+                color: "red",
+                type: "subgoal",
                 subTasks: [],
                 createdAt: new Date().toISOString(),
                 updatedAt: new Date().toISOString(),
-              });
+                isTimeSelected: true,
+              })
             }
-          });
-        });
-        setSubGoalSchedules(timeSelectedSubGoals);
+          })
+        })
 
+        setSubGoalSchedules(timeSelectedSubGoals)
       } catch (err) {
-        console.error("Failed to fetch goals or sub-goals:", err);
-      }
-    };
-    fetchGoalsAndSubGoals();
-  }, [selectedDate, refreshTrigger]);
-
-  useEffect(() => {
-    const handleResize = () => {
-      if (window.innerWidth >= 1024) {
-        setSidebarOpen(false)
+        console.error("Failed to fetch goals or sub-goals:", err)
       }
     }
-    window.addEventListener('resize', handleResize)
-    return () => window.removeEventListener('resize', handleResize)
-  }, [])
 
-  const onUpdateSubGoal = (goalId: number, subGoalId: number, updates: { isCompleted: boolean, title: string }) => {
-    // Optimistic update
-    setSubGoalSchedules(prev => prev.map(sg => 
-      sg.planId === subGoalId ? { ...sg, isCompleted: updates.isCompleted } : sg
-    ));
+    fetchGoalsAndSubGoals()
+  }, [selectedDate, refreshTrigger])
+
+  const onUpdateSubGoal = (goalId: number, subGoalId: number, updates: { isCompleted: boolean; title: string }) => {
+    const currentSubGoal = subGoalSchedules.find((sg) => sg.planId === subGoalId)
+
+    setSubGoalSchedules((prev) =>
+      prev.map((sg) => (sg.planId === subGoalId ? { ...sg, isCompleted: updates.isCompleted } : sg))
+    )
 
     updateSubGoal(goalId, subGoalId, {
       title: updates.title,
       is_completed: updates.isCompleted,
-    }).catch(err => {
-      console.error("Failed to update sub-goal, reverting:", err);
-      // Revert
-      setSubGoalSchedules(prev => prev.map(sg => 
-        sg.planId === subGoalId ? { ...sg, isCompleted: !updates.isCompleted } : sg
-      ));
-    });
+      is_time_selected: Boolean(currentSubGoal?.isTimeSelected),
+      start_date_time: currentSubGoal?.isTimeSelected ? currentSubGoal?.startDateTime : undefined,
+      end_date_time: currentSubGoal?.isTimeSelected ? currentSubGoal?.endDateTime : undefined,
+    }).catch((err) => {
+      console.error("Failed to update sub-goal, reverting:", err)
+      setSubGoalSchedules((prev) =>
+        prev.map((sg) => (sg.planId === subGoalId ? { ...sg, isCompleted: !updates.isCompleted } : sg))
+      )
+    })
   }
 
   const timelineItems = useMemo(() => {
-    if (filterType === 'schedules') {
-      return schedules;
+    if (filterType === "schedules") {
+      return schedules
     }
-    if (filterType === 'subgoals') {
-      return subGoalSchedules;
+    if (filterType === "subgoals") {
+      return subGoalSchedules
     }
-    // 'all'
-    return [...schedules, ...subGoalSchedules].sort((a, b) => new Date(a.startDateTime).getTime() - new Date(b.startDateTime).getTime());
-  }, [schedules, subGoalSchedules, filterType]);
+    return [...schedules, ...subGoalSchedules].sort(
+      (a, b) => new Date(a.startDateTime).getTime() - new Date(b.startDateTime).getTime()
+    )
+  }, [schedules, subGoalSchedules, filterType])
 
-
-  const createSchedule = async (scheduleData: Omit<Schedule, 'planId' | 'isCompleted' | 'createdAt' | 'updatedAt' | 'type'>) => {
-    const categoryMap: { [key:string]: string } = {
+  const createSchedule = async (
+    scheduleData: Omit<Schedule, "planId" | "isCompleted" | "createdAt" | "updatedAt" | "type">
+  ) => {
+    const categoryMap: Record<string, string> = {
       Briefcase: "WORK",
       Book: "STUDY",
       Dumbbell: "WORKOUT",
@@ -243,41 +247,42 @@ export default function SchedulePage() {
       Music: "MUSIC",
       Camera: "PHOTO",
       Gamepad2: "GAME",
-    };
-        const apiPayload: CreatePlanRequest = {
-          title: scheduleData.title,
-          start_date_time: scheduleData.startDateTime,
-          end_date_time: scheduleData.endDateTime,
-          all_day: scheduleData.allDay,
-          color: scheduleData.color || '#2196f3',
-          plan_category: categoryMap[scheduleData.icon || ''] || "ETC",
-        };
+    }
+
+    const apiPayload: CreatePlanRequest = {
+      title: scheduleData.title,
+      start_date_time: scheduleData.startDateTime,
+      end_date_time: scheduleData.endDateTime,
+      all_day: scheduleData.allDay,
+      color: scheduleData.color || "#2196f3",
+      plan_category: categoryMap[scheduleData.icon || ""] || "ETC",
+    }
+
     try {
-      const newPlanFromApi = await createPlan(apiPayload);
+      const newPlanFromApi = await createPlan(apiPayload)
 
       if (scheduleData.subTasks && scheduleData.subTasks.length > 0) {
-        const subPlansToCreate = scheduleData.subTasks.map(st => ({ title: st.title }));
-        await createSubPlans(newPlanFromApi.plan_id, subPlansToCreate);
+        const subPlansToCreate = scheduleData.subTasks.map((st) => ({ title: st.title }))
+        await createSubPlans(newPlanFromApi.plan_id, subPlansToCreate)
       }
 
-      setShowForm(false);
-      setEditingSchedule(null);
-      setRefreshTrigger(prev => prev + 1);
+      setShowForm(false)
+      setEditingSchedule(null)
+      setRefreshTrigger((prev) => prev + 1)
     } catch (err) {
-      console.error("Failed to create schedule:", err);
-      setError("일정 생성에 실패했습니다. 다시 시도해 주세요.");
+      console.error("Failed to create schedule:", err)
+      setError("일정 생성에 실패했습니다. 다시 시도해 주세요.")
     }
   }
 
   const updateSchedule = async (planId: number, updates: Partial<Schedule>) => {
-    const originalSchedule = schedules.find(s => s.planId === planId);
+    const originalSchedule = schedules.find((s) => s.planId === planId)
     if (!originalSchedule) {
-      console.error("Schedule not found for update");
-      setError("일정 수정에 필요한 정보가 부족합니다.");
-      return;
+      setError("일정 수정에 필요한 정보가 부족합니다.")
+      return
     }
 
-    const categoryMap: { [key: string]: string } = {
+    const categoryMap: Record<string, string> = {
       Briefcase: "WORK",
       Book: "STUDY",
       Dumbbell: "WORKOUT",
@@ -288,20 +293,20 @@ export default function SchedulePage() {
       Music: "MUSIC",
       Camera: "PHOTO",
       Gamepad2: "GAME",
-    };
+    }
 
-    const colorNameToHexMap: { [key: string]: string } = {
-      "blue": "#2196f3",
-      "red": "#f44336",
-      "green": "#4caf50",
-      "purple": "#9c27b0",
-      "orange": "#ff9800",
-      "pink": "#e91e63",
-      "yellow": "#ffeb3b",
-      "indigo": "#607d8b",
-    };
+    const colorNameToHexMap: Record<string, string> = {
+      blue: "#2196f3",
+      red: "#f44336",
+      green: "#4caf50",
+      purple: "#9c27b0",
+      orange: "#ff9800",
+      pink: "#e91e63",
+      yellow: "#ffeb3b",
+      indigo: "#607d8b",
+    }
 
-    const updatedSchedule = { ...originalSchedule, ...updates };
+    const updatedSchedule = { ...originalSchedule, ...updates }
 
     const apiPayload: UpdatePlanRequest = {
       title: updatedSchedule.title,
@@ -309,31 +314,30 @@ export default function SchedulePage() {
       end_date_time: updatedSchedule.endDateTime,
       all_day: updatedSchedule.allDay,
       is_completed: updatedSchedule.isCompleted,
-      color: colorNameToHexMap[updatedSchedule.color || 'blue'] || '#2196f3',
-      plan_category: categoryMap[updatedSchedule.icon || ''] || 'ETC',
-    };
+      color: colorNameToHexMap[updatedSchedule.color || "blue"] || "#2196f3",
+      plan_category: categoryMap[updatedSchedule.icon || ""] || "ETC",
+    }
 
     try {
-      await updatePlan(planId, apiPayload);
-      
-      setRefreshTrigger(prev => prev + 1);
-      setShowForm(false);
-      setEditingSchedule(null);
+      await updatePlan(planId, apiPayload)
+      setRefreshTrigger((prev) => prev + 1)
+      setShowForm(false)
+      setEditingSchedule(null)
     } catch (err) {
-      console.error("Failed to update schedule:", err);
-      setError("일정 수정에 실패했습니다. 다시 시도해 주세요.");
+      console.error("Failed to update schedule:", err)
+      setError("일정 수정에 실패했습니다. 다시 시도해 주세요.")
     }
   }
 
   const deleteSchedule = async (planId: number) => {
     try {
-      await deletePlan(planId);
-      setRefreshTrigger(prev => prev + 1); // 목록 새로고침
-      setShowForm(false); // 폼 닫기
-      setEditingSchedule(null); // 수정 상태 초기화
+      await deletePlan(planId)
+      setRefreshTrigger((prev) => prev + 1)
+      setShowForm(false)
+      setEditingSchedule(null)
     } catch (err) {
-      console.error("Failed to delete schedule:", err);
-      setError("일정 삭제에 실패했습니다. 다시 시도해 주세요.");
+      console.error("Failed to delete schedule:", err)
+      setError("일정 삭제에 실패했습니다. 다시 시도해 주세요.")
     }
   }
 
@@ -342,258 +346,205 @@ export default function SchedulePage() {
     setShowForm(true)
   }
 
-  const handleUpdateSchedule = (scheduleData: Omit<Schedule, 'planId' | 'isCompleted' | 'createdAt' | 'updatedAt' | 'type'>) => {
+  const handleUpdateSchedule = (
+    scheduleData: Omit<Schedule, "planId" | "isCompleted" | "createdAt" | "updatedAt" | "type">
+  ) => {
     if (editingSchedule) {
       updateSchedule(editingSchedule.planId, scheduleData)
     }
   }
 
   const handleSubTasksUpdate = (planId: number, newSubTasks: SubTask[]) => {
-    const newSchedules = schedules.map(s =>
-      s.planId === planId ? { ...s, subTasks: newSubTasks } : s
-    );
-    setSchedules(newSchedules);
+    const updatedSchedules = schedules.map((schedule) =>
+      schedule.planId === planId ? { ...schedule, subTasks: newSubTasks } : schedule
+    )
+    setSchedules(updatedSchedules)
 
     if (editingSchedule && editingSchedule.planId === planId) {
-      setEditingSchedule(prev => {
-        if (!prev) return null;
-        return { ...prev, subTasks: newSubTasks };
-      });
+      const updatedScheduleForForm = updatedSchedules.find((s) => s.planId === planId)
+      if (updatedScheduleForForm) {
+        setEditingSchedule(updatedScheduleForForm)
+      }
     }
-  };
-
-  const toggleScheduleCompletion = (schedule: Schedule) => {
-    updateSchedule(schedule.planId, { isCompleted: !schedule.isCompleted });
-  };
-
-  const formatDate = (date: Date) => {
-    return date.toLocaleDateString("ko-KR", { year: "numeric", month: "long", day: "numeric", weekday: "long" })
   }
 
-  const todaySchedules = [...schedules].sort((a, b) => new Date(a.startDateTime).getTime() - new Date(b.startDateTime).getTime())
+  const selectedDayLabel = selectedDate.toLocaleDateString("ko-KR", {
+    month: "long",
+    day: "numeric",
+    weekday: "long",
+  })
+  const selectedMonthLabel = `${selectedDate.getFullYear()}.${String(selectedDate.getMonth() + 1).padStart(2, "0")}`
+
+  const totalSchedules = schedules.length
+  const completedSchedules = schedules.filter((s) => s.isCompleted).length
+  const pendingSchedules = totalSchedules - completedSchedules
+  const subgoalCount = subGoalSchedules.length
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
-      <div className="flex h-screen">
-        {/* Sidebar */}
-        <div className={`fixed lg:static inset-y-0 left-0 z-40 w-80 lg:w-72 xl:w-80 bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 flex flex-col transform transition-transform duration-300 ease-in-out ${
-          sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
-        }`}>
-          <div className="p-6 border-b border-slate-200 dark:border-slate-700">
-            <div className="flex items-center justify-between mb-4">
-              <Link href="/" className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-colors">
-                ← 목표로 돌아가기
-              </Link>
-              <div className="flex items-center gap-2">
-                <Button variant="ghost" size="sm" onClick={() => setSidebarOpen(false)} className="lg:hidden hover:bg-slate-100 dark:hover:bg-slate-700">
-                  <X className="h-4 w-4" />
-                </Button>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="sm" className="hover:bg-slate-100 dark:hover:bg-slate-700">
-                      {theme === "light" ? <Sun className="h-4 w-4" /> : theme === "dark" ? <Moon className="h-4 w-4" /> : <Monitor className="h-4 w-4" />}
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={() => setTheme("light")}><Sun className="h-4 w-4 mr-2" />라이트 모드</DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => setTheme("dark")}><Moon className="h-4 w-4 mr-2" />다크 모드</DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => setTheme("system")}><Monitor className="h-4 w-4 mr-2" />시스템 설정</DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-                <Button variant="ghost" size="sm" className="hover:bg-slate-100 dark:hover:bg-slate-700"><Settings className="h-4 w-4" /></Button>
-              </div>
-            </div>
-            <h1 className="text-xl font-semibold text-slate-900 dark:text-slate-100">일정 관리</h1>
-            <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">{formatDate(selectedDate)}</p>
+    <div className="min-h-screen bg-[#EEF5F7] text-[#0F1C21]">
+      <div className="mx-auto w-full max-w-5xl px-4 py-6 sm:px-6 lg:px-8">
+        <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="space-y-2">
+            <Link href="/" className="text-sm font-semibold text-[#5D6E72] hover:text-[#0F1C21]">
+              ← 목표 보드로 돌아가기
+            </Link>
+            <h1 className="text-2xl font-bold text-[#0F1C21] sm:text-3xl">하루 일정 타임라인</h1>
+            <p className="text-sm text-[#5D6E72]">{selectedDayLabel}</p>
           </div>
 
-          <div className="p-4 border-b border-slate-200 dark:border-slate-700">
-            <Button onClick={() => { setEditingSchedule(null); setShowForm(true); }} className="w-full bg-slate-900 hover:bg-slate-800 dark:bg-slate-100 dark:hover:bg-slate-200 text-white dark:text-slate-900 justify-start">
-              <Plus className="h-4 w-4 mr-2" />새 일정 추가
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              variant="ghost"
+              className="flex items-center gap-2 rounded-full border border-[#99C6D6] bg-white px-4 py-2 text-sm font-semibold text-[#0F1C21] shadow-sm hover:bg-white/80"
+              onClick={() => setShowCalendar((prev) => !prev)}
+            >
+              <Calendar className="h-4 w-4" />
+              {selectedMonthLabel}
+            </Button>
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button className="flex items-center gap-2 rounded-full bg-[#BBDCE5] px-4 py-2 text-sm font-semibold text-[#0F1C21] shadow-sm hover:bg-[#BBDCE5]/80">
+                  {FILTER_LABELS[filterType]}
+                  <ChevronDown className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-36 rounded-2xl border border-[#D3E6ED] bg-white p-2 text-sm">
+                {(
+                  [
+                    { value: "all", label: FILTER_LABELS["all"] },
+                    { value: "schedules", label: FILTER_LABELS["schedules"] },
+                    { value: "subgoals", label: FILTER_LABELS["subgoals"] },
+                  ] as const
+                ).map((option) => (
+                  <DropdownMenuItem
+                    key={option.value}
+                    onClick={() => setFilterType(option.value)}
+                    className={`rounded-xl px-3 py-2 ${
+                      filterType === option.value ? "bg-[#BBDCE5]/40 font-semibold text-[#0F1C21]" : ""
+                    }`}
+                  >
+                    {option.label}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            <Button
+              className="flex items-center gap-2 rounded-full bg-[#BBDCE5] px-4 py-2 text-sm font-semibold text-[#0F1C21] shadow-sm hover:bg-[#BBDCE5]/80"
+              onClick={() => {
+                setEditingSchedule(null)
+                setShowForm(true)
+              }}
+            >
+              <Plus className="h-4 w-4" />
+              새 일정
             </Button>
           </div>
+        </header>
 
-          <div className="p-4 border-b border-slate-200 dark:border-slate-700">
-            <h3 className="text-sm font-medium text-slate-900 dark:text-slate-100 mb-3">오늘의 요약</h3>
-            <div className="space-y-2">
-              {/* 전체 일정 */}
-              <div>
-                <div className="flex items-center justify-between text-sm cursor-pointer" onClick={() => setExpandedSummary(expandedSummary === 'all' ? null : 'all')}>
-                  <span className="text-slate-600 dark:text-slate-400">전체 일정</span>
-                  <div className="flex items-center gap-2">
-                    <span className="font-medium text-slate-900 dark:text-slate-100">{todaySchedules.length}</span>
-                    <Button variant="ghost" size="sm">
-                      {expandedSummary === 'all' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                    </Button>
-                  </div>
-                </div>
-                {expandedSummary === 'all' && (
-                  <div className="mt-2 space-y-2 pl-4">
-                    {todaySchedules.map(schedule => (
-                      <div key={schedule.planId} className="flex items-center gap-3 text-sm">
-                        <Checkbox id={`summary-all-${schedule.planId}`} checked={schedule.isCompleted} onCheckedChange={() => toggleScheduleCompletion(schedule)} />
-                        <label htmlFor={`summary-all-${schedule.planId}`} className={`flex-1 ${schedule.isCompleted ? 'line-through text-slate-500' : 'text-slate-800 dark:text-slate-200'}`}>{schedule.title}</label>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-              {/* 완료됨 */}
-              <div>
-                <div className="flex items-center justify-between text-sm cursor-pointer" onClick={() => setExpandedSummary(expandedSummary === 'completed' ? null : 'completed')}>
-                  <span className="text-slate-600 dark:text-slate-400">완료됨</span>
-                  <div className="flex items-center gap-2">
-                    <span className="font-medium text-slate-900 dark:text-slate-100">{todaySchedules.filter((s) => s.isCompleted).length}</span>
-                    <Button variant="ghost" size="sm">
-                      {expandedSummary === 'completed' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                    </Button>
-                  </div>
-                </div>
-                {expandedSummary === 'completed' && (
-                  <div className="mt-2 space-y-2 pl-4">
-                    {todaySchedules.filter(s => s.isCompleted).map(schedule => (
-                      <div key={schedule.planId} className="flex items-center gap-3 text-sm">
-                        <Checkbox id={`summary-completed-${schedule.planId}`} checked={schedule.isCompleted} onCheckedChange={() => toggleScheduleCompletion(schedule)} />
-                        <label htmlFor={`summary-completed-${schedule.planId}`} className="flex-1 line-through text-slate-500">{schedule.title}</label>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-              {/* 남은 일정 */}
-              <div>
-                <div className="flex items-center justify-between text-sm cursor-pointer" onClick={() => setExpandedSummary(expandedSummary === 'remaining' ? null : 'remaining')}>
-                  <span className="text-slate-600 dark:text-slate-400">남은 일정</span>
-                  <div className="flex items-center gap-2">
-                    <span className="font-medium text-slate-900 dark:text-slate-100">{todaySchedules.filter((s) => !s.isCompleted).length}</span>
-                    <Button variant="ghost" size="sm">
-                      {expandedSummary === 'remaining' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                    </Button>
-                  </div>
-                </div>
-                {expandedSummary === 'remaining' && (
-                  <div className="mt-2 space-y-2 pl-4">
-                    {todaySchedules.filter(s => !s.isCompleted).map(schedule => (
-                      <div key={schedule.planId} className="flex items-center gap-3 text-sm">
-                        <Checkbox id={`summary-remaining-${schedule.planId}`} checked={schedule.isCompleted} onCheckedChange={() => toggleScheduleCompletion(schedule)} />
-                        <label htmlFor={`summary-remaining-${schedule.planId}`} className="flex-1 text-slate-800 dark:text-slate-200">{schedule.title}</label>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
+        {showCalendar && (
+          <div className="mt-6 overflow-hidden rounded-3xl border border-[#D3E6ED] bg-white shadow-md">
+            <ScheduleCalendar
+              selectedDate={selectedDate}
+              onDateSelect={(date) => {
+                setSelectedDate(date)
+                setShowCalendar(false)
+              }}
+              schedules={schedules}
+              onClose={() => setShowCalendar(false)}
+            />
+          </div>
+        )}
+
+        <section className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4"></section>
+
+        <section className="mt-8 space-y-4">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <h2 className="text-lg font-semibold text-[#0F1C21]">타임라인</h2>
+              <p className="text-xs text-[#5D6E72]">
+                {FILTER_LABELS[filterType]} · {timelineItems.length}개 일정
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                className="rounded-full border border-[#99C6D6] bg-white px-4 py-2 text-sm font-semibold text-[#0F1C21] shadow-sm hover:bg-white/80"
+                onClick={() => {
+                  setSelectedDate(new Date())
+                  timelineRef.current?.scrollToCurrentTime?.()
+                }}
+              >
+                오늘로 이동
+              </Button>
+              <Button
+                variant="ghost"
+                className="rounded-full border border-[#99C6D6] bg-white px-4 py-2 text-sm font-semibold text-[#0F1C21] shadow-sm hover:bg-white/80"
+                onClick={() => timelineRef.current?.scrollToCurrentTime?.()}
+              >
+                현재 시간 보기
+              </Button>
             </div>
           </div>
 
-          <div className="flex-1 overflow-y-auto p-4">
-            <h3 className="text-sm font-medium text-slate-900 dark:text-slate-100 mb-3">다가오는 일정</h3>
-            <div className="space-y-3">
-              {todaySchedules.filter((schedule) => !schedule.isCompleted).slice(0, 5).map((schedule) => (
-                  <Card key={schedule.planId} className="border-0 shadow-sm hover:shadow-md transition-shadow dark:bg-slate-700 cursor-pointer" onClick={() => handleViewScheduleInTimeline(schedule)}>
-                    <CardContent className="p-4">
-                      <div className="flex items-start gap-3">
-                        <div className="w-3 h-3 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <p className="text-sm font-medium text-slate-900 dark:text-slate-100 truncate">{schedule.title}</p>
-                          </div>
-                          <div className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-400">
-                            {schedule.allDay ? (<span>하루 종일</span>) : (<span>{new Date(schedule.startDateTime).toLocaleTimeString("ko-KR", { hour: "numeric", minute: "2-digit", hour12: true })}</span>)}
-                          </div>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-            </div>
-          </div>
+        <div className="overflow-hidden rounded-3xl border border-[#D3E6ED] bg-white shadow-lg">
+          <ScheduleTimeline
+            ref={timelineRef}
+            schedules={timelineItems}
+            selectedDate={selectedDate}
+            onUpdateSchedule={updateSchedule}
+            onDeleteSchedule={deleteSchedule}
+            onEditSchedule={handleEditSchedule}
+            loading={loading}
+            onFilterTypeChange={setFilterType}
+            filterType={filterType}
+            onUpdateSubGoal={onUpdateSubGoal}
+            scrollToPlanId={null}
+            onScrollToPlanIdProcessed={() => {}}
+          />
         </div>
-
-        <div className="flex-1 flex flex-col min-w-0">
-          <div className="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 p-3 sm:p-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 sm:gap-4">
-                <Button variant="ghost" size="sm" onClick={() => setSidebarOpen(true)} className="lg:hidden hover:bg-slate-100 dark:hover:bg-slate-700">
-                  <Menu className="h-4 w-4" />
-                </Button>
-                <h2 className="text-base sm:text-lg font-semibold text-slate-900 dark:text-slate-100 truncate">
-                  {selectedDate.toLocaleDateString("ko-KR", { year: "numeric", month: "long" })}
-                </h2>
-                <Button variant="ghost" size="sm" onClick={() => setShowCalendar(!showCalendar)} className="flex items-center gap-2 hover:bg-slate-100 dark:hover:bg-slate-700">
-                  <Calendar className="h-4 w-4" />
-                  {showCalendar ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                </Button>
-              </div>
-              <div className="flex items-center gap-2">
-                <Button variant="outline" size="sm" onClick={() => { setSelectedDate(new Date()) }}>오늘</Button>
-              </div>
-            </div>
-          </div>
-
-          {showCalendar && (
-            <div className="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700">
-              <ScheduleCalendar selectedDate={selectedDate} onDateSelect={setSelectedDate} schedules={schedules} onClose={() => setShowCalendar(false)} />
-            </div>
-          )}
-
-          <div className="flex-1 overflow-hidden">
-            {error && (
-              <div className="flex flex-col items-center justify-center h-full text-red-500">
-                <AlertCircle className="h-12 w-12 mb-4" />
-                <p className="text-lg">{error}</p>
-              </div>
-            )}
-            {!error && (
-                              <ScheduleTimeline
-                                ref={timelineRef}
-                                schedules={timelineItems}
-                                selectedDate={selectedDate}
-                                onUpdateSchedule={updateSchedule}
-                                onDeleteSchedule={deleteSchedule}
-                                onEditSchedule={handleEditSchedule}
-                                loading={loading}
-                                onScrollToCurrentTime={() => {}}
-                                filterType={filterType}
-                                onFilterTypeChange={setFilterType}
-                                onUpdateSubGoal={onUpdateSubGoal}
-                                scrollToPlanId={scrollToPlanId}
-                                onScrollToPlanIdProcessed={() => setScrollToPlanId(null)}
-                              />            )}
-          </div>
-        </div>
+        </section>
       </div>
 
-      {sidebarOpen && (<div className="fixed inset-0 bg-black/50 z-30 lg:hidden" onClick={() => setSidebarOpen(false)} />)}
+      {error && (
+        <div className="fixed bottom-6 left-1/2 z-50 w-[90%] max-w-lg -translate-x-1/2 rounded-full border border-[#5D6E72] bg-white px-4 py-3 text-center text-sm text-[#5D6E72] shadow-lg">
+          {error}
+        </div>
+      )}
 
       {showForm && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-slate-800 rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4 backdrop-blur-sm">
+          <div className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-3xl border border-[#D3E6ED] bg-white p-4 shadow-2xl">
             <ScheduleForm
               schedule={editingSchedule}
               onSubmit={editingSchedule ? handleUpdateSchedule : createSchedule}
-              onCancel={() => { setShowForm(false); setEditingSchedule(null); }}
+              onCancel={() => {
+                setShowForm(false)
+                setEditingSchedule(null)
+              }}
               onDelete={deleteSchedule}
               defaultDate={selectedDate}
               goals={goalList}
               onSubTaskChange={(planId, index, newSubTask) => {
-                const newSchedules = schedules.map(schedule => {
-                    if (schedule.planId !== planId) {
-                        return schedule;
-                    }
-                    const newSubTasks = [...(schedule.subTasks || [])];
-                    if (index === null) { // Add
-                        newSubTasks.push(newSubTask);
-                    } else { // Update
-                        newSubTasks[index] = newSubTask;
-                    }
-                    return { ...schedule, subTasks: newSubTasks };
-                });
-                setSchedules(newSchedules);
+                const newSchedules = schedules.map((schedule) => {
+                  if (schedule.planId !== planId) {
+                    return schedule
+                  }
+                  const newSubTasks = [...(schedule.subTasks || [])]
+                  if (index === null) {
+                    newSubTasks.push(newSubTask)
+                  } else {
+                    newSubTasks[index] = newSubTask
+                  }
+                  return { ...schedule, subTasks: newSubTasks }
+                })
+                setSchedules(newSchedules)
                 if (editingSchedule && editingSchedule.planId === planId) {
-                    const updatedScheduleForForm = newSchedules.find(s => s.planId === planId);
-                    if (updatedScheduleForForm) {
-                        setEditingSchedule(updatedScheduleForForm);
-                    }
+                  const updatedScheduleForForm = newSchedules.find((s) => s.planId === planId)
+                  if (updatedScheduleForForm) {
+                    setEditingSchedule(updatedScheduleForForm)
+                  }
                 }
               }}
               onSubTasksUpdate={handleSubTasksUpdate}

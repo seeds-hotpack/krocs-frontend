@@ -1,82 +1,102 @@
 "use client"
 
-import { getGoals, Goal, deleteBigGoal as deleteGoalApi } from '../api/goals';
-import { update_Goal as updateGoalApi, type UpdateGoalRequest } from '../api/updateGoal'
-import { createGoal as createGoalApi } from '../api/createGoal'
 import { useState, useEffect, useCallback } from "react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Plus, Edit, Trash2, Calendar, Clock, Target, TrendingUp, CheckCircle2, Sun, Moon, Monitor, ClipboardList, LogOut, Menu, ChevronDown, ChevronUp } from "lucide-react"
-import { GoalForm } from "@/components/goal-form"
-
-import { useTheme } from "next-themes"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuSub, DropdownMenuSubTrigger, DropdownMenuPortal, DropdownMenuSubContent } from "@/components/ui/dropdown-menu"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { ScheduleCalendar } from "@/components/schedule-calendar"
+
+import { getGoals, Goal } from "../api/goals"
+import { update_Goal as updateGoalApi, type UpdateGoalRequest } from "../api/updateGoal"
+import { createGoal as createGoalApi } from "../api/createGoal"
 import { logout } from "../api/auth"
+import { ScheduleCalendar } from "@/components/schedule-calendar"
+import { GoalForm } from "@/components/goal-form"
+
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardTitle } from "@/components/ui/card"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+
+import { Plus, Calendar, Target, CheckCircle2, Menu, ChevronDown } from "lucide-react"
+
+const FILTER_LABELS: Record<string, string> = {
+  All: "전체",
+  "In Progress": "진행 중",
+  Completed: "완료",
+  Overdue: "기한 초과",
+}
+
+const FILTER_OPTIONS = [
+  { value: "All", label: FILTER_LABELS["All"] },
+  { value: "In Progress", label: FILTER_LABELS["In Progress"] },
+  { value: "Completed", label: FILTER_LABELS["Completed"] },
+  { value: "Overdue", label: FILTER_LABELS["Overdue"] },
+]
+
+const BRAND_BASE = "#BBDCE5"
+const BRAND_DARK = "#5D6E72"
+const BRAND_LIGHT = "#DDEDF2"
+const BRAND_SOFT = "#EEF5F7"
 
 export default function GoalManagementApp() {
   const router = useRouter()
   const [goals, setGoals] = useState<Goal[]>([])
-  
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [editingGoal, setEditingGoal] = useState<Goal | null>(null)
   const [loading, setLoading] = useState(false)
-  const { theme, setTheme } = useTheme()
   const [error, setError] = useState<string | null>(null)
   const [selectedDate, setSelectedDate] = useState(new Date())
   const [isCalendarOpen, setIsCalendarOpen] = useState(false)
-  const [filterStatus, setFilterStatus] = useState("In Progress") // 필터 상태 추가
-  const [isStatsVisible, setIsStatsVisible] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1); // 현재 페이지 상태
-  const itemsPerPage = 6; // 페이지 당 항목 수
+  const [filterStatus, setFilterStatus] = useState("In Progress")
 
   const handleLogout = async () => {
     try {
-      await logout();
-      alert("로그아웃 되었습니다.");
-      router.push('/login');
-    } catch (error) {
-      alert("로그아웃에 실패했습니다.");
+      await logout()
+      alert("로그아웃 되었습니다.")
+      router.push("/login")
+    } catch {
+      alert("로그아웃에 실패했습니다.")
     }
   }
 
-  const fetchGoals = useCallback(async (date: Date, status: string) => {
-    setLoading(true)
-    setError(null)
-    try {
-      const year = date.getFullYear()
-      const month = String(date.getMonth() + 1).padStart(2, "0")
-      const day = String(date.getDate()).padStart(2, "0")
-      const formattedDate = `${year}-${month}-${day}`
+  const fetchGoals = useCallback(
+    async (date: Date, status: string) => {
+      setLoading(true)
+      setError(null)
+      try {
+        const year = date.getFullYear()
+        const month = String(date.getMonth() + 1).padStart(2, "0")
+        const day = String(date.getDate()).padStart(2, "0")
+        const formattedDate = `${year}-${month}-${day}`
 
-      const apiStatusMap: { [key: string]: 'IN_PROGRESS' | 'COMPLETED' | 'EXPIRED' } = {
-        'In Progress': 'IN_PROGRESS',
-        'Completed': 'COMPLETED',
-        'Overdue': 'EXPIRED',
-      };
-      
-      const apiStatus = apiStatusMap[status];
+        const apiStatusMap: { [key: string]: "IN_PROGRESS" | "COMPLETED" | "EXPIRED" } = {
+          "In Progress": "IN_PROGRESS",
+          Completed: "COMPLETED",
+          Overdue: "EXPIRED",
+        }
 
-      const data = await getGoals({ 
-        searchDate: formattedDate,
-        status: apiStatus,
-      })
-      setGoals(data)
-    } catch (err: any) {
-      if (err.response?.status === 401 || err.response?.status === 403) {
-        router.push('/login');
-      } else {
-        setError(err?.response?.data?.message || "목표를 불러오는데 실패했습니다.")
-        console.error(err)
+        const apiStatus = apiStatusMap[status]
+
+        const data = await getGoals({
+          searchDate: formattedDate,
+          status: apiStatus,
+        })
+        setGoals(data)
+      } catch (err: any) {
+        if (err.response?.status === 401 || err.response?.status === 403) {
+          router.push("/login")
+        } else {
+          setError(err?.response?.data?.message || "목표를 불러오는데 실패했습니다.")
+          console.error(err)
+        }
+      } finally {
+        setLoading(false)
       }
-    } finally {
-      setLoading(false)
-    }
-  }, [router])
+    },
+    [router]
+  )
 
-  const createGoal = async (goalData: Omit<Goal, "goalId" | "completed" | "subGoals" | "createdAt" | "updatedAt"> & { color: string }) => {
+  const createGoal = async (
+    goalData: Omit<Goal, "goalId" | "completed" | "subGoals" | "createdAt" | "updatedAt"> & { color: string }
+  ) => {
     setLoading(true)
     try {
       const apiData = {
@@ -98,14 +118,14 @@ export default function GoalManagementApp() {
   }
 
   const updateGoal = async (goalId: number, goalData: Partial<Goal>) => {
-    const originalGoal = goals.find(g => g.goalId === goalId);
-    if (!originalGoal) return;
+    const originalGoal = goals.find((g) => g.goalId === goalId)
+    if (!originalGoal) return
 
-    // Optimistically update UI for instant feedback
-    const optimisticUpdatedGoal = { ...originalGoal, ...goalData };
-    setGoals(prevGoals => prevGoals.map(g => g.goalId === goalId ? optimisticUpdatedGoal : g));
+    // 사용자에게 즉시 반영되도록 낙관적 업데이트
+    const optimisticUpdatedGoal = { ...originalGoal, ...goalData }
+    setGoals((prevGoals) => prevGoals.map((g) => (g.goalId === goalId ? optimisticUpdatedGoal : g)))
 
-    const updatedGoal = { ...originalGoal, ...goalData };
+    const updatedGoal = { ...originalGoal, ...goalData }
 
     const apiPayload: UpdateGoalRequest = {
       title: updatedGoal.title,
@@ -114,18 +134,18 @@ export default function GoalManagementApp() {
       endDate: updatedGoal.endDate,
       isCompleted: updatedGoal.completed,
       color: updatedGoal.color,
-    };
+    }
 
     try {
-      const response = await updateGoalApi(goalId, 1, apiPayload);
-      const updatedGoalFromApi = response.result;
+      const response = await updateGoalApi(goalId, 1, apiPayload)
+      const updatedGoalFromApi = response.result
 
-      // Final update with the definitive data from the API response
+      // API 응답으로 확정 데이터를 다시 반영
       const finalGoal: Goal = {
         ...originalGoal,
         goalId: updatedGoalFromApi.goalId,
         title: updatedGoalFromApi.title,
-        priority: updatedGoalFromApi.priority as 'HIGH' | 'MEDIUM' | 'LOW',
+        priority: updatedGoalFromApi.priority as "HIGH" | "MEDIUM" | "LOW",
         startDate: updatedGoalFromApi.startDate,
         endDate: updatedGoalFromApi.endDate,
         completed: updatedGoalFromApi.isCompleted,
@@ -137,44 +157,29 @@ export default function GoalManagementApp() {
         completionPercentage: updatedGoalFromApi.completionPercentage ?? 0,
         createdAt: updatedGoalFromApi.createdAt,
         updatedAt: updatedGoalFromApi.updatedAt,
-        duration: originalGoal.duration, // Assuming duration is not returned by update API
-      };
-
-      setGoals(prevGoals => prevGoals.map(g => g.goalId === goalId ? finalGoal : g));
-
-      if (editingGoal?.goalId === goalId) {
-        setEditingGoal(null);
-        setIsFormOpen(false);
+        duration: originalGoal.duration, // update API가 duration을 반환하지 않는다고 가정
       }
 
-    } catch (err: any) {
-      // Revert the optimistic update if the API call fails
-      setGoals(prevGoals => prevGoals.map(g => g.goalId === goalId ? originalGoal : g));
-      setError(err?.response?.data?.message || "목표 수정에 실패했습니다.");
-      console.error(err);
-    }
-  }
+      setGoals((prevGoals) => prevGoals.map((g) => (g.goalId === goalId ? finalGoal : g)))
 
-  const deleteGoal = async (goalId: number) => {
-    setLoading(true)
-    setError(null)
-    try {
-      await deleteGoalApi(goalId)
-      await fetchGoals(selectedDate, filterStatus) // 삭제 후 목록 새로고침
+      if (editingGoal?.goalId === goalId) {
+        setEditingGoal(null)
+        setIsFormOpen(false)
+      }
     } catch (err: any) {
-      setError(err?.response?.data?.message || "목표 삭제에 실패했습니다.")
+      // API 호출 실패 시 낙관적 업데이트 되돌리기
+      setGoals((prevGoals) => prevGoals.map((g) => (g.goalId === goalId ? originalGoal : g)))
+      setError(err?.response?.data?.message || "목표 수정에 실패했습니다.")
       console.error(err)
-    } finally {
-      setLoading(false)
     }
   }
 
   const toggleGoalCompletion = async (goalId: number) => {
-    const goal = goals.find(g => g.goalId === goalId);
-    if (!goal) return;
+    const goal = goals.find((g) => g.goalId === goalId)
+    if (!goal) return
 
-    // Call the existing updateGoal function to handle API call and state refresh
-    await updateGoal(goalId, { ...goal, completed: !goal.completed });
+    // 기존 updateGoal 함수를 호출해 API 처리와 상태 갱신 수행
+    await updateGoal(goalId, { ...goal, completed: !goal.completed })
   }
 
   useEffect(() => {
@@ -184,34 +189,35 @@ export default function GoalManagementApp() {
   const getPriorityColor = (priority: string) => {
     switch (priority) {
       case "HIGH":
-        return "bg-slate-900 text-white"
+        return "bg-[#5D6E72] text-white"
       case "MEDIUM":
-        return "bg-slate-600 text-white"
+        return "bg-[#BBDCE5] text-[#0F1C21]"
       case "LOW":
-        return "bg-slate-400 text-white"
+        return "bg-[#DDEDF2] text-[#0F1C21]"
       default:
-        return "bg-slate-300 text-slate-700"
+        return "bg-white text-[#0F1C21]"
     }
   }
 
   const getPriorityText = (priority: string) => {
     switch (priority) {
       case "HIGH":
-        return "High"
+        return "높음"
       case "MEDIUM":
-        return "Medium"
+        return "보통"
       case "LOW":
-        return "Low"
+        return "낮음"
       default:
         return priority
     }
   }
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-    })
+    const date = new Date(dateString)
+    const year = date.getFullYear()
+    const month = String(date.getMonth() + 1).padStart(2, "0")
+    const day = String(date.getDate()).padStart(2, "0")
+    return `${year}.${month}.${day}`
   }
 
   const getProgressPercentage = (goal: Goal) => {
@@ -220,276 +226,276 @@ export default function GoalManagementApp() {
     return (completed / goal.subGoals.length) * 100
   }
 
-  const isSameDay = (date1: Date, date2: Date) =>
-    date1.getFullYear() === date2.getFullYear() &&
-    date1.getMonth() === date2.getMonth() &&
-    date1.getDate() === date2.getDate()
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+
+  const completedList = goals.filter((goal) => goal.completed)
+  const overdueList = goals.filter((goal) => {
+    if (goal.completed) return false
+    const endDate = new Date(goal.endDate)
+    return endDate < today
+  })
+  const inProgressList = goals.filter((goal) => {
+    if (goal.completed) return false
+    const endDate = new Date(goal.endDate)
+    return endDate >= today
+  })
 
   const totalGoals = goals.length
-  const completedGoals = goals.filter(goal => goal.completed).length
+  const inProgressCount = inProgressList.length
+  const completedCount = completedList.length
+  const overdueCount = overdueList.length
 
-  const filteredGoals = goals.filter(goal => {
-    if (filterStatus === 'All') {
-      return true;
-    }
-    if (filterStatus === 'Completed') {
-      return goal.completed;
-    }
-    
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const endDate = new Date(goal.endDate);
-    
-    if (filterStatus === 'In Progress') {
-      return !goal.completed && endDate >= today;
-    }
-    if (filterStatus === 'Overdue') {
-      return !goal.completed && endDate < today;
-    }
-    return true;
-  });
+  const filterCounts: Record<string, number> = {
+    All: totalGoals,
+    "In Progress": inProgressCount,
+    Completed: completedCount,
+    Overdue: overdueCount,
+  }
 
-  // 페이지네이션 로직
-  const indexOfLastItem = currentPage * itemsPerPage;
-  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentItems = filteredGoals.slice(indexOfFirstItem, indexOfLastItem);
-  const totalPages = Math.ceil(filteredGoals.length / itemsPerPage);
+  const sections = (() => {
+    switch (filterStatus) {
+      case "In Progress":
+        return [{ title: "진행 중", goals: inProgressList }]
+      case "Completed":
+        return [{ title: "완료된 목표", goals: completedList }]
+      case "Overdue":
+        return [{ title: "기한 초과", goals: overdueList }]
+      default:
+        return [
+          { title: "진행 중", goals: inProgressList },
+          { title: "완료된 목표", goals: completedList },
+        ]
+    }
+  })()
 
-  // 필터나 페이지가 변경될 때 현재 페이지를 1로 초기화
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [filterStatus]);
+  const sectionsToRender = sections.filter((section) => section.goals.length > 0)
+  const hasVisibleGoals = sectionsToRender.length > 0
 
-  // The GoalDetail component is now rendered on a separate dynamic page.
-  // The logic below has been removed.
+  const selectedMonthLabel = `${selectedDate.getFullYear()}.${String(selectedDate.getMonth() + 1).padStart(2, "0")}`
+  const selectedDayLabel = selectedDate.toLocaleDateString("ko-KR", {
+    month: "long",
+    day: "numeric",
+    weekday: "short",
+  })
+  const activeFilterLabel = FILTER_LABELS[filterStatus] ?? filterStatus
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 p-6">
-      <div className="max-w-6xl mx-auto">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-12 gap-4">
-          <div>
-            <h1 className="text-3xl font-semibold text-slate-900 dark:text-slate-100 mb-2">Goals</h1>
-            <p className="text-slate-600 dark:text-slate-400">Track and achieve your objectives</p>
-          </div>
-          <div className="flex items-center flex-wrap justify-end gap-3 relative">
-            {/* Always visible calendar button */}
-            <Button
-              variant="outline"
-              className="border-slate-300 hover:bg-slate-50 dark:border-slate-600 dark:hover:bg-slate-800 bg-transparent"
+    <div className="min-h-screen bg-[#EEF5F7] text-[#0F1C21]">
+      <div className="mx-auto flex min-h-screen w-full max-w-md flex-col">
+        <header className="sticky top-0 z-20 border-b border-[#D3E6ED] bg-[#EEF5F7]/95 px-5 py-4 backdrop-blur">
+          <div className="flex items-center justify-between">
+            <button
+              className="flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-semibold text-[#0F1C21] shadow-sm"
               onClick={() => setIsCalendarOpen((prev) => !prev)}
             >
-              <Calendar className="h-4 w-4 mr-2" />
-              {selectedDate.toLocaleDateString("ko-KR", { year: "numeric", month: "2-digit", day: "2-digit" })}
-            </Button>
-            {isCalendarOpen && (
-              <div className="absolute right-0 top-12 z-50 bg-white dark:bg-slate-900 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700">
-                <ScheduleCalendar
-                  selectedDate={selectedDate}
-                  onDateSelect={(date) => {
-                    setSelectedDate(date)
-                    setIsCalendarOpen(false)
-                  }}
-                  schedules={[]}
-                  onClose={() => setIsCalendarOpen(false)}
-                />
-              </div>
-            )}
-
-            {/* Buttons for medium and larger screens */}
-            <div className="hidden md:flex items-center gap-3">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className="border-slate-300 hover:bg-slate-50 dark:border-slate-600 dark:hover:bg-slate-800 bg-transparent"
-                  >
-                    {theme === "light" ? (
-                      <Sun className="h-4 w-4" />
-                    ) : theme === "dark" ? (
-                      <Moon className="h-4 w-4" />
-                    ) : (
-                      <Monitor className="h-4 w-4" />
-                    )}
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => setTheme("light")}>
-                    <Sun className="h-4 w-4 mr-2" />
-                    라이트 모드
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setTheme("dark")}>
-                    <Moon className="h-4 w-4 mr-2" />
-                    다크 모드
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setTheme("system")}>
-                    <Monitor className="h-4 w-4 mr-2" />
-                    시스템 설정
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-              <Link href="/schedule">
-                <Button
-                  variant="outline"
-                  className="border-slate-300 hover:bg-slate-50 dark:border-slate-600 dark:hover:bg-slate-800 bg-transparent"
-                >
-                  <Calendar className="h-4 w-4 mr-2" />
-                  Schedule
-                </Button>
-              </Link>
-              <Link href="/templates">
-                <Button
-                  variant="outline"
-                  className="border-slate-300 hover:bg-slate-50 dark:border-slate-600 dark:hover:bg-slate-800 bg-transparent"
-                >
-                  <ClipboardList className="h-4 w-4 mr-2" />
-                  Templates
-                </Button>
-              </Link>
+              {selectedMonthLabel}
+              <ChevronDown className="h-4 w-4" />
+            </button>
+            <div className="flex items-center gap-2">
               <Button
+                className="h-10 w-10 rounded-full bg-[#BBDCE5] text-[#0F1C21] shadow-sm hover:bg-[#BBDCE5]/80"
                 onClick={() => {
                   setEditingGoal(null)
                   setIsFormOpen(true)
                 }}
-                className="bg-slate-900 hover:bg-slate-800 dark:bg-slate-100 dark:hover:bg-slate-200 text-white dark:text-slate-900 px-6 py-2 rounded-lg font-medium"
               >
-                <Plus className="h-4 w-4 mr-2" />
-                New Goal
+                <Plus className="h-5 w-5" />
               </Button>
-              <Button
-                variant="outline"
-                onClick={handleLogout}
-                className="border-slate-300 hover:bg-slate-50 dark:border-slate-600 dark:hover:bg-slate-800 bg-transparent p-2"
-              >
-                <LogOut className="h-4 w-4" />
-              </Button>
-            </div>
-
-            {/* Dropdown Menu for small screens */}
-            <div className="md:hidden">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="icon">
-                    <Menu className="h-4 w-4" />
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-10 w-10 rounded-full border border-[#99C6D6] bg-white text-[#0F1C21] shadow-sm hover:bg-white/80"
+                  >
+                    <Menu className="h-5 w-5" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => { setEditingGoal(null); setIsFormOpen(true); }}>
-                    <Plus className="h-4 w-4 mr-2" />
-                    New Goal
+                <DropdownMenuContent
+                  align="end"
+                  className="w-40 rounded-2xl border border-[#D3E6ED] bg-white p-2 text-sm text-[#0F1C21] shadow-md"
+                >
+                  <DropdownMenuItem asChild className="rounded-xl px-3 py-2">
+                    <Link href="/schedule">일정보기</Link>
                   </DropdownMenuItem>
-                  <DropdownMenuSub>
-                    <DropdownMenuSubTrigger>
-                      {theme === "light" ? (
-                        <Sun className="h-4 w-4 mr-2" />
-                      ) : theme === "dark" ? (
-                        <Moon className="h-4 w-4 mr-2" />
-                      ) : (
-                        <Monitor className="h-4 w-4 mr-2" />
-                      )}
-                      <span>Theme</span>
-                    </DropdownMenuSubTrigger>
-                    <DropdownMenuPortal>
-                      <DropdownMenuSubContent>
-                        <DropdownMenuItem onClick={() => setTheme("light")}>
-                          <Sun className="h-4 w-4 mr-2" />
-                          라이트 모드
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => setTheme("dark")}>
-                          <Moon className="h-4 w-4 mr-2" />
-                          다크 모드
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => setTheme("system")}>
-                          <Monitor className="h-4 w-4 mr-2" />
-                          시스템 설정
-                        </DropdownMenuItem>
-                      </DropdownMenuSubContent>
-                    </DropdownMenuPortal>
-                  </DropdownMenuSub>
-                  <DropdownMenuItem asChild>
-                    <Link href="/schedule" className="flex items-center w-full">
-                      <Calendar className="h-4 w-4 mr-2" />
-                      Schedule
-                    </Link>
+                  <DropdownMenuItem asChild className="rounded-xl px-3 py-2">
+                    <Link href="/templates">템플릿</Link>
                   </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link href="/templates" className="flex items-center w-full">
-                      <ClipboardList className="h-4 w-4 mr-2" />
-                      Templates
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={handleLogout}>
-                    <LogOut className="h-4 w-4 mr-2" />
-                    <span>Logout</span>
+                  <DropdownMenuItem className="rounded-xl px-3 py-2" onClick={handleLogout}>
+                    로그아웃
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
           </div>
-        </div>
+          {isCalendarOpen && (
+            <div className="mt-4 rounded-2xl border border-[#D3E6ED] bg-white p-3 shadow-sm">
+              <ScheduleCalendar
+                selectedDate={selectedDate}
+                onDateSelect={(date) => {
+                  setSelectedDate(date)
+                  setIsCalendarOpen(false)
+                }}
+                schedules={[]}
+                onClose={() => setIsCalendarOpen(false)}
+              />
+            </div>
+          )}
+        </header>
 
-        <div className="md:hidden flex justify-between items-center mb-4">
-          <h2 className="text-lg font-semibold">요약</h2>
-          <Button variant="ghost" onClick={() => setIsStatsVisible(!isStatsVisible)}>
-            {isStatsVisible ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
-          </Button>
-        </div>
-        <div className={`${isStatsVisible ? 'grid' : 'hidden'} md:grid grid-cols-1 md:grid-cols-3 gap-6 mb-8`}>
-          <Card className="border-0 shadow-sm dark:bg-slate-800">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-slate-600 dark:text-slate-400 mb-1">Total Goals</p>
-                  <p className="text-2xl font-semibold text-slate-900 dark:text-slate-100">{totalGoals}</p>
-                </div>
-                <div className="w-10 h-10 bg-slate-100 dark:bg-slate-700 rounded-lg flex items-center justify-center">
-                  <Target className="h-5 w-5 text-slate-600 dark:text-slate-400" />
-                </div>
+        <main className="flex-1 space-y-6 px-5 py-6">
+          {error && (
+            <div className="rounded-2xl border border-[#5D6E72] bg-white/90 px-4 py-3 text-xs text-[#5D6E72]">
+              {error}
+            </div>
+          )}
+
+          <section className="space-y-2">
+            <div className="flex items-center justify-between">
+              <h1 className="text-lg font-semibold">목표 현황</h1>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    className="flex items-center gap-2 rounded-full border border-[#99C6D6] bg-white px-3 py-1.5 text-xs font-semibold text-[#0F1C21] shadow-sm hover:bg-white/80"
+                  >
+                    {FILTER_LABELS[filterStatus]}
+                    <ChevronDown className="h-3 w-3" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  align="end"
+                  className="w-40 rounded-2xl border border-[#D3E6ED] bg-white p-2 text-sm text-[#0F1C21] shadow-md"
+                >
+                  {FILTER_OPTIONS.map((option) => {
+                    const isActive = option.value === filterStatus
+                    return (
+                      <DropdownMenuItem
+                        key={option.value}
+                        onClick={() => setFilterStatus(option.value)}
+                        className={`flex items-center justify-between rounded-xl px-3 py-2 ${
+                          isActive ? "bg-[#BBDCE5]/40 font-semibold text-[#0F1C21]" : ""
+                        }`}
+                      >
+                        <span>{option.label}</span>
+                        <span className="text-xs text-black/50">{filterCounts[option.value]}</span>
+                      </DropdownMenuItem>
+                    )
+                  })}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+            <p className="text-xs text-black/60">
+              {selectedDayLabel} • {FILTER_LABELS[filterStatus]} {filterCounts[filterStatus]}개
+            </p>
+          </section>
+
+          <section className="space-y-4">
+            {loading ? (
+              <div className="space-y-4">
+                {Array.from({ length: 3 }).map((_, index) => (
+                  <Card
+                    key={index}
+                    className="animate-pulse rounded-3xl border border-[#D3E6ED] bg-white/90 p-5 shadow-xs"
+                  >
+                    <div className="mb-3 h-4 w-3/4 rounded-full bg-[#BBDCE5]/40" />
+                    <div className="mb-4 h-3 w-1/2 rounded-full bg-[#BBDCE5]/30" />
+                    <div className="h-16 rounded-2xl bg-[#BBDCE5]/20" />
+                  </Card>
+                ))}
               </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-0 shadow-sm dark:bg-slate-800">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-slate-600 dark:text-slate-400 mb-1">Completed</p>
-                  <p className="text-2xl font-semibold text-slate-900 dark:text-slate-100">{completedGoals}</p>
+            ) : !hasVisibleGoals ? (
+              <div className="rounded-3xl border border-[#D3E6ED] bg-white/90 p-8 text-center shadow-xs">
+                <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[#BBDCE5]/30">
+                  <Target className="h-6 w-6 text-[#0F1C21]" />
                 </div>
-                <div className="w-10 h-10 bg-slate-100 dark:bg-slate-700 rounded-lg flex items-center justify-center">
-                  <CheckCircle2 className="h-5 w-5 text-slate-600 dark:text-slate-400" />
-                </div>
+                <p className="text-sm font-semibold">
+                  {filterStatus === "All" ? "등록된 목표가 없습니다" : "조건에 맞는 목표가 없어요"}
+                </p>
+                <p className="mt-2 text-xs text-black/60">
+                  {filterStatus === "All"
+                    ? "첫 목표를 만들어 하루 루틴을 시작해보세요."
+                    : "다른 필터를 선택하거나 새로운 목표를 추가해보세요."}
+                </p>
+                <Button
+                  className="mt-4 rounded-full bg-[#BBDCE5] px-4 text-[#0F1C21] shadow-sm hover:bg-[#BBDCE5]/80"
+                  onClick={() => setIsFormOpen(true)}
+                >
+                  <Plus className="h-4 w-4" />
+                  새 목표 만들기
+                </Button>
               </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-0 shadow-sm dark:bg-slate-800">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-slate-600 dark:text-slate-400 mb-1">Success Rate</p>
-                  <p className="text-2xl font-semibold text-slate-900 dark:text-slate-100">
-                    {totalGoals > 0 ? Math.round((completedGoals / totalGoals) * 100) : 0}%
+            ) : (
+              sectionsToRender.map((section) => (
+                <div key={section.title} className="space-y-3">
+                  <p className="px-1 text-xs font-semibold uppercase tracking-wide text-black/45">
+                    {section.title}
                   </p>
-                </div>
-                <div className="w-10 h-10 bg-slate-100 dark:bg-slate-700 rounded-lg flex items-center justify-center">
-                  <TrendingUp className="h-5 w-5 text-slate-600 dark:text-slate-400" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+                  <div className="space-y-3">
+                    {section.goals.map((goal) => {
+                      const rawProgress = getProgressPercentage(goal)
+                      const progress = Math.max(0, Math.min(100, Math.round(rawProgress)))
+                      const isCompleted = goal.completed
+                      const priorityClass = getPriorityColor(goal.priority)
+                      const circleBackground = {
+                        background: `conic-gradient(#BBDCE5 ${progress}%, rgba(187,220,229,0.25) ${progress}% 100%)`,
+                      }
 
-        <div className="flex gap-2 mb-4 pb-4 border-b border-slate-200 dark:border-slate-700">
-          <Button size="sm" variant={filterStatus === 'All' ? 'default' : 'ghost'} onClick={() => setFilterStatus('All')}>전체</Button>
-          <Button size="sm" variant={filterStatus === 'In Progress' ? 'default' : 'ghost'} onClick={() => setFilterStatus('In Progress')}>진행중</Button>
-          <Button size="sm" variant={filterStatus === 'Completed' ? 'default' : 'ghost'} onClick={() => setFilterStatus('Completed')}>완료</Button>
-          <Button size="sm" variant={filterStatus === 'Overdue' ? 'default' : 'ghost'} onClick={() => setFilterStatus('Overdue')}>기간만료</Button>
-        </div>
+                      return (
+                        <Link href={`/goal/${goal.goalId}`} key={goal.goalId} className="block">
+                          <Card className="rounded-3xl border border-[#D3E6ED] bg-white px-5 py-4 shadow-xs">
+                            <CardContent className="flex items-center justify-between gap-4 p-0">
+                              <div className="flex-1 space-y-2 overflow-hidden">
+                                <span
+                                  className={`inline-flex items-center rounded-full px-3 py-1 text-[11px] font-semibold ${priorityClass}`}
+                                >
+                                  {getPriorityText(goal.priority)}
+                                </span>
+                                <CardTitle className="truncate text-lg font-semibold leading-tight text-[#0F1C21]">
+                                  {goal.title}
+                                </CardTitle>
+                              </div>
+                              <div className="flex flex-col items-center gap-2">
+                                <div
+                                  className="relative flex h-16 w-16 items-center justify-center rounded-full bg-[#EEF5F7]"
+                                  style={circleBackground}
+                                >
+                                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white text-sm font-semibold text-[#0F1C21]">
+                                    {progress}%
+                                  </div>
+                                </div>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                    isCompleted ? "text-[#5D6E72]" : "text-[#0F1C21]"
+                                  }`}
+                                  onClick={(e) => {
+                                    e.preventDefault()
+                                    e.stopPropagation()
+                                    toggleGoalCompletion(goal.goalId)
+                                  }}
+                                >
+                                  <CheckCircle2 className="h-3.5 w-3.5" />
+                                  <span className="ml-2">{isCompleted ? "완료 해제" : "완료 처리"}</span>
+                                </Button>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        </Link>
+                      )
+                    })}
+                  </div>
+                </div>
+              ))
+            )}
+          </section>
+        </main>
 
         {isFormOpen && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white dark:bg-slate-800 rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4 backdrop-blur-sm">
+            <div className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-3xl border border-[#D3E6ED] bg-white p-4 shadow-2xl">
               <GoalForm
                 goal={editingGoal}
                 onSubmit={editingGoal ? (data) => updateGoal(editingGoal.goalId, data) : createGoal}
@@ -500,201 +506,6 @@ export default function GoalManagementApp() {
               />
             </div>
           </div>
-        )}
-
-        {loading ? (
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <Card key={i} className="animate-pulse border-0 shadow-sm dark:bg-slate-800">
-                <CardHeader className="pb-4">
-                  <div className="h-5 bg-slate-200 rounded w-3/4 mb-2"></div>
-                  <div className="h-4 bg-slate-200 rounded w-1/2"></div>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    <div className="h-4 bg-slate-200 rounded"></div>
-                    <div className="h-4 bg-slate-200 rounded w-2/3"></div>
-                    <div className="h-9 bg-slate-200 rounded"></div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        ) : filteredGoals.length === 0 ? (
-          <Card className="text-center py-16 border-0 shadow-sm dark:bg-slate-800">
-            <CardContent>
-              <div className="w-16 h-16 bg-slate-100 dark:bg-slate-700 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Target className="h-8 w-8 text-slate-400 dark:text-slate-400" />
-              </div>
-              <h3 className="text-lg font-medium text-slate-900 dark:text-slate-100 mb-2">
-                {filterStatus === 'All' ? 'No goals yet' : 'No matching goals'}
-              </h3>
-              <p className="text-slate-600 dark:text-slate-400 mb-6">
-                {filterStatus === 'All' ? 'Create your first goal to get started' : 'Try a different filter or create a new goal'}
-              </p>
-              <Button
-                onClick={() => setIsFormOpen(true)}
-                className="bg-slate-900 hover:bg-slate-800 dark:bg-slate-100 dark:hover:bg-slate-200 text-white dark:text-slate-900 px-6 py-2 rounded-lg font-medium"
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Create Goal
-              </Button>
-            </CardContent>
-          </Card>
-        ) : (
-          <>
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {currentItems.map(goal => {
-                const progress = getProgressPercentage(goal)
-                return (
-                  <Link href={`/goal/${goal.goalId}`} key={goal.goalId} className="block">
-                    <Card
-                      style={{ borderTop: `4px solid ${goal.color}` }}
-                      className={`group transition-all duration-200 hover:shadow-md border border-slate-200 dark:border-slate-700 shadow-sm ${
-                        goal.completed ? "bg-slate-50 dark:bg-slate-800" : "bg-white dark:bg-slate-900"
-                      }`}
-                    >
-                      <CardHeader className="pb-4">
-                        <div className="flex items-start justify-between mb-3">
-                          <CardTitle
-                            className={`text-lg font-medium leading-tight ${
-                              goal.completed
-                                ? "line-through text-slate-500 dark:text-slate-400"
-                                : "text-slate-900 dark:text-slate-100"
-                            }`}
-                          >
-                            {goal.title}
-                          </CardTitle>
-                          <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-8 w-8 p-0 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-md"
-                              onClick={(e) => {
-                                e.preventDefault()
-                                e.stopPropagation()
-                                setEditingGoal(goal)
-                                setIsFormOpen(true)
-                              }}
-                            >
-                              <Edit className="h-4 w-4 text-slate-600 dark:text-slate-400" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-8 w-8 p-0 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-md"
-                              onClick={(e) => {
-                                e.preventDefault()
-                                e.stopPropagation()
-                                deleteGoal(goal.goalId)
-                              }}
-                            >
-                              <Trash2 className="h-4 w-4 text-slate-600 dark:text-slate-400" />
-                            </Button>
-                          </div>
-                        </div>
-
-                        <div className="flex items-center gap-2 mb-4">
-                          <span className={`px-2 py-1 rounded text-xs font-medium ${getPriorityColor(goal.priority)}`}>
-                            {getPriorityText(goal.priority)}
-                          </span>
-                          {goal.completed && (
-                            <span className="px-2 py-1 rounded text-xs font-medium bg-slate-900 text-white">Done</span>
-                          )}
-                        </div>
-
-                        <div className="mb-4">
-                          <div className="flex justify-between text-xs text-slate-600 dark:text-slate-400 mb-2">
-                            <span>Progress</span>
-                            <span>{Math.round(progress)}%</span>
-                          </div>
-                          <div className="w-full bg-slate-200 rounded-full h-1.5 dark:bg-slate-700">
-                            <div
-                              className="bg-slate-900 h-1.5 rounded-full transition-all duration-300 dark:bg-slate-100"
-                              style={{ width: `${progress}%` }}
-                            />
-                          </div>
-                        </div>
-                      </CardHeader>
-
-                      <CardContent className="space-y-4">
-                        <div className="space-y-2 text-sm text-slate-600 dark:text-slate-400">
-                          <div className="flex items-center gap-2">
-                            <Calendar className="h-4 w-4" />
-                            <span>
-                              {formatDate(goal.startDate)} - {formatDate(goal.endDate)}
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Clock className="h-4 w-4" />
-                            <span>{goal.duration} days</span>
-                          </div>
-                          <div className="flex items-center gap-2" style={{ minHeight: '1.5rem' }}> {/* minHeight to reserve space */}
-                            {goal.subGoals.length > 0 && (
-                              <>
-                                <Target className="h-4 w-4" />
-                                <span>
-                                  {goal.subGoals.filter((sg) => sg.completed).length}/{goal.subGoals.length} subtasks
-                                </span>
-                              </>
-                            )}
-                          </div>
-                        </div>
-
-                        <Button
-                          variant={goal.completed ? "secondary" : "default"}
-                          size="sm"
-                          className={`w-full font-medium ${
-                            goal.completed
-                              ? "bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-700 dark:hover:bg-slate-600 dark:text-slate-300"
-                              : "bg-slate-900 hover:bg-slate-800 text-white dark:bg-slate-100 dark:hover:bg-slate-200 dark:text-slate-900"
-                          }`}
-                          onClick={(e) => {
-                            e.preventDefault()
-                            e.stopPropagation()
-                            toggleGoalCompletion(goal.goalId)
-                          }}
-                        >
-                          {goal.completed ? (
-                            <>
-                              <CheckCircle2 className="h-4 w-4 mr-2" />
-                              Completed
-                            </>
-                          ) : (
-                            "Mark Complete"
-                          )}
-                        </Button>
-                      </CardContent>
-                    </Card>
-                  </Link>
-                )
-              })}
-            </div> {/* Closing div for the grid */}
-
-            {totalPages > 1 && (
-              <div className="flex justify-center items-center gap-2 mt-8">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                  disabled={currentPage === 1}
-                >
-                  이전
-                </Button>
-                <span className="text-sm font-medium">
-                  Page {currentPage} of {totalPages}
-                </span>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-                  disabled={currentPage === totalPages}
-                >
-                  다음
-                </Button>
-              </div>
-            )}
-          </> // Closing fragment
         )}
       </div>
     </div>
