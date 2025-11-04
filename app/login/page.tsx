@@ -32,7 +32,7 @@ export default function LoginPage() {
     "효율적인 시간 관리로 꿈을 이루세요",
     "시간은 금이다, 현명하게 사용하세요",
     "매 순간을 소중하게",
-    "시간 관리의 시작, Knoss와 함께",
+    "시간 관리의 시작, Krocs와 함께",
   ]
 
   return (
@@ -75,7 +75,7 @@ export default function LoginPage() {
       {/* 헤더 */}
       <header className="w-full p-6 relative z-10">
         <Link href="/" className="text-2xl font-bold text-white">
-          Knoss
+          Krocs
         </Link>
       </header>
 
