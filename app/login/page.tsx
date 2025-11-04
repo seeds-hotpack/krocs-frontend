@@ -109,9 +109,9 @@ export default function LoginPage() {
                   type="button"
                   disabled={isLoading}
                   onClick={handleGoogleLogin}
-                  className="w-full h-14 text-base hover:bg-gray-50 bg-transparent"
+                  className="w-full h-14 text-base hover:bg-gray-50 bg-transparent rounded-full"
                 >
-                  <svg className="h-6 w-6 mr-3" viewBox="0 0 24 24">
+                  <svg className="h-8 w-8 mr-3" viewBox="0 0 24 24">
                     <path
                       d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
                       fill="#4285F4"
@@ -136,9 +136,9 @@ export default function LoginPage() {
                   type="button"
                   disabled={isLoading}
                   onClick={handleNaverLogin}
-                  className="w-full h-14 text-base hover:bg-gray-50 bg-transparent"
+                  className="w-full h-14 text-base hover:bg-gray-50 bg-transparent rounded-full"
                 >
-                  <svg className="h-6 w-6 mr-3" viewBox="0 0 24 24" fill="none">
+                  <svg className="h-8 w-8 mr-3" viewBox="0 0 24 24" fill="none">
                     <rect width="24" height="24" rx="4" fill="#03C75A" />
                     <path d="M16.273 12.845L7.376 0H0v24h7.727V11.155L16.624 24H24V0h-7.727v12.845z" fill="white" />
                   </svg>
@@ -149,9 +149,9 @@ export default function LoginPage() {
                   type="button"
                   disabled={isLoading}
                   onClick={handleKakaoLogin}
-                  className="w-full h-14 text-base hover:bg-gray-50 bg-transparent"
+                  className="w-full h-14 text-base hover:bg-gray-50 bg-transparent rounded-full"
                 >
-                  <svg className="h-6 w-6 mr-3" viewBox="0 0 24 24" fill="none">
+                  <svg className="h-8 w-8 mr-3" viewBox="0 0 24 24" fill="none">
                     <rect width="24" height="24" rx="4" fill="#FEE500" />
                     <path
                       d="M12 4C7.582 4 4 6.686 4 10c0 2.09 1.352 3.93 3.406 5.089l-.87 3.197c-.068.25.186.457.414.337l3.384-2.25C10.87 16.458 11.425 16.5 12 16.5c4.418 0 8-2.686 8-6s-3.582-6-8-6z"
