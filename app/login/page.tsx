@@ -98,8 +98,7 @@ export default function LoginPage() {
                   className="object-contain"
                 />
               </div>
-              <CardTitle className="text-2xl text-center">간편 로그인</CardTitle>
-              <CardDescription className="text-center">소셜 계정으로 빠르게 시작하세요</CardDescription>
+              <CardDescription className="text-center">소셜 계정으로 간편하게 시작하세요</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               {/* 소셜 로그인 버튼들 */}
@@ -109,7 +108,7 @@ export default function LoginPage() {
                   type="button"
                   disabled={isLoading}
                   onClick={handleGoogleLogin}
-                  className="w-full h-14 text-base hover:bg-gray-50 bg-transparent"
+                  className="w-full h-14 text-base hover:bg-gray-50 bg-transparent rounded-full"
                 >
                   <svg className="h-6 w-6 mr-3" viewBox="0 0 24 24">
                     <path
@@ -135,8 +134,7 @@ export default function LoginPage() {
                   variant="outline"
                   type="button"
                   disabled={isLoading}
-                  onClick={handleNaverLogin}
-                  className="w-full h-14 text-base hover:bg-gray-50 bg-transparent"
+                  className="w-full h-14 text-base hover:bg-gray-50 bg-transparent rounded-full"
                 >
                   <svg className="h-6 w-6 mr-3" viewBox="0 0 24 24" fill="none">
                     <rect width="24" height="24" rx="4" fill="#03C75A" />
@@ -149,7 +147,7 @@ export default function LoginPage() {
                   type="button"
                   disabled={isLoading}
                   onClick={handleKakaoLogin}
-                  className="w-full h-14 text-base hover:bg-gray-50 bg-transparent"
+                  className="w-full h-14 text-base hover:bg-gray-50 bg-transparent rounded-full"
                 >
                   <svg className="h-6 w-6 mr-3" viewBox="0 0 24 24" fill="none">
                     <rect width="24" height="24" rx="4" fill="#FEE500" />
