@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-
 import { useState } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
@@ -10,20 +9,7 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 
 export default function LoginPage() {
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
   const [isLoading, setIsLoading] = useState(false)
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsLoading(true)
-
-    // TODO: 실제 로그인 로직 구현
-    await new Promise((resolve) => setTimeout(resolve, 1000))
-
-    console.log("Login attempt:", { email })
-    setIsLoading(false)
-  }
 
   const backendOrigin = process.env.NEXT_PUBLIC_API_URL
     ? new URL(process.env.NEXT_PUBLIC_API_URL).origin
@@ -61,67 +47,18 @@ export default function LoginPage() {
           {/* 로그인 카드 */}
           <Card className="border-0 shadow-2xl bg-white">
             <CardHeader className="space-y-1">
-              <CardTitle className="text-2xl">로그인</CardTitle>
-              <CardDescription>이메일과 비밀번호를 입력하세요</CardDescription>
+              <CardTitle className="text-2xl">소셜 로그인</CardTitle>
+              <CardDescription>아래 버튼을 눌러 로그인하세요</CardDescription>
             </CardHeader>
             <CardContent>
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="email">이메일</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="name@example.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                    disabled={isLoading}
-                    className="w-full"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="password">비밀번호</Label>
-                    <a href="#" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-                      비밀번호를 잊으셨나요?
-                    </a>
-                  </div>
-                  <Input
-                    id="password"
-                    type="password"
-                    placeholder="비밀번호를 입력하세요"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                    disabled={isLoading}
-                    className="w-full"
-                  />
-                </div>
-                <Button
-                  type="submit"
-                  className="w-full bg-purple-600 hover:bg-purple-700 text-white"
-                  disabled={isLoading}
-                >
-                  {isLoading ? "로그인 중..." : "로그인"}
-                </Button>
-              </form>
             </CardContent>
             <CardFooter className="flex flex-col space-y-4">
-              <div className="relative w-full">
-                <div className="absolute inset-0 flex items-center">
-                  <span className="w-full border-t border-border" />
-                </div>
-                <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-white px-2 text-muted-foreground">또는</span>
-                </div>
-              </div>
 
               {/* 소셜 로그인 버튼들 */}
               <div className="grid grid-cols-3 gap-3 w-full">
                 <Button
                   variant="outline"
                   type="button"
-                  disabled={isLoading}
                   onClick={handleGoogleLogin}
                   className="flex flex-col items-center justify-center h-20 gap-1 bg-transparent"
                 >
@@ -148,7 +85,6 @@ export default function LoginPage() {
                 <Button
                   variant="outline"
                   type="button"
-                  disabled={isLoading}
                   onClick={handleNaverLogin}
                   className="flex flex-col items-center justify-center h-20 gap-1 bg-transparent"
                 >
@@ -161,7 +97,6 @@ export default function LoginPage() {
                 <Button
                   variant="outline"
                   type="button"
-                  disabled={isLoading}
                   onClick={handleKakaoLogin}
                   className="flex flex-col items-center justify-center h-20 gap-1 bg-transparent"
                 >
