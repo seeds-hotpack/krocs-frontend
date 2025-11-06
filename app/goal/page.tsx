@@ -223,7 +223,6 @@ export default function GoalPage() {
     return endDate >= today
   })
 
-  // 우선순위 정렬 함수
   const sortByPriority = (goalsList: Goal[]) => {
     const priorityOrder = { HIGH: 1, MEDIUM: 2, LOW: 3 }
     return [...goalsList].sort((a, b) => priorityOrder[a.priority] - priorityOrder[b.priority])
@@ -268,7 +267,6 @@ export default function GoalPage() {
 
   return (
     <div className="min-h-screen bg-[#EEF5F7] text-[#0F1C21]">
-      {/* Header */}
       <header className="sticky top-0 z-20 border-b border-[#D3E6ED] bg-[#EEF5F7]/95 px-6 py-4 backdrop-blur">
         <div className="mx-auto flex max-w-7xl items-center justify-between">
           <h1 className="text-xl font-bold text-[#0F1C21]">목표 관리</h1>
@@ -315,10 +313,8 @@ export default function GoalPage() {
         </div>
       </header>
 
-      {/* Main Content - 2 Column Layout */}
       <main className="mx-auto max-w-7xl px-6 py-6">
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-          {/* Left Column - Calendar (Always Visible) */}
           <div className="lg:col-span-1">
             <Card className="sticky top-24 rounded-3xl border border-[#D3E6ED] bg-white p-4 shadow-md">
               <CardContent className="p-0">
@@ -331,7 +327,6 @@ export default function GoalPage() {
             </Card>
           </div>
 
-          {/* Right Column - Goal List */}
           <div className="space-y-6 lg:col-span-2">
             {error && (
               <div className="rounded-2xl border border-[#5D6E72] bg-white/90 px-4 py-3 text-xs text-[#5D6E72]">
@@ -339,7 +334,6 @@ export default function GoalPage() {
               </div>
             )}
 
-            {/* Filter Section */}
             <section className="space-y-3">
               <div className="flex items-center justify-between">
                 <div>
@@ -382,23 +376,22 @@ export default function GoalPage() {
               </div>
             </section>
 
-            {/* Goals List */}
             <section className="space-y-4">
               {loading ? (
-                <div className="space-y-4">
+                <div className="space-y-3">
                   {Array.from({ length: 3 }).map((_, index) => (
                     <Card
                       key={index}
-                      className="animate-pulse rounded-3xl border border-[#D3E6ED] bg-white/90 p-5 shadow-xs"
+                      className="animate-pulse rounded-3xl border border-[#D3E6ED] bg-white p-4 shadow-xs"
                     >
-                      <div className="mb-3 h-4 w-3/4 rounded-full bg-[#BBDCE5]/40" />
-                      <div className="mb-4 h-3 w-1/2 rounded-full bg-[#BBDCE5]/30" />
-                      <div className="h-16 rounded-2xl bg-[#BBDCE5]/20" />
+                      <div className="mb-2 h-3 w-1/4 rounded-full bg-[#BBDCE5]/40" />
+                      <div className="mb-3 h-4 w-3/4 rounded-full bg-[#BBDCE5]/30" />
+                      <div className="h-2 rounded-full bg-[#BBDCE5]/20" />
                     </Card>
                   ))}
                 </div>
               ) : !hasVisibleGoals ? (
-                <Card className="rounded-3xl border border-[#D3E6ED] bg-white/90 p-10 text-center shadow-xs">
+                <Card className="rounded-3xl border border-[#D3E6ED] bg-white p-10 text-center shadow-xs">
                   <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[#BBDCE5]/30">
                     <Target className="h-7 w-7 text-[#0F1C21]" />
                   </div>
@@ -421,7 +414,7 @@ export default function GoalPage() {
               ) : (
                 sectionsToRender.map((section) => (
                   <div key={section.title} className="space-y-3">
-                    <h3 className="px-2 text-sm font-semibold uppercase tracking-wide text-black/50">
+                    <h3 className="px-2 text-xs font-bold uppercase tracking-wider text-black/40">
                       {section.title}
                     </h3>
                     <div className="space-y-3">
@@ -430,9 +423,6 @@ export default function GoalPage() {
                         const progress = Math.max(0, Math.min(100, Math.round(rawProgress)))
                         const isCompleted = goal.completed
                         const priorityClass = getPriorityColor(goal.priority)
-                        const circleBackground = {
-                          background: `conic-gradient(#BBDCE5 ${progress}%, rgba(187,220,229,0.25) ${progress}% 100%)`,
-                        }
 
                         const startDate = new Date(goal.startDate)
                         const endDate = new Date(goal.endDate)
@@ -445,136 +435,105 @@ export default function GoalPage() {
                         const daysRemaining = Math.ceil((endDate.getTime() - todayZero.getTime()) / (1000 * 60 * 60 * 24))
                         const calculatedTotalDays = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1
                         const totalDays = goal.duration === 0 ? calculatedTotalDays : goal.duration
-                        const remainingPercentage = totalDays > 0 ? Math.round((daysRemaining / totalDays) * 100) : 0
                         const isOverdue = daysRemaining < 0 && !isCompleted
                         
                         return (
                           <Link href={`/goal/${goal.goalId}`} key={goal.goalId} className="block">
                             <Card 
-                              className="group rounded-3xl border-2 bg-white shadow-sm transition-all hover:shadow-lg"
+                              className="group rounded-3xl border-2 bg-white shadow-sm transition-all hover:shadow-md hover:scale-[1.005]"
                               style={{ 
-                                borderLeftWidth: '6px',
+                                borderLeftWidth: '5px',
                                 borderLeftColor: goal.color || '#BBDCE5',
                                 borderTopColor: '#D3E6ED',
                                 borderRightColor: '#D3E6ED',
                                 borderBottomColor: '#D3E6ED'
                               }}
                             >
-                              <CardContent className="p-4">
-                                <div className="flex items-start justify-between gap-5">
-                                  {/* Left Content */}
-                                  <div className="flex-1 space-y-3">
-                                    {/* Priority Badge & Title */}
-                                    <div className="space-y-2">
-                                      <span
-                                        className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${priorityClass}`}
-                                      >
-                                        {getPriorityText(goal.priority)}
-                                      </span>
-                                      <CardTitle className="text-xl font-bold leading-snug text-[#0F1C21] group-hover:text-[#5D6E72] transition-colors">
-                                        {goal.title}
-                                      </CardTitle>
-                                    </div>
-
-                                    {/* Goal Info Grid */}
-                                    <div className="grid grid-cols-2 gap-2">
-                                      {/* Date Range */}
-                                      <div 
-                                        className="rounded-xl px-3 py-2"
-                                        style={{ backgroundColor: `${goal.color}20` || '#EEF5F7' }}
-                                      >
-                                        <div className="flex items-center gap-1.5 text-xs text-[#5D6E72] mb-0.5">
-                                          <Calendar className="h-3 w-3" />
-                                          <span className="font-medium">기간</span>
-                                        </div>
-                                        <p className="text-xs font-semibold text-[#0F1C21]">
-                                          {new Date(goal.startDate).toLocaleDateString("ko-KR", { month: "short", day: "numeric" })} - {new Date(goal.endDate).toLocaleDateString("ko-KR", { month: "short", day: "numeric" })}
-                                        </p>
-                                        <p className="text-[10px] text-[#5D6E72] mt-0.5">
-                                          {totalDays}일 계획
-                                        </p>
-                                      </div>
-
-                                      {/* Days Remaining */}
-                                      <div 
-                                        className="rounded-xl px-3 py-2"
-                                        style={{ backgroundColor: `${goal.color}20` || '#EEF5F7' }}
-                                      >
-                                        <div className="flex items-center gap-1.5 text-xs text-[#5D6E72] mb-0.5">
-                                          <Target className="h-3 w-3" />
-                                          <span className="font-medium">남은 일수</span>
-                                        </div>
-                                        <p className={`text-xs font-semibold ${isOverdue ? "text-red-500" : "text-[#0F1C21]"}`}>
-                                          {isCompleted ? "완료됨" : isOverdue ? `${Math.abs(daysRemaining)}일 초과` : daysRemaining === 0 ? "오늘 마감" : `D-${daysRemaining}`}
-                                        </p>
-                                        {!isCompleted && !isOverdue && daysRemaining > 0 && (
-                                          <p className="text-[10px] text-[#5D6E72] mt-0.5">
-                                            {remainingPercentage}% 남음
-                                          </p>
-                                        )}
-                                      </div>
-                                    </div>
-
-                                    {/* SubGoals Progress */}
-                                    {goal.subGoals.length > 0 && (
-                                      <div 
-                                        className="rounded-xl border px-3 py-2"
-                                        style={{ 
-                                          backgroundColor: `${goal.color}15` || '#EEF5F7',
-                                          borderColor: `${goal.color}40` || '#D3E6ED'
-                                        }}
-                                      >
-                                        <div className="flex items-center justify-between mb-1.5">
-                                          <span className="text-xs font-medium text-[#5D6E72]">소목표 진행률</span>
-                                          <span className="text-xs font-semibold text-[#0F1C21]">
-                                            {goal.subGoals.filter((sg) => sg.completed).length} / {goal.subGoals.length}
-                                          </span>
-                                        </div>
-                                        <div className="h-1.5 w-full rounded-full bg-[#D3E6ED] overflow-hidden">
-                                          <div 
-                                            className="h-full transition-all duration-300"
-                                            style={{ 
-                                              width: `${progress}%`,
-                                              background: `linear-gradient(to right, ${goal.color || '#BBDCE5'}, ${goal.color || '#5D6E72'})`
-                                            }}
-                                          />
-                                        </div>
-                                      </div>
-                                    )}
-                                  </div>
-
-                                  {/* Right Content - Progress Circle & Button */}
-                                  <div className="flex flex-col items-center gap-2.5">
-                                    <div
-                                      className="relative flex h-20 w-20 items-center justify-center rounded-full shadow-inner"
-                                      style={{
-                                        background: `conic-gradient(${goal.color || '#BBDCE5'} ${progress}%, rgba(187,220,229,0.25) ${progress}% 100%)`
-                                      }}
-                                    >
-                                      <div className="flex h-14 w-14 items-center justify-center rounded-full bg-white shadow-sm">
-                                        <span className="text-base font-bold text-[#0F1C21]">{progress}%</span>
-                                      </div>
-                                    </div>
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      className={`rounded-full px-4 py-1.5 text-xs font-semibold shadow-sm transition-all ${
-                                        isCompleted
-                                          ? "border border-[#99C6D6] bg-white text-[#5D6E72] hover:bg-[#EEF5F7]"
-                                          : "text-[#0F1C21]"
-                                      }`}
-                                      style={!isCompleted ? {
-                                        backgroundColor: goal.color || '#BBDCE5',
-                                      } : {}}
+                              <CardContent className="p-5">
+                                <div className="flex items-center justify-between gap-4">
+                                  {/* Checkbox + Content */}
+                                  <div className="flex items-start gap-4 flex-1 min-w-0">
+                                    <button
                                       onClick={(e) => {
                                         e.preventDefault()
                                         e.stopPropagation()
                                         toggleGoalCompletion(goal.goalId)
                                       }}
+                                      className={`mt-1 flex-shrink-0 h-6 w-6 rounded-full border-2 flex items-center justify-center transition-all hover:scale-110 ${
+                                        isCompleted
+                                          ? 'bg-gradient-to-br shadow-sm'
+                                          : 'hover:border-opacity-80'
+                                      }`}
+                                      style={isCompleted ? {
+                                        backgroundColor: goal.color || '#5D6E72',
+                                        borderColor: goal.color || '#5D6E72',
+                                      } : {
+                                        borderColor: goal.color || '#D3E6ED',
+                                      }}
                                     >
-                                      <CheckCircle2 className="h-3.5 w-3.5" />
-                                      <span className="ml-1.5">{isCompleted ? "완료 해제" : "완료 처리"}</span>
-                                    </Button>
+                                      {isCompleted && <CheckCircle2 className="h-4 w-4 text-white" strokeWidth={3} />}
+                                    </button>
+
+                                    <div className="flex-1 min-w-0 space-y-3">
+                                      <div className="space-y-2">
+                                        <span
+                                          className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-bold ${priorityClass}`}
+                                        >
+                                          {getPriorityText(goal.priority)}
+                                        </span>
+                                        <CardTitle className={`text-lg font-bold leading-tight transition-all ${
+                                          isCompleted ? 'text-[#5D6E72]/70 line-through' : 'text-[#0F1C21] group-hover:text-[#5D6E72]'
+                                        }`}>
+                                          {goal.title}
+                                        </CardTitle>
+                                      </div>
+
+                                      <div className="flex items-center gap-4 flex-wrap text-xs text-[#5D6E72]">
+                                        <div className="flex items-center gap-1.5">
+                                          <Calendar className="h-3.5 w-3.5 flex-shrink-0" />
+                                          <span className="whitespace-nowrap">
+                                            {new Date(goal.startDate).toLocaleDateString("ko-KR", { month: "short", day: "numeric" })} - {new Date(goal.endDate).toLocaleDateString("ko-KR", { month: "short", day: "numeric" })}
+                                          </span>
+                                        </div>
+                                        <div className="flex items-center gap-1.5">
+                                          <Target className="h-3.5 w-3.5 flex-shrink-0" />
+                                          <span className={`font-semibold whitespace-nowrap ${isOverdue ? "text-red-500" : ""}`}>
+                                            {isCompleted ? "완료" : isOverdue ? `${Math.abs(daysRemaining)}일 초과` : daysRemaining === 0 ? "오늘 마감" : `D-${daysRemaining}`}
+                                          </span>
+                                        </div>
+                                      </div>
+
+                                      <div className="space-y-1.5">
+                                        <div className="flex items-center justify-between text-[10px]">
+                                          <span className="text-[#5D6E72] font-medium">
+                                            {goal.subGoals.length > 0 ? `소목표 ${goal.subGoals.filter((sg) => sg.completed).length}/${goal.subGoals.length}` : '목표 진행률'}
+                                          </span>
+                                          <span className="font-bold" style={{ color: goal.color || '#5D6E72' }}>
+                                            {progress}%
+                                          </span>
+                                        </div>
+                                        <div className="h-2 w-full rounded-full bg-[#EEF5F7] overflow-hidden">
+                                          <div 
+                                            className="h-full transition-all duration-500 ease-out rounded-full"
+                                            style={{ 
+                                              width: `${progress}%`,
+                                              backgroundColor: goal.color || '#BBDCE5'
+                                            }}
+                                          />
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  <div
+                                    className="relative flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-full shadow-sm"
+                                    style={{
+                                      background: `conic-gradient(${goal.color || '#BBDCE5'} ${progress}%, #EEF5F7 ${progress}% 100%)`
+                                    }}
+                                  >
+                                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white">
+                                      <span className="text-xs font-bold text-[#0F1C21]">{progress}%</span>
+                                    </div>
                                   </div>
                                 </div>
                               </CardContent>
@@ -591,7 +550,6 @@ export default function GoalPage() {
         </div>
       </main>
 
-      {/* Goal Form Modal */}
       {isFormOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4 backdrop-blur-sm">
           <div className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-3xl border border-[#D3E6ED] bg-white p-4 shadow-2xl">
