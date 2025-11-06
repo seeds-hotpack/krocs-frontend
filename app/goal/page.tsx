@@ -223,6 +223,12 @@ export default function GoalPage() {
     return endDate >= today
   })
 
+  // 우선순위 정렬 함수
+  const sortByPriority = (goalsList: Goal[]) => {
+    const priorityOrder = { HIGH: 1, MEDIUM: 2, LOW: 3 }
+    return [...goalsList].sort((a, b) => priorityOrder[a.priority] - priorityOrder[b.priority])
+  }
+
   const totalGoals = goals.length
   const inProgressCount = inProgressList.length
   const completedCount = completedList.length
@@ -238,15 +244,15 @@ export default function GoalPage() {
   const sections = (() => {
     switch (filterStatus) {
       case "In Progress":
-        return [{ title: "진행 중", goals: inProgressList }]
+        return [{ title: "진행 중", goals: sortByPriority(inProgressList) }]
       case "Completed":
-        return [{ title: "완료된 목표", goals: completedList }]
+        return [{ title: "완료된 목표", goals: sortByPriority(completedList) }]
       case "Overdue":
-        return [{ title: "기한 초과", goals: overdueList }]
+        return [{ title: "기한 초과", goals: sortByPriority(overdueList) }]
       default:
         return [
-          { title: "진행 중", goals: inProgressList },
-          { title: "완료된 목표", goals: completedList },
+          { title: "진행 중", goals: sortByPriority(inProgressList) },
+          { title: "완료된 목표", goals: sortByPriority(completedList) },
         ]
     }
   })()
