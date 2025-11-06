@@ -454,55 +454,55 @@ export default function GoalPage() {
                                 borderBottomColor: '#D3E6ED'
                               }}
                             >
-                              <CardContent className="p-6">
-                                <div className="flex items-start justify-between gap-6">
+                              <CardContent className="p-4">
+                                <div className="flex items-start justify-between gap-5">
                                   {/* Left Content */}
-                                  <div className="flex-1 space-y-4">
+                                  <div className="flex-1 space-y-3">
                                     {/* Priority Badge & Title */}
-                                    <div className="space-y-3">
+                                    <div className="space-y-2">
                                       <span
                                         className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${priorityClass}`}
                                       >
                                         {getPriorityText(goal.priority)}
                                       </span>
-                                      <CardTitle className="text-2xl font-bold leading-snug text-[#0F1C21] group-hover:text-[#5D6E72] transition-colors">
+                                      <CardTitle className="text-xl font-bold leading-snug text-[#0F1C21] group-hover:text-[#5D6E72] transition-colors">
                                         {goal.title}
                                       </CardTitle>
                                     </div>
 
                                     {/* Goal Info Grid */}
-                                    <div className="grid grid-cols-2 gap-3">
+                                    <div className="grid grid-cols-2 gap-2">
                                       {/* Date Range */}
                                       <div 
-                                        className="rounded-2xl px-4 py-3"
+                                        className="rounded-xl px-3 py-2"
                                         style={{ backgroundColor: `${goal.color}20` || '#EEF5F7' }}
                                       >
-                                        <div className="flex items-center gap-2 text-xs text-[#5D6E72] mb-1">
-                                          <Calendar className="h-3.5 w-3.5" />
+                                        <div className="flex items-center gap-1.5 text-xs text-[#5D6E72] mb-0.5">
+                                          <Calendar className="h-3 w-3" />
                                           <span className="font-medium">기간</span>
                                         </div>
-                                        <p className="text-sm font-semibold text-[#0F1C21]">
+                                        <p className="text-xs font-semibold text-[#0F1C21]">
                                           {new Date(goal.startDate).toLocaleDateString("ko-KR", { month: "short", day: "numeric" })} - {new Date(goal.endDate).toLocaleDateString("ko-KR", { month: "short", day: "numeric" })}
                                         </p>
-                                        <p className="text-xs text-[#5D6E72] mt-0.5">
+                                        <p className="text-[10px] text-[#5D6E72] mt-0.5">
                                           {totalDays}일 계획
                                         </p>
                                       </div>
 
                                       {/* Days Remaining */}
                                       <div 
-                                        className="rounded-2xl px-4 py-3"
+                                        className="rounded-xl px-3 py-2"
                                         style={{ backgroundColor: `${goal.color}20` || '#EEF5F7' }}
                                       >
-                                        <div className="flex items-center gap-2 text-xs text-[#5D6E72] mb-1">
-                                          <Target className="h-3.5 w-3.5" />
+                                        <div className="flex items-center gap-1.5 text-xs text-[#5D6E72] mb-0.5">
+                                          <Target className="h-3 w-3" />
                                           <span className="font-medium">남은 일수</span>
                                         </div>
-                                        <p className={`text-sm font-semibold ${isOverdue ? "text-red-500" : "text-[#0F1C21]"}`}>
+                                        <p className={`text-xs font-semibold ${isOverdue ? "text-red-500" : "text-[#0F1C21]"}`}>
                                           {isCompleted ? "완료됨" : isOverdue ? `${Math.abs(daysRemaining)}일 초과` : daysRemaining === 0 ? "오늘 마감" : `D-${daysRemaining}`}
                                         </p>
                                         {!isCompleted && !isOverdue && daysRemaining > 0 && (
-                                          <p className="text-xs text-[#5D6E72] mt-0.5">
+                                          <p className="text-[10px] text-[#5D6E72] mt-0.5">
                                             {remainingPercentage}% 남음
                                           </p>
                                         )}
@@ -512,19 +512,19 @@ export default function GoalPage() {
                                     {/* SubGoals Progress */}
                                     {goal.subGoals.length > 0 && (
                                       <div 
-                                        className="rounded-2xl border px-4 py-3"
+                                        className="rounded-xl border px-3 py-2"
                                         style={{ 
                                           backgroundColor: `${goal.color}15` || '#EEF5F7',
                                           borderColor: `${goal.color}40` || '#D3E6ED'
                                         }}
                                       >
-                                        <div className="flex items-center justify-between mb-2">
+                                        <div className="flex items-center justify-between mb-1.5">
                                           <span className="text-xs font-medium text-[#5D6E72]">소목표 진행률</span>
                                           <span className="text-xs font-semibold text-[#0F1C21]">
                                             {goal.subGoals.filter((sg) => sg.completed).length} / {goal.subGoals.length}
                                           </span>
                                         </div>
-                                        <div className="h-2 w-full rounded-full bg-[#D3E6ED] overflow-hidden">
+                                        <div className="h-1.5 w-full rounded-full bg-[#D3E6ED] overflow-hidden">
                                           <div 
                                             className="h-full transition-all duration-300"
                                             style={{ 
@@ -538,21 +538,21 @@ export default function GoalPage() {
                                   </div>
 
                                   {/* Right Content - Progress Circle & Button */}
-                                  <div className="flex flex-col items-center gap-4">
+                                  <div className="flex flex-col items-center gap-2.5">
                                     <div
-                                      className="relative flex h-24 w-24 items-center justify-center rounded-full shadow-inner"
+                                      className="relative flex h-20 w-20 items-center justify-center rounded-full shadow-inner"
                                       style={{
                                         background: `conic-gradient(${goal.color || '#BBDCE5'} ${progress}%, rgba(187,220,229,0.25) ${progress}% 100%)`
                                       }}
                                     >
-                                      <div className="flex h-16 w-16 items-center justify-center rounded-full bg-white shadow-sm">
-                                        <span className="text-lg font-bold text-[#0F1C21]">{progress}%</span>
+                                      <div className="flex h-14 w-14 items-center justify-center rounded-full bg-white shadow-sm">
+                                        <span className="text-base font-bold text-[#0F1C21]">{progress}%</span>
                                       </div>
                                     </div>
                                     <Button
                                       variant="ghost"
                                       size="sm"
-                                      className={`rounded-full px-5 py-2 text-xs font-semibold shadow-sm transition-all ${
+                                      className={`rounded-full px-4 py-1.5 text-xs font-semibold shadow-sm transition-all ${
                                         isCompleted
                                           ? "border border-[#99C6D6] bg-white text-[#5D6E72] hover:bg-[#EEF5F7]"
                                           : "text-[#0F1C21]"
@@ -566,8 +566,8 @@ export default function GoalPage() {
                                         toggleGoalCompletion(goal.goalId)
                                       }}
                                     >
-                                      <CheckCircle2 className="h-4 w-4" />
-                                      <span className="ml-2">{isCompleted ? "완료 해제" : "완료 처리"}</span>
+                                      <CheckCircle2 className="h-3.5 w-3.5" />
+                                      <span className="ml-1.5">{isCompleted ? "완료 해제" : "완료 처리"}</span>
                                     </Button>
                                   </div>
                                 </div>
