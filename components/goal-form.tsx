@@ -31,12 +31,23 @@ interface GoalFormProps {
 }
 
 export function GoalForm({ goal, onSubmit, onCancel }: GoalFormProps) {
+  const initialStartDate = goal?.startDate || new Date().toISOString().split("T")[0]
+  const initialEndDate = goal?.endDate || new Date().toISOString().split("T")[0]
+  
+  // 초기 duration 계산
+  const calculateInitialDuration = () => {
+    if (goal?.duration) return goal.duration
+    const start = new Date(initialStartDate)
+    const end = new Date(initialEndDate)
+    return Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1
+  }
+
   const [formData, setFormData] = useState({
     title: goal?.title || "",
     priority: goal?.priority || "MEDIUM",
-    startDate: goal?.startDate || new Date().toISOString().split("T")[0],
-    endDate: goal?.endDate || new Date().toISOString().split("T")[0],
-    duration: goal?.duration || 0,
+    startDate: initialStartDate,
+    endDate: initialEndDate,
+    duration: calculateInitialDuration(),
     color: goal?.color || "#bbdefb",
   })
 
@@ -57,7 +68,7 @@ export function GoalForm({ goal, onSubmit, onCancel }: GoalFormProps) {
     // Calculate duration if not provided
     const start = new Date(formData.startDate)
     const end = new Date(formData.endDate)
-    const calculatedDuration = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24))
+    const calculatedDuration = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1
 
     onSubmit({
       ...formData,
@@ -68,12 +79,11 @@ export function GoalForm({ goal, onSubmit, onCancel }: GoalFormProps) {
   const handleDateChange = (field: "startDate" | "endDate", value: string) => {
     const newFormData = { ...formData, [field]: value }
 
-    // Auto-calculate duration when dates change
     if (newFormData.startDate && newFormData.endDate) {
       const start = new Date(newFormData.startDate)
       const end = new Date(newFormData.endDate)
-      const duration = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24))
-      newFormData.duration = Math.max(0, duration)
+      const duration = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1
+      newFormData.duration = Math.max(1, duration)
     }
 
     setFormData(newFormData)

@@ -437,7 +437,8 @@ export default function GoalPage() {
                         todayZero.setHours(0, 0, 0, 0)
                         
                         const daysRemaining = Math.ceil((endDate.getTime() - todayZero.getTime()) / (1000 * 60 * 60 * 24))
-                        const totalDays = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24))
+                        const calculatedTotalDays = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1
+                        const totalDays = goal.duration === 0 ? calculatedTotalDays : goal.duration
                         const remainingPercentage = totalDays > 0 ? Math.round((daysRemaining / totalDays) * 100) : 0
                         const isOverdue = daysRemaining < 0 && !isCompleted
                         
