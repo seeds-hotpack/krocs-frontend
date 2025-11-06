@@ -39,7 +39,7 @@ export default function GoalPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [selectedDate, setSelectedDate] = useState(new Date())
-  const [filterStatus, setFilterStatus] = useState("In Progress")
+  const [filterStatus, setFilterStatus] = useState("All")
 
   const handleLogout = async () => {
     try {
@@ -314,7 +314,7 @@ export default function GoalPage() {
       </header>
 
       <main className="mx-auto max-w-7xl px-6 py-6">
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
           <div className="lg:col-span-1">
             <Card className="sticky top-24 rounded-3xl border border-[#D3E6ED] bg-white p-4 shadow-md">
               <CardContent className="p-0">
