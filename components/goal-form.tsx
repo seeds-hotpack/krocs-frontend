@@ -99,26 +99,25 @@ export function GoalForm({ goal, onSubmit, onCancel }: GoalFormProps) {
     <div className="relative w-full bg-white rounded-3xl overflow-hidden shadow-2xl">
       {/* Header with Gradient */}
       <div 
-        className="relative px-6 py-8 bg-gradient-to-br from-[#BBDCE5] to-[#99C6D6] overflow-hidden"
+        className="relative px-6 py-5 bg-gradient-to-br from-[#BBDCE5] to-[#99C6D6] overflow-hidden"
       >
-        <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full blur-3xl"></div>
-        <div className="absolute bottom-0 left-0 w-32 h-32 bg-white/10 rounded-full blur-2xl"></div>
+        <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-3xl"></div>
+        <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/10 rounded-full blur-2xl"></div>
         
-        <div className="relative flex items-start justify-between">
-          <div className="flex-1">
-            <h2 className="text-2xl font-bold text-white leading-tight">
-              <div className="flex items-center gap-2 mb-2">
-                <Sparkles className="h-5 w-5 text-white" />{goal ? "목표를 업데이트하세요" : "목표 생성"}
-              </div>
+        <div className="relative flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <Sparkles className="h-4 w-4 text-white flex-shrink-0" />
+            <h2 className="text-lg font-bold text-white">
+              {goal ? "목표 수정" : "목표 생성"}
             </h2>
           </div>
           <Button
             variant="ghost"
             size="icon"
             onClick={onCancel}
-            className="h-9 w-9 rounded-full bg-white/20 text-white backdrop-blur-sm hover:bg-white/30 transition-all"
+            className="h-8 w-8 rounded-full bg-white/20 text-white backdrop-blur-sm hover:bg-white/30 transition-all flex-shrink-0"
           >
-            <X className="h-5 w-5" />
+            <X className="h-4 w-4" />
           </Button>
         </div>
       </div>

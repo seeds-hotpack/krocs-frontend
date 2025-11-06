@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
+import Image from "next/image"
 
 import { getGoals, Goal } from "@/api/goals"
 import { update_Goal as updateGoalApi, type UpdateGoalRequest } from "@/api/updateGoal"
@@ -16,6 +17,7 @@ import { Card, CardContent, CardTitle } from "@/components/ui/card"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 
 import { Plus, Calendar, Target, CheckCircle2, Menu, ChevronDown } from "lucide-react"
+import krocsLogo from "@/assets/krocslogo.png"
 
 const FILTER_LABELS: Record<string, string> = {
   All: "전체",
@@ -278,9 +280,15 @@ export default function GoalPage() {
 
   return (
     <div className="min-h-screen bg-[#EEF5F7] text-[#0F1C21]">
-      <header className="sticky top-0 z-20 border-b border-[#D3E6ED] bg-[#EEF5F7]/95 px-6 py-4 backdrop-blur">
+      <header className="sticky top-0 z-20 border-b border-[#D3E6ED] bg-[#EEF5F7]/95 px-6 py-3 backdrop-blur">
         <div className="mx-auto flex max-w-7xl items-center justify-between">
-          <h1 className="text-xl font-bold text-[#0F1C21]">목표 관리</h1>
+          <Image 
+            src={krocsLogo}
+            alt="Krocs Logo" 
+            width={120}
+            height={120}
+            className="object-contain"
+          />
           <div className="flex items-center gap-3">
             <Button
               className="h-10 rounded-full bg-[#BBDCE5] px-4 text-sm font-semibold text-[#0F1C21] shadow-sm hover:bg-[#BBDCE5]/80"
