@@ -115,7 +115,13 @@ export default function GoalPage() {
     const originalGoal = goals.find((g) => g.goalId === goalId)
     if (!originalGoal) return
 
-    const optimisticUpdatedGoal = { ...originalGoal, ...goalData }
+    // 낙관적 업데이트 시 progress 유지
+    const optimisticUpdatedGoal = { 
+      ...originalGoal, 
+      ...goalData,
+      // completionPercentage는 유지
+      completionPercentage: originalGoal.completionPercentage 
+    }
     setGoals((prevGoals) => prevGoals.map((g) => (g.goalId === goalId ? optimisticUpdatedGoal : g)))
 
     const updatedGoal = { ...originalGoal, ...goalData }
@@ -146,7 +152,7 @@ export default function GoalPage() {
           title: sg.title,
           completed: sg.isCompleted,
         })),
-        completionPercentage: updatedGoalFromApi.completionPercentage ?? 0,
+        completionPercentage: updatedGoalFromApi.completionPercentage ?? originalGoal.completionPercentage ?? 0,
         createdAt: updatedGoalFromApi.createdAt,
         updatedAt: updatedGoalFromApi.updatedAt,
         duration: originalGoal.duration,
@@ -203,7 +209,12 @@ export default function GoalPage() {
   }
 
   const getProgressPercentage = (goal: Goal) => {
-    if (goal.subGoals.length === 0) return goal.completed ? 100 : 0
+    // API에서 받은 completionPercentage가 있으면 사용
+    if (goal.completionPercentage !== undefined && goal.completionPercentage !== null) {
+      return goal.completionPercentage
+    }
+    // 없으면 계산
+    if (goal.subGoals.length === 0) return 0
     const completed = goal.subGoals.filter((sg) => sg.completed).length
     return (completed / goal.subGoals.length) * 100
   }
