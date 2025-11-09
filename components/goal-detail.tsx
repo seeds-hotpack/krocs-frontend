@@ -333,7 +333,7 @@ export function GoalDetail({ goal, onBack, onUpdate, onDelete }: GoalDetailProps
                   </p>
                 </div>
                 <Button
-                  className="flex items-center gap-2 rounded-full bg-[#BBDCE5] px-4 py-2 text-sm font-semibold text-[#0F1C21] shadow-sm hover:bg-[#BBDCE5]/80"
+                  className="flex items-center gap-2 rounded-full bg-[#ff8b6b] px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-[#ff6b47]"
                   onClick={() => setIsModalOpen(true)}
                 >
                   <Plus className="h-4 w-4" />
@@ -365,7 +365,7 @@ export function GoalDetail({ goal, onBack, onUpdate, onDelete }: GoalDetailProps
                         <Checkbox
                           checked={subGoal.completed}
                           onCheckedChange={() => toggleSubGoal(subGoal.sub_goal_id)}
-                          className="h-5 w-5 border-[#99C6D6] data-[state=checked]:bg-[#BBDCE5]"
+                          className="h-5 w-5 border-[#99C6D6] data-[state=checked]:bg-[#ff8b6b] data-[state=checked]:border-[#ff8b6b]"
                         />
                         {isEditing ? (
                           <Input

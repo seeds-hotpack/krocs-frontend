@@ -99,7 +99,7 @@ export function GoalForm({ goal, onSubmit, onCancel }: GoalFormProps) {
     <div className="relative w-full bg-white rounded-3xl overflow-hidden shadow-2xl">
       {/* Header with Gradient */}
       <div 
-        className="relative px-6 py-5 bg-gradient-to-br from-[#BBDCE5] to-[#99C6D6] overflow-hidden"
+        className="relative px-6 py-5 bg-gradient-to-br from-[#ff8b6b] to-[#ff6b47] overflow-hidden"
       >
         <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-3xl"></div>
         <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/10 rounded-full blur-2xl"></div>
@@ -135,7 +135,7 @@ export function GoalForm({ goal, onSubmit, onCancel }: GoalFormProps) {
             value={formData.title}
             onChange={(e) => setFormData({ ...formData, title: e.target.value })}
             placeholder="예: 매일 아침 명상하기"
-            className="h-12 rounded-2xl border-2 border-[#D3E6ED] bg-white text-base text-[#0F1C21] placeholder:text-[#5D6E72]/50 focus:border-[#BBDCE5] focus:ring-2 focus:ring-[#BBDCE5]/20 transition-all"
+            className="h-12 rounded-2xl border-2 border-[#D3E6ED] bg-white text-base text-[#0F1C21] placeholder:text-[#5D6E72]/50 focus:border-[#ff8b6b] focus:ring-2 focus:ring-[#ff8b6b]/20 transition-all"
             required
             onInvalid={(e) => (e.target as HTMLInputElement).setCustomValidity("목표 이름을 입력해 주세요.")}
             onInput={(e) => (e.target as HTMLInputElement).setCustomValidity("")}
@@ -222,7 +222,7 @@ export function GoalForm({ goal, onSubmit, onCancel }: GoalFormProps) {
                 type="date"
                 value={formData.startDate}
                 onChange={(e) => handleDateChange("startDate", e.target.value)}
-                className="h-12 rounded-2xl border-2 border-[#D3E6ED] bg-white text-sm text-[#0F1C21] focus:border-[#BBDCE5] focus:ring-2 focus:ring-[#BBDCE5]/20"
+                className="h-12 rounded-2xl border-2 border-[#D3E6ED] bg-white text-sm text-[#0F1C21] focus:border-[#ff8b6b] focus:ring-2 focus:ring-[#ff8b6b]/20"
                 required
               />
             </div>
@@ -237,7 +237,7 @@ export function GoalForm({ goal, onSubmit, onCancel }: GoalFormProps) {
                 value={formData.endDate}
                 onChange={(e) => handleDateChange("endDate", e.target.value)}
                 min={formData.startDate}
-                className="h-12 rounded-2xl border-2 border-[#D3E6ED] bg-white text-sm text-[#0F1C21] focus:border-[#BBDCE5] focus:ring-2 focus:ring-[#BBDCE5]/20"
+                className="h-12 rounded-2xl border-2 border-[#D3E6ED] bg-white text-sm text-[#0F1C21] focus:border-[#ff8b6b] focus:ring-2 focus:ring-[#ff8b6b]/20"
                 required
               />
             </div>
@@ -245,7 +245,7 @@ export function GoalForm({ goal, onSubmit, onCancel }: GoalFormProps) {
         </div>
 
         {/* Duration Display */}
-        <div className="rounded-2xl bg-gradient-to-r from-[#EEF5F7] to-[#E0EEF3] px-5 py-4 border-l-4 border-[#BBDCE5]">
+        <div className="rounded-2xl bg-gradient-to-r from-[#EEF5F7] to-[#E0EEF3] px-5 py-4 border-l-4 border-[#ff8b6b]">
           <div className="flex items-center justify-between">
             <span className="text-sm text-[#5D6E72]">선택한 기간</span>
             <div className="flex items-baseline gap-1">
@@ -267,7 +267,7 @@ export function GoalForm({ goal, onSubmit, onCancel }: GoalFormProps) {
           </Button>
           <Button
             type="submit"
-            className="flex-1 h-12 rounded-2xl bg-gradient-to-r from-[#BBDCE5] to-[#99C6D6] text-white font-bold shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all"
+            className="flex-1 h-12 rounded-2xl bg-gradient-to-r from-[#ff8b6b] to-[#ff6b47] text-white font-bold shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all"
           >
             {goal ? "수정 완료" : "목표 만들기"}
           </Button>

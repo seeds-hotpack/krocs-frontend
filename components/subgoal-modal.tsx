@@ -112,7 +112,7 @@ export function SubGoalModal({
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="예: 1장 읽고 요약하기"
-              className="mt-2 h-11 rounded-xl border-[#D3E6ED] bg-[#EEF5F7] text-sm text-[#0F1C21] placeholder:text-[#5D6E72] focus:border-[#99C6D6] focus:ring-[#99C6D6]"
+              className="mt-2 h-11 rounded-xl border-[#D3E6ED] bg-[#EEF5F7] text-sm text-[#0F1C21] placeholder:text-[#5D6E72] focus:border-[#ff8b6b] focus:ring-[#ff8b6b]"
             />
           </div>
 
@@ -121,7 +121,7 @@ export function SubGoalModal({
               id="isTimeSelected"
               checked={isTimeSelected}
               onCheckedChange={(checked) => setIsTimeSelected(Boolean(checked))}
-              className="h-5 w-5 border-[#99C6D6] data-[state=checked]:bg-[#BBDCE5]"
+              className="h-5 w-5 border-[#99C6D6] data-[state=checked]:bg-[#ff8b6b] data-[state=checked]:border-[#ff8b6b]"
             />
             <Label
               htmlFor="isTimeSelected"
@@ -142,7 +142,7 @@ export function SubGoalModal({
                   type="time"
                   value={startTime}
                   onChange={(e) => setStartTime(e.target.value)}
-                  className="mt-2 h-11 rounded-xl border-[#D3E6ED] bg-white text-sm text-[#0F1C21] focus:border-[#99C6D6] focus:ring-[#99C6D6]"
+                  className="mt-2 h-11 rounded-xl border-[#D3E6ED] bg-white text-sm text-[#0F1C21] focus:border-[#ff8b6b] focus:ring-[#ff8b6b]"
                 />
               </div>
               <div>
@@ -154,7 +154,7 @@ export function SubGoalModal({
                   type="time"
                   value={endTime}
                   onChange={(e) => setEndTime(e.target.value)}
-                  className="mt-2 h-11 rounded-xl border-[#D3E6ED] bg-white text-sm text-[#0F1C21] focus:border-[#99C6D6] focus:ring-[#99C6D6]"
+                  className="mt-2 h-11 rounded-xl border-[#D3E6ED] bg-white text-sm text-[#0F1C21] focus:border-[#ff8b6b] focus:ring-[#ff8b6b]"
                 />
               </div>
             </div>
@@ -179,7 +179,7 @@ export function SubGoalModal({
           <Button
             onClick={handleSubmit}
             disabled={!title.trim() || loading}
-            className="rounded-full bg-[#BBDCE5] px-4 py-2 text-sm font-semibold text-[#0F1C21] shadow-sm hover:bg-[#BBDCE5]/80 disabled:opacity-50"
+            className="rounded-full bg-[#ff8b6b] px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-[#ff6b47] disabled:opacity-50"
           >
             {loading ? "추가 중..." : "소목표 추가"}
           </Button>

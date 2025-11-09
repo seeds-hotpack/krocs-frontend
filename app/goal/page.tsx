@@ -291,7 +291,7 @@ export default function GoalPage() {
           />
           <div className="flex items-center gap-3">
             <Button
-              className="h-10 rounded-full bg-[#BBDCE5] px-4 text-sm font-semibold text-[#0F1C21] shadow-sm hover:bg-[#BBDCE5]/80"
+              className="h-10 rounded-full bg-[#ff8b6b] px-4 text-sm font-semibold text-white shadow-sm hover:bg-[#ff7a56] transition-colors"
               onClick={() => {
                 setEditingGoal(null)
                 setIsFormOpen(true)
@@ -423,7 +423,7 @@ export default function GoalPage() {
                       : "다른 필터를 선택하거나 새로운 목표를 추가해보세요."}
                   </p>
                   <Button
-                    className="mt-5 rounded-full bg-[#BBDCE5] px-5 py-2 text-sm font-semibold text-[#0F1C21] shadow-sm hover:bg-[#BBDCE5]/80"
+                    className="mt-5 rounded-full bg-[#ff8b6b] px-5 py-2 text-sm font-semibold text-white shadow-md hover:bg-[#ff7a56] hover:shadow-lg transition-all"
                     onClick={() => setIsFormOpen(true)}
                   >
                     <Plus className="h-4 w-4" />
