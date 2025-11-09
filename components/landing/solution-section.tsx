@@ -60,7 +60,7 @@ export function SolutionSection() {
                     alt={step.title}
                     width={100}
                     height={100}
-                    className="object-contain"
+                    className="object-contain w-[100px] h-[100px] hidden sm:block"
                   />
                 </div>
               </CardContent>
