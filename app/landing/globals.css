@@ -1,7 +1,6 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
-@custom-variant dark (&:is(.dark *));
 
 :root {
   /* Updated theme for Krocs - Soft pastel palette with coral accent */
@@ -40,40 +39,6 @@
   --sidebar-ring: oklch(0.708 0 0);
 }
 
-.dark {
-  --background: 15 23 42;
-  --foreground: 248 250 252;
-  --card: 30 41 59;
-  --card-foreground: 248 250 252;
-  --popover: 30 41 59;
-  --popover-foreground: 248 250 252;
-  --primary: 255 139 107;
-  --primary-foreground: 255 255 255;
-  --secondary: 71 85 105;
-  --secondary-foreground: 248 250 252;
-  --muted: 51 65 85;
-  --muted-foreground: 148 163 184;
-  --accent: 51 65 85;
-  --accent-foreground: 248 250 252;
-  --destructive: 239 68 68;
-  --destructive-foreground: 248 250 252;
-  --border: 51 65 85;
-  --input: 51 65 85;
-  --ring: 255 139 107;
-  --chart-1: 255 139 107;
-  --chart-2: 186 230 253;
-  --chart-3: 255 215 186;
-  --chart-4: 167 243 208;
-  --chart-5: 253 186 116;
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(0.269 0 0);
-  --sidebar-ring: oklch(0.439 0 0);
-}
 
 @theme inline {
   /* Added font variables for unified font management */
@@ -125,4 +90,13 @@
   body {
     @apply bg-background text-foreground;
   }
+}
+
+html,
+body,
+:root,
+.dark {
+  color-scheme: light !important;
+  background-color: #fff !important;
+  --tw-bg-opacity: 1 !important;
 }
