@@ -12,7 +12,7 @@ export function HeroSection() {
             </p>
 
             <div className="space-y-4">
-              <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold leading-tight">
+              <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold leading-tight break-keep">
                 <span className="block">시간을 계획하는 게 아니라,</span>
                 <span className="block">
                   <span className="text-[#ff8b6b]">조율하는 것</span>부터 시작하세요.
