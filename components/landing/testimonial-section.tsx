@@ -36,19 +36,21 @@ export function TestimonialSection() {
     <section id="testimonials" className="py-24 bg-gradient-to-br from-primary/10 via-background to-secondary/10">
       <div className="container mx-auto px-4">
         <div className="text-center mb-16">
-          <h2 className="text-4xl md:text-5xl font-bold mb-4 text-balance">실패가 덜 무섭고, 하루가 눈에 보여요.</h2>
+          <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-4 text-balance">실패가 덜 무섭고,&nbsp;
+            <br className="inline sm:hidden" />
+            하루가 눈에 보여요.</h2>
         </div>
 
         <div className="max-w-4xl mx-auto">
           <Card className="border-2 shadow-xl">
             <CardContent className="p-12">
               <div className="space-y-6 text-center">
-                <p className="text-2xl md:text-3xl font-medium leading-relaxed text-pretty">
+                <p className="text-base sm:text-xl md:text-2xl font-medium leading-relaxed text-pretty">
                   "{testimonials[currentIndex].text}"
                 </p>
                 <div className="space-y-1">
-                  <p className="font-semibold text-lg">{testimonials[currentIndex].author}</p>
-                  <p className="text-muted-foreground">{testimonials[currentIndex].role}</p>
+                  <p className="font-semibold text-sm sm:text-base">{testimonials[currentIndex].author}</p>
+                  <p className="text-muted-foreground text-xs sm:text-sm">{testimonials[currentIndex].role}</p>
                 </div>
               </div>
             </CardContent>
