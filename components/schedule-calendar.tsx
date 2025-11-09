@@ -18,7 +18,7 @@ interface ScheduleCalendarProps {
   selectedDate: Date
   onDateSelect: (date: Date) => void
   schedules: Schedule[]
-  onClose: () => void
+  onClose?: () => void
 }
 
 export function ScheduleCalendar({ selectedDate, onDateSelect, schedules, onClose }: ScheduleCalendarProps) {
@@ -31,7 +31,7 @@ export function ScheduleCalendar({ selectedDate, onDateSelect, schedules, onClos
       setLoadingMonthlyPlans(true);
       try {
         const year = currentMonth.getFullYear();
-        const month = currentMonth.getMonth() + 1; // Month is 0-indexed in JS Date
+        const month = currentMonth.getMonth() + 1;
         const data = await getMonthlyPlans(year, month);
         setMonthlyPlans(data);
       } catch (error) {
@@ -47,6 +47,7 @@ export function ScheduleCalendar({ selectedDate, onDateSelect, schedules, onClos
   const daysInMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0).getDate()
   const firstDayOfMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1).getDay()
   const today = new Date()
+  today.setHours(0, 0, 0, 0)
 
   const previousMonth = () => {
     setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1))
@@ -72,7 +73,7 @@ export function ScheduleCalendar({ selectedDate, onDateSelect, schedules, onClos
       days.push(
         <button
           key={`prev-${i}`}
-          className="h-12 text-slate-400 hover:bg-slate-50 rounded-lg transition-colors"
+          className="aspect-square flex items-center justify-center text-[#5D6E72]/40 hover:bg-[#EEF5F7] rounded-xl transition-all text-sm"
           onClick={() => onDateSelect(prevMonthDate)}
         >
           {prevMonthDate.getDate()}
@@ -83,38 +84,51 @@ export function ScheduleCalendar({ selectedDate, onDateSelect, schedules, onClos
     // Current month days
     for (let day = 1; day <= daysInMonth; day++) {
       const date = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day)
-      const isToday = date.toDateString() === today.toDateString()
-      const isSelected = date.toDateString() === selectedDate.toDateString()
+      date.setHours(0, 0, 0, 0)
+      const isToday = date.getTime() === today.getTime()
+      const isSelected = date.getTime() === selectedDate.getTime()
       const daySchedules = getMonthlySchedulesForDate(date)
+      const hasSchedules = daySchedules.length > 0
 
       days.push(
         <button
           key={day}
-          className={`h-12 rounded-lg transition-colors relative ${
+          className={`aspect-square flex flex-col items-center justify-center rounded-xl transition-all relative group text-sm font-medium ${
             isSelected
-              ? "bg-slate-900 text-white"
+              ? "bg-gradient-to-br from-[#BBDCE5] to-[#99C6D6] text-white shadow-md scale-105"
               : isToday
-                ? "bg-slate-100 text-slate-900 font-medium"
-                : "text-slate-700 hover:bg-slate-50"
+                ? "bg-[#EEF5F7] text-[#0F1C21] ring-2 ring-[#BBDCE5] ring-offset-1"
+                : hasSchedules
+                  ? "text-[#0F1C21] hover:bg-[#EEF5F7]"
+                  : "text-[#5D6E72] hover:bg-[#EEF5F7]"
           }`}
           onClick={() => onDateSelect(date)}
         >
-          {day}
-          {daySchedules.length > 0 && (
-            <div className="absolute bottom-1 left-1/2 transform -translate-x-1/2 flex items-center justify-center">
-              {daySchedules.length < 4 ? (
-                <div className="flex gap-0.5">
+          <span className={isToday && !isSelected ? "font-bold" : ""}>{day}</span>
+          
+          {hasSchedules && (
+            <div className="absolute bottom-1.5 left-1/2 transform -translate-x-1/2 flex items-center justify-center">
+              {daySchedules.length <= 3 ? (
+                <div className="flex gap-1">
                   {daySchedules.slice(0, 3).map((_, index) => (
                     <div
                       key={index}
-                      className={`w-1 h-1 rounded-full ${isSelected ? "bg-white/60" : "bg-slate-400"}`}
+                      className={`w-1.5 h-1.5 rounded-full transition-all ${
+                        isSelected 
+                          ? "bg-white shadow-sm" 
+                          : "bg-[#BBDCE5] group-hover:bg-[#5D6E72]"
+                      }`}
                     />
                   ))}
                 </div>
               ) : (
                 <div
-                  className={`h-1 rounded-sm ${isSelected ? "bg-white/70" : "bg-slate-500"}`}
-                  style={{ width: "10px" }}
+                  className={`h-1.5 rounded-full transition-all ${
+                    isSelected 
+                      ? "bg-white shadow-sm" 
+                      : "bg-[#BBDCE5] group-hover:bg-[#5D6E72]"
+                  }`}
+                  style={{ width: "14px" }}
                 />
               )}
             </div>
@@ -130,7 +144,7 @@ export function ScheduleCalendar({ selectedDate, onDateSelect, schedules, onClos
       days.push(
         <button
           key={`next-${day}`}
-          className="h-12 text-slate-400 hover:bg-slate-50 rounded-lg transition-colors"
+          className="aspect-square flex items-center justify-center text-[#5D6E72]/40 hover:bg-[#EEF5F7] rounded-xl transition-all text-sm"
           onClick={() => onDateSelect(nextMonthDate)}
         >
           {day}
@@ -142,36 +156,73 @@ export function ScheduleCalendar({ selectedDate, onDateSelect, schedules, onClos
   }
 
   return (
-    <div className="p-6">
-      <div className="flex items-center justify-between mb-6">
-        <h3 className="text-lg font-semibold text-slate-900">
-          {currentMonth.toLocaleDateString("en-US", {
-            month: "long",
+    <div className="p-5">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-5">
+        <h3 className="text-base font-bold text-[#0F1C21]">
+          {currentMonth.toLocaleDateString("ko-KR", {
             year: "numeric",
+            month: "long",
           })}
         </h3>
-        <div className="flex items-center gap-2">
-          <Button variant="ghost" size="sm" onClick={previousMonth} className="hover:bg-slate-100">
+        <div className="flex items-center gap-1">
+          <Button 
+            variant="ghost" 
+            size="icon"
+            onClick={previousMonth} 
+            className="h-8 w-8 rounded-full hover:bg-[#EEF5F7] text-[#5D6E72]"
+          >
             <ChevronLeft className="h-4 w-4" />
           </Button>
-          <Button variant="ghost" size="sm" onClick={nextMonth} className="hover:bg-slate-100">
+          <Button 
+            variant="ghost" 
+            size="icon"
+            onClick={nextMonth} 
+            className="h-8 w-8 rounded-full hover:bg-[#EEF5F7] text-[#5D6E72]"
+          >
             <ChevronRight className="h-4 w-4" />
           </Button>
-          <Button variant="ghost" size="sm" onClick={onClose} className="hover:bg-slate-100 ml-2">
-            <X className="h-4 w-4" />
-          </Button>
+          {onClose && (
+            <Button 
+              variant="ghost" 
+              size="icon"
+              onClick={onClose} 
+              className="h-8 w-8 rounded-full hover:bg-[#EEF5F7] text-[#5D6E72] ml-1"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          )}
         </div>
       </div>
 
+      {/* Weekday Headers */}
       <div className="grid grid-cols-7 gap-1 mb-2">
-        {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
-          <div key={day} className="h-8 flex items-center justify-center text-xs font-medium text-slate-600">
+        {["일", "월", "화", "수", "목", "금", "토"].map((day, index) => (
+          <div 
+            key={day} 
+            className={`h-8 flex items-center justify-center text-[10px] font-bold uppercase tracking-wider ${
+              index === 0 ? "text-red-400" : index === 6 ? "text-blue-400" : "text-[#5D6E72]/60"
+            }`}
+          >
             {day}
           </div>
         ))}
       </div>
 
-      <div className="grid grid-cols-7 gap-1">{renderCalendarDays()}</div>
+      {/* Calendar Grid */}
+      <div className="grid grid-cols-7 gap-1.5">{renderCalendarDays()}</div>
+
+      {/* Legend */}
+      <div className="mt-4 pt-4 border-t border-[#D3E6ED] flex items-center justify-center gap-4 text-xs text-[#5D6E72]">
+        <div className="flex items-center gap-1.5">
+          <div className="w-2 h-2 rounded-full bg-[#BBDCE5]"></div>
+          <span>일정 있음</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <div className="w-2 h-2 rounded-full ring-2 ring-[#BBDCE5]"></div>
+          <span>오늘</span>
+        </div>
+      </div>
     </div>
   )
 }

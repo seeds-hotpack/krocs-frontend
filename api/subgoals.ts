@@ -43,9 +43,9 @@ export const getSubGoals = async (
 //---------------------------------소목표 생성 api---------------------------------
 export interface CreateSubGoalRequest {
   title: string;
-  is_time_selected?: boolean;
-  start_date_time?: string;
-  end_date_time?: string;
+  is_time_selected: boolean;
+  start_date_time?: string | null;
+  end_date_time?: string | null;
 }
 
 export interface CreatedSubGoal {

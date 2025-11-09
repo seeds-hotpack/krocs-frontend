@@ -2,33 +2,35 @@
 
 import { useState, useEffect, useCallback } from "react"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Checkbox } from "@/components/ui/checkbox"
+
 import {
   ArrowLeft,
+  Calendar,
+  CheckCircle2,
+  Pencil,
   Plus,
   Trash2,
-  Calendar,
-  Clock,
-  Target,
-  Pencil,
 } from "lucide-react"
+
 import {
   getSubGoals,
   deleteSubGoal,
   updateSubGoal,
   SubGoal as APISubGoal,
-} from "../api/subgoals"
-import { SubGoalModal } from "./subgoal-modal"
+} from "@/api/subgoals"
+import { GoalForm } from "@/components/goal-form"
+import { SubGoalModal } from "@/components/subgoal-modal"
 
 interface SubGoal {
   sub_goal_id: number
   title: string
   completed: boolean
-  is_time_selected?: boolean;
-  start_date_time?: string;
-  end_date_time?: string;
+  is_time_selected: boolean
+  start_date_time?: string | null
+  end_date_time?: string | null
 }
 
 interface Goal {
@@ -42,36 +44,41 @@ interface Goal {
   subGoals: SubGoal[]
   createdAt: string
   updatedAt: string
+  color: string
 }
 
 interface GoalDetailProps {
   goal: Goal
   onBack: () => void
-  onUpdate: (updatedGoal: Partial<Goal>) => void
+  onUpdate: (updatedGoal: Partial<Goal>) => Promise<void> | void
+  onDelete: () => Promise<void> | void
 }
 
-export function GoalDetail({ goal, onBack, onUpdate }: GoalDetailProps) {
-  const [subGoals, setSubGoals] = useState<SubGoal[]>(goal.subGoals)
+export function GoalDetail({ goal, onBack, onUpdate, onDelete }: GoalDetailProps) {
+  const [subGoals, setSubGoals] = useState<SubGoal[]>(goal.subGoals ?? [])
   const [loadingSubGoals, setLoadingSubGoals] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [editingSubGoalId, setEditingSubGoalId] = useState<number | null>(null)
   const [editingSubGoalTitle, setEditingSubGoalTitle] = useState("")
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [isGoalFormOpen, setIsGoalFormOpen] = useState(false)
 
   const fetchSubGoals = useCallback(async () => {
     setLoadingSubGoals(true)
     setError(null)
     try {
       const res = await getSubGoals(goal.goalId)
-      console.log("Fetched sub-goals:", res.result.subGoals);
       setSubGoals(
         res.result.subGoals
           .map((sg: APISubGoal) => ({
             sub_goal_id: sg.sub_goal_id,
             title: sg.title,
             completed: sg.is_completed,
+            is_time_selected: Boolean(sg.is_time_selected),
+            start_date_time: sg.start_date_time ?? null,
+            end_date_time: sg.end_date_time ?? null,
           }))
-          .sort((a, b) => a.sub_goal_id - b.sub_goal_id),
+          .sort((a, b) => a.sub_goal_id - b.sub_goal_id)
       )
     } catch (e: any) {
       setError(e.message)
@@ -84,31 +91,35 @@ export function GoalDetail({ goal, onBack, onUpdate }: GoalDetailProps) {
     fetchSubGoals()
   }, [fetchSubGoals])
 
+  useEffect(() => {
+    setSubGoals(goal.subGoals ?? [])
+  }, [goal.subGoals])
+
   const toggleSubGoal = async (sub_goal_id: number) => {
     const originalSubGoals = [...subGoals]
     const subGoalToUpdate = subGoals.find((sg) => sg.sub_goal_id === sub_goal_id)
     if (!subGoalToUpdate) return
 
     const newCompletedStatus = !subGoalToUpdate.completed
-
-    // Optimistic update
-    const updatedSubGoals = subGoals.map((sg) =>
-      sg.sub_goal_id === sub_goal_id
-        ? { ...sg, completed: newCompletedStatus }
-        : sg,
+    setSubGoals((prev) =>
+      prev.map((sg) =>
+        sg.sub_goal_id === sub_goal_id ? { ...sg, completed: newCompletedStatus } : sg
+      )
     )
-    setSubGoals(updatedSubGoals)
 
     try {
       await updateSubGoal(goal.goalId, sub_goal_id, {
         title: subGoalToUpdate.title,
         is_completed: newCompletedStatus,
-        is_time_selected: subGoalToUpdate.is_time_selected,
-        start_date_time: subGoalToUpdate.start_date_time,
-        end_date_time: subGoalToUpdate.end_date_time,
+        is_time_selected: Boolean(subGoalToUpdate.is_time_selected),
+        start_date_time: subGoalToUpdate.is_time_selected
+          ? subGoalToUpdate.start_date_time ?? undefined
+          : undefined,
+        end_date_time: subGoalToUpdate.is_time_selected
+          ? subGoalToUpdate.end_date_time ?? undefined
+          : undefined,
       })
     } catch (e: any) {
-      // Revert on error
       setSubGoals(originalSubGoals)
       setError(e.message)
     }
@@ -116,10 +127,7 @@ export function GoalDetail({ goal, onBack, onUpdate }: GoalDetailProps) {
 
   const handleDeleteSubGoal = async (sub_goal_id: number) => {
     const originalSubGoals = [...subGoals]
-    const updatedSubGoals = subGoals.filter(
-      (sg) => sg.sub_goal_id !== sub_goal_id,
-    )
-    setSubGoals(updatedSubGoals)
+    setSubGoals((prev) => prev.filter((sg) => sg.sub_goal_id !== sub_goal_id))
 
     try {
       await deleteSubGoal(goal.goalId, sub_goal_id)
@@ -133,34 +141,34 @@ export function GoalDetail({ goal, onBack, onUpdate }: GoalDetailProps) {
     onUpdate({ completed: !goal.completed })
   }
 
-  const getPriorityColor = (priority: string) => {
+  const getPriorityBadgeStyle = (priority: string) => {
     switch (priority) {
       case "HIGH":
-        return "bg-slate-900 text-white"
+        return "bg-[#5D6E72] text-white"
       case "MEDIUM":
-        return "bg-slate-600 text-white"
+        return "bg-[#BBDCE5] text-[#0F1C21]"
       case "LOW":
-        return "bg-slate-400 text-white"
+        return "bg-[#EEF5F7] text-[#0F1C21]"
       default:
-        return "bg-slate-300 text-slate-700"
+        return "bg-white text-[#0F1C21]"
     }
   }
 
   const getPriorityText = (priority: string) => {
     switch (priority) {
       case "HIGH":
-        return "High"
+        return "높음"
       case "MEDIUM":
-        return "Medium"
+        return "보통"
       case "LOW":
-        return "Low"
+        return "낮음"
       default:
         return priority
     }
   }
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("en-US", {
+    return new Date(dateString).toLocaleDateString("ko-KR", {
       year: "numeric",
       month: "long",
       day: "numeric",
@@ -169,7 +177,7 @@ export function GoalDetail({ goal, onBack, onUpdate }: GoalDetailProps) {
 
   const completedSubGoals = subGoals.filter((sg) => sg.completed).length
   const progressPercentage =
-    subGoals.length > 0 ? (completedSubGoals / subGoals.length) * 100 : 0
+    subGoals.length > 0 ? Math.round((completedSubGoals / subGoals.length) * 100) : 0
 
   const startInlineEdit = (subGoal: SubGoal) => {
     setEditingSubGoalId(subGoal.sub_goal_id)
@@ -185,21 +193,22 @@ export function GoalDetail({ goal, onBack, onUpdate }: GoalDetailProps) {
     if (!editingSubGoalTitle.trim()) return
 
     const originalSubGoals = [...subGoals]
-    const updatedSubGoals = subGoals.map((sg) =>
-      sg.sub_goal_id === subGoal.sub_goal_id
-        ? { ...sg, title: editingSubGoalTitle.trim() }
-        : sg,
+    setSubGoals((prev) =>
+      prev.map((sg) =>
+        sg.sub_goal_id === subGoal.sub_goal_id
+          ? { ...sg, title: editingSubGoalTitle.trim() }
+          : sg
+      )
     )
-    setSubGoals(updatedSubGoals)
     cancelInlineEdit()
 
     try {
       await updateSubGoal(goal.goalId, subGoal.sub_goal_id, {
         title: editingSubGoalTitle.trim(),
         is_completed: subGoal.completed,
-        is_time_selected: subGoal.is_time_selected,
-        start_date_time: subGoal.start_date_time,
-        end_date_time: subGoal.end_date_time,
+        is_time_selected: Boolean(subGoal.is_time_selected),
+        start_date_time: subGoal.is_time_selected ? subGoal.start_date_time ?? undefined : undefined,
+        end_date_time: subGoal.is_time_selected ? subGoal.end_date_time ?? undefined : undefined,
       })
     } catch (e: any) {
       setSubGoals(originalSubGoals)
@@ -207,281 +216,247 @@ export function GoalDetail({ goal, onBack, onUpdate }: GoalDetailProps) {
     }
   }
 
+  const handleGoalFormSubmit = async (data: Goal) => {
+    await Promise.resolve(
+      onUpdate({
+        title: data.title,
+        priority: data.priority,
+        startDate: data.startDate,
+        endDate: data.endDate,
+        color: data.color,
+      })
+    )
+    setIsGoalFormOpen(false)
+  }
+
+  const handleDeleteGoal = async () => {
+    const confirmed = window.confirm("정말로 이 목표를 삭제할까요?")
+    if (!confirmed) return
+
+    await Promise.resolve(onDelete())
+  }
+
   return (
-    <>
-      <div className="min-h-screen bg-slate-50 dark:bg-slate-900 p-6">
-        <div className="max-w-4xl mx-auto">
-          <div className="flex items-center gap-4 mb-8">
+    <div className="min-h-screen bg-[#EEF5F7] text-[#0F1C21]">
+      <div className="mx-auto flex min-h-screen w-full max-w-3xl flex-col px-4 py-6 sm:px-6">
+        <div className="mb-6 flex items-center justify-between">
+          <Button
+            variant="ghost"
+            onClick={onBack}
+            className="flex items-center gap-2 rounded-full border border-[#99C6D6] bg-white px-4 py-2 text-sm font-semibold text-[#0F1C21] shadow-sm hover:bg-white/80"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            목록으로 돌아가기
+          </Button>
+          <div className="flex items-center gap-2">
             <Button
               variant="ghost"
-              onClick={onBack}
-              className="flex items-center gap-2 hover:bg-slate-100 px-3 py-2 rounded-md"
+              className="rounded-full border border-[#99C6D6] bg-white px-4 py-2 text-sm font-semibold text-[#0F1C21] shadow-sm hover:bg-white/80"
+              onClick={() => setIsGoalFormOpen(true)}
             >
-              <ArrowLeft className="h-4 w-4" />
-              Back to Goals
+              목표 수정
+            </Button>
+            <Button
+              variant="ghost"
+              className="rounded-full border border-[#5D6E72] bg-white px-4 py-2 text-sm font-semibold text-[#5D6E72] shadow-sm hover:bg-white/80"
+              onClick={handleDeleteGoal}
+            >
+              삭제
             </Button>
           </div>
+        </div>
 
-          {/* Main Goal Card */}
-          <Card className="mb-8 border border-slate-200 dark:border-slate-700 shadow-sm dark:bg-slate-800">
-            <CardHeader className="border-b border-slate-200">
-              <div className="flex items-start justify-between">
+        <div className="space-y-6">
+          <Card className="rounded-3xl border border-[#D3E6ED] bg-white shadow-lg">
+            <CardContent className="space-y-6 p-6">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                 <div className="space-y-3">
-                  <h1
-                    className={`text-2xl font-semibold ${
-                      goal.completed
-                        ? "line-through text-slate-500 dark:text-slate-400"
-                        : "text-slate-900 dark:text-slate-100"
-                    }`}
+                  <span
+                    className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${getPriorityBadgeStyle(
+                      goal.priority
+                    )}`}
                   >
+                    {getPriorityText(goal.priority)}
+                  </span>
+                  <h1 className="text-2xl font-bold leading-snug text-[#0F1C21] sm:text-3xl">
                     {goal.title}
                   </h1>
-                  <div className="flex items-center gap-3">
-                    <span
-                      className={`px-3 py-1 rounded text-sm font-medium ${getPriorityColor(
-                        goal.priority,
-                      )}`}
-                    >
-                      {getPriorityText(goal.priority)}
+                  <div className="flex flex-wrap items-center gap-3 text-xs text-[#5D6E72]">
+                    <span className="flex items-center gap-1">
+                      <Calendar className="h-3.5 w-3.5" />
+                      {formatDate(goal.startDate)}
                     </span>
-                    {goal.completed && (
-                      <span className="px-3 py-1 rounded text-sm font-medium bg-slate-900 text-white">
-                        Completed
-                      </span>
-                    )}
+                    <span className="flex items-center gap-1">
+                      <Calendar className="h-3.5 w-3.5" />
+                      {formatDate(goal.endDate)}
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <CheckCircle2 className="h-3.5 w-3.5" />
+                      {goal.duration}일 계획
+                    </span>
                   </div>
                 </div>
                 <Button
-                  variant={goal.completed ? "secondary" : "default"}
-                  onClick={toggleGoalCompletion}
-                  className={`px-6 py-2 font-medium ${
+                  variant="ghost"
+                  className={`rounded-full px-4 py-2 text-sm font-semibold shadow-sm ${
                     goal.completed
-                      ? "bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-700 dark:hover:bg-slate-600 dark:text-slate-300"
-                      : "bg-slate-900 hover:bg-slate-800 text-white dark:bg-slate-100 dark:hover:bg-slate-200 dark:text-slate-900"
+                      ? "border border-[#99C6D6] bg-white text-[#0F1C21]"
+                      : "bg-[#BBDCE5] text-[#0F1C21]"
                   }`}
+                  onClick={toggleGoalCompletion}
                 >
-                  {goal.completed ? "Mark Incomplete" : "Mark Complete"}
+                  <CheckCircle2 className="h-4 w-4" />
+                  <span className="ml-2">{goal.completed ? "완료 해제" : "완료로 표시"}</span>
                 </Button>
               </div>
 
-              {/* Progress Bar */}
               {subGoals.length > 0 && (
-                <div className="mt-6">
-                  <div className="flex justify-between text-sm text-slate-600 mb-2">
-                    <span>Progress</span>
-                    <span>{Math.round(progressPercentage)}%</span>
-                  </div>
-                  <div className="w-full bg-slate-200 rounded-full h-2">
-                    <div
-                      className="bg-slate-900 h-2 rounded-full transition-all duration-300"
-                      style={{ width: `${progressPercentage}%` }}
-                    />
-                  </div>
+                <div className="rounded-2xl border border-[#D3E6ED] bg-[#EEF5F7] px-4 py-3 text-sm text-[#5D6E72]">
+                  소목표 진행률{" "}
+                  <span className="font-semibold text-[#0F1C21]">
+                    {completedSubGoals}/{subGoals.length} ({progressPercentage}%)
+                  </span>
                 </div>
               )}
-            </CardHeader>
-
-            <CardContent className="p-6">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-slate-100 rounded-lg flex items-center justify-center">
-                    <Calendar className="h-5 w-5 text-slate-600" />
-                  </div>
-                  <div>
-                    <div className="text-sm text-slate-600 dark:text-slate-400">
-                      Start Date
-                    </div>
-                    <div className="font-medium text-slate-900 dark:text-slate-100">
-                      {formatDate(goal.startDate)}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-slate-100 rounded-lg flex items-center justify-center">
-                    <Calendar className="h-5 w-5 text-slate-600" />
-                  </div>
-                  <div>
-                    <div className="text-sm text-slate-600 dark:text-slate-400">
-                      End Date
-                    </div>
-                    <div className="font-medium text-slate-900 dark:text-slate-100">
-                      {formatDate(goal.endDate)}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-slate-100 rounded-lg flex items-center justify-center">
-                    <Clock className="h-5 w-5 text-slate-600" />
-                  </div>
-                  <div>
-                    <div className="text-sm text-slate-600 dark:text-slate-400">
-                      Duration
-                    </div>
-                    <div className="font-medium text-slate-900 dark:text-slate-100">
-                      {goal.duration} days
-                    </div>
-                  </div>
-                </div>
-              </div>
             </CardContent>
           </Card>
 
-          {/* Sub Goals Card */}
-          <Card className="border border-slate-200 dark:border-slate-700 shadow-sm dark:bg-slate-800">
-            <CardHeader className="border-b border-slate-200">
-              <CardTitle className="text-xl font-semibold text-slate-900 dark:text-slate-100">
-                Subtasks
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-6">
-              {/* Add Sub Goal */}
-              <div className="flex justify-end mb-6">
+          <Card className="rounded-3xl border border-[#D3E6ED] bg-white shadow-md">
+            <CardContent className="space-y-5 p-6">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <h2 className="text-lg font-semibold text-[#0F1C21]">소목표</h2>
+                  <p className="text-xs text-[#5D6E72]">
+                    {subGoals.length === 0
+                      ? "아직 추가된 소목표가 없어요."
+                      : `${subGoals.length}개의 소목표 중 ${completedSubGoals}개를 완료했습니다.`}
+                  </p>
+                </div>
                 <Button
+                  className="flex items-center gap-2 rounded-full bg-[#ff8b6b] px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-[#ff6b47]"
                   onClick={() => setIsModalOpen(true)}
-                  className="bg-slate-900 hover:bg-slate-800 text-white dark:bg-slate-100 dark:hover:bg-slate-200 dark:text-slate-900"
                 >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Subtask
+                  <Plus className="h-4 w-4" />
+                  소목표 추가
                 </Button>
               </div>
 
-              {loadingSubGoals ? (
-                <div className="text-center py-12 text-slate-500">
-                  소목표를 불러오는 중...
+              {error && (
+                <div className="rounded-xl border border-[#5D6E72] bg-[#EEF5F7] px-3 py-2 text-xs text-[#5D6E72]">
+                  {error}
                 </div>
+              )}
+
+              {loadingSubGoals ? (
+                <div className="py-10 text-center text-sm text-[#5D6E72]">소목표를 불러오는 중...</div>
               ) : subGoals.length === 0 ? (
-                <div className="text-center py-12">
-                  <div className="w-16 h-16 bg-slate-100 dark:bg-slate-700 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <Target className="h-8 w-8 text-slate-400" />
-                  </div>
-                  <h3 className="text-lg font-medium text-slate-900 dark:text-slate-100 mb-2">
-                    No subtasks yet
-                  </h3>
-                  <p className="text-slate-600 dark:text-slate-400">
-                    Break down your goal into smaller, manageable tasks
-                  </p>
+                <div className="py-10 text-center text-sm text-[#5D6E72]">
+                  목표를 작은 단계로 나눠서 관리해 보세요.
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {subGoals.map((subGoal, index) => (
-                    <div
-                      key={subGoal.sub_goal_id}
-                      className="group flex items-center gap-4 p-4 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 transition-all duration-200"
-                    >
-                      <div className="flex items-center justify-center w-6 h-6 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400 text-sm font-medium">
-                        {index + 1}
-                      </div>
-
-                      <Checkbox
-                        checked={subGoal.completed}
-                        onCheckedChange={() => toggleSubGoal(subGoal.sub_goal_id)}
-                        className="w-5 h-5"
-                      />
-
-                      <span
-                        className={`flex-1 font-medium ${
-                          subGoal.completed
-                            ? "line-through text-slate-500 dark:text-slate-400"
-                            : "text-slate-900 dark:text-slate-100"
-                        }`}
+                  {subGoals.map((subGoal) => {
+                    const isEditing = editingSubGoalId === subGoal.sub_goal_id
+                    return (
+                      <div
+                        key={subGoal.sub_goal_id}
+                        className="flex items-center gap-3 rounded-2xl border border-[#D3E6ED] bg-[#EEF5F7] px-3 py-3"
                       >
-                        {editingSubGoalId === subGoal.sub_goal_id ? (
+                        <Checkbox
+                          checked={subGoal.completed}
+                          onCheckedChange={() => toggleSubGoal(subGoal.sub_goal_id)}
+                          className="h-5 w-5 border-[#99C6D6] data-[state=checked]:bg-[#ff8b6b] data-[state=checked]:border-[#ff8b6b]"
+                        />
+                        {isEditing ? (
                           <Input
                             value={editingSubGoalTitle}
-                            onChange={(e) =>
-                              setEditingSubGoalTitle(e.target.value)
-                            }
+                            onChange={(e) => setEditingSubGoalTitle(e.target.value)}
                             onKeyDown={(e) => {
                               if (e.key === "Enter") saveInlineEdit(subGoal)
                               if (e.key === "Escape") cancelInlineEdit()
                             }}
-                            className="h-8 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 border-slate-300 dark:border-slate-700"
+                            className="flex-1 bg-white text-sm text-[#0F1C21]"
                             autoFocus
                           />
                         ) : (
-                          subGoal.title
-                        )}
-                      </span>
-
-                      {subGoal.completed && (
-                        <span className="px-2 py-1 bg-slate-900 text-white text-xs font-medium rounded">
-                          Done
-                        </span>
-                      )}
-
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() =>
-                          editingSubGoalId === subGoal.sub_goal_id
-                            ? saveInlineEdit(subGoal)
-                            : startInlineEdit(subGoal)
-                        }
-                        className="opacity-0 group-hover:opacity-100 h-8 w-8 p-0 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-md"
-                      >
-                        {editingSubGoalId === subGoal.sub_goal_id ? (
-                          <span className="text-xs text-slate-600 dark:text-slate-400">
-                            저장
+                          <span
+                            className={`flex-1 text-sm font-medium ${
+                              subGoal.completed ? "text-[#5D6E72] line-through" : "text-[#0F1C21]"
+                            }`}
+                          >
+                            {subGoal.title}
                           </span>
-                        ) : (
-                          <Pencil className="h-4 w-4 text-slate-600" />
                         )}
-                      </Button>
-                      {editingSubGoalId === subGoal.sub_goal_id && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={cancelInlineEdit}
-                          className="h-8 w-8 p-0 hover:bg-slate-100 rounded-md"
-                        >
-                          <span className="text-xs text-slate-600">취소</span>
-                        </Button>
-                      )}
 
-                      {/* 삭제 버튼 */}
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleDeleteSubGoal(subGoal.sub_goal_id)}
-                        className="opacity-0 group-hover:opacity-100 h-8 w-8 p-0 hover:bg-slate-100 rounded-md transition-all duration-200"
-                      >
-                        <Trash2 className="h-4 w-4 text-slate-600" />
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {subGoals.length > 0 && (
-                <div className="mt-6 p-4 bg-slate-50 dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-700">
-                  <div className="text-center">
-                    <div
-                      className={`text-2xl font-semibold ${
-                        progressPercentage === 100
-                          ? "line-through text-slate-500 dark:text-slate-400"
-                          : "text-slate-900 dark:text-slate-100"
-                      } mb-1`}
-                    >
-                      {completedSubGoals}/{subGoals.length}
-                    </div>
-                    <div className="text-sm text-slate-600 dark:text-slate-400">
-                      Subtasks completed ({Math.round(progressPercentage)}%)
-                    </div>
-                  </div>
+                        <div className="flex items-center gap-1">
+                          {isEditing ? (
+                            <>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => saveInlineEdit(subGoal)}
+                                className="rounded-full px-3 py-1 text-xs font-semibold text-[#0F1C21] hover:bg-white/70"
+                              >
+                                저장
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={cancelInlineEdit}
+                                className="rounded-full px-3 py-1 text-xs font-semibold text-[#5D6E72] hover:bg-white/70"
+                              >
+                                취소
+                              </Button>
+                            </>
+                          ) : (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 rounded-full text-[#5D6E72] hover:bg-white/70"
+                              onClick={() => startInlineEdit(subGoal)}
+                            >
+                              <Pencil className="h-4 w-4" />
+                              <span className="sr-only">소목표 수정</span>
+                            </Button>
+                          )}
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 rounded-full text-[#5D6E72] hover:bg-white/70"
+                            onClick={() => handleDeleteSubGoal(subGoal.sub_goal_id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                            <span className="sr-only">소목표 삭제</span>
+                          </Button>
+                        </div>
+                      </div>
+                    )
+                  })}
                 </div>
               )}
             </CardContent>
           </Card>
         </div>
       </div>
+
+      {isGoalFormOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4 backdrop-blur-sm">
+          <div className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-3xl border border-[#D3E6ED] bg-white p-4 shadow-2xl">
+            <GoalForm
+              goal={goal as any}
+              onSubmit={handleGoalFormSubmit}
+              onCancel={() => setIsGoalFormOpen(false)}
+            />
+          </div>
+        </div>
+      )}
+
       <SubGoalModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onSubGoalCreated={fetchSubGoals}
         goalId={goal.goalId}
       />
-    </>
+    </div>
   )
 }
