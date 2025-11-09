@@ -1,3 +1,5 @@
+"use client"
+
 import { Button } from "@/components/landing/ui/button"
 import { PhoneMockup } from "@/components/landing/phone-mockup"
 
@@ -27,6 +29,9 @@ export function HeroSection() {
               <Button
                 size="lg"
                 className="text-xs sm:text-sm px-6 sm:px-8 py-5 sm:py-6 rounded-full bg-[#ff8b6b] hover:bg-[#ff7a56] text-white"
+                onClick={() => {
+                window.location.href = "/"
+              }}
               >
                 지금 내 루틴 기록하기
               </Button>
