@@ -40,13 +40,13 @@ export function HeroSection() {
 
           <div className="relative hidden lg:flex lg:col-span-7 xl:col-span-6 justify-end">
             <div className="relative w-full max-w-[480px]">
-              <div className="absolute -right-6 top-8 w-72 h-72 bg-white/40 blur-3xl rounded-full" />
-              <div className="absolute -left-10 bottom-0 w-80 h-80 bg-[var(--landing-accent-light)]/70 blur-3xl rounded-full" />
+              <div className="absolute right-0 top-6 w-64 h-64 bg-white/40 blur-3xl rounded-full" />
+              <div className="absolute left-2 bottom-0 w-72 h-72 bg-[var(--landing-accent-light)]/70 blur-3xl rounded-full" />
 
-              <div className="relative ml-auto flex justify-end">
+              <div className="relative ml-auto flex justify-end pr-2">
                 <PhoneMockup imageSrc="/landing/images/app-calendar.png" />
 
-                <div className="absolute -left-6 top-10 flex flex-col gap-3">
+                <div className="absolute left-2 top-10 flex flex-col gap-3">
                   <div className="relative rounded-3xl bg-white/85 backdrop-blur border border-white/50 px-4 py-3 shadow-lg text-left after:content-[''] after:absolute after:-bottom-2 after:left-8 after:size-3 after:bg-white/85 after:border after:border-white/30 after:rotate-45">
                     <p className="text-xs font-semibold text-foreground">회고 기록 +1</p>
                     <p className="text-[11px] text-muted-foreground">이유 태그 저장</p>
@@ -57,12 +57,12 @@ export function HeroSection() {
                   </div>
                 </div>
 
-                <div className="absolute -right-6 top-8 rounded-3xl bg-white/85 backdrop-blur border border-white/50 px-4 py-3 shadow-lg text-left after:content-[''] after:absolute after:-bottom-2 after:right-10 after:size-3 after:bg-white/85 after:border after:border-white/30 after:rotate-45">
+                <div className="absolute right-0 top-8 rounded-3xl bg-white/85 backdrop-blur border border-white/50 px-4 py-3 shadow-lg text-left after:content-[''] after:absolute after:-bottom-2 after:right-10 after:size-3 after:bg-white/85 after:border after:border-white/30 after:rotate-45">
                   <p className="text-xs font-semibold text-foreground">일정 타임라인</p>
                   <p className="text-[11px] text-muted-foreground">20분 뒤 일정 대기</p>
                 </div>
 
-                <div className="absolute -right-8 bottom-14 rounded-3xl bg-white/85 backdrop-blur border border-white/50 px-4 py-3 shadow-lg text-left after:content-[''] after:absolute after:-top-2 after:right-8 after:size-3 after:bg-white/85 after:border after:border-white/30 after:rotate-45">
+                <div className="absolute right-0 bottom-12 rounded-3xl bg-white/85 backdrop-blur border border-white/50 px-4 py-3 shadow-lg text-left after:content-[''] after:absolute after:-top-2 after:right-8 after:size-3 after:bg-white/85 after:border after:border-white/30 after:rotate-45">
                   <p className="text-xs font-semibold text-foreground">오늘 일정 86%</p>
                   <p className="text-[11px] text-muted-foreground">3개의 목표 진행 중</p>
                 </div>
