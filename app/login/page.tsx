@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import Image from "next/image"
 import krocsLogo from "@/assets/krocslogo.png"
+import naverLogo from "@/assets/naverlogo.png"
 
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false)
@@ -101,7 +102,7 @@ export default function LoginPage() {
                   className="w-full h-14 text-base hover:bg-gray-50 bg-transparent rounded-full"
                 >
                   <Image
-                    src="/naverlogo.png"
+                    src={naverLogo}
                     alt="Naver Logo"
                     width={24}
                     height={24}
