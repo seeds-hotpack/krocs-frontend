@@ -91,8 +91,8 @@ export default function LoginPage() {
             <CardHeader className="space-y-1">
               <div className="flex justify-center mb-4">
                 <Image
-                  src="/colorful-crocs-shoes.jpg"
-                  alt="Crocs Shoes"
+                  src="/lrocslogo.png"
+                  alt="Krocs Logo"
                   width={120}
                   height={120}
                   className="object-contain"
