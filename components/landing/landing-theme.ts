@@ -19,14 +19,16 @@ export const landingGradients = {
   aboutStroke: `linear-gradient(90deg, ${landingColors.accent}, ${landingColors.accentDark})`,
 } as const
 
-export const landingColorVars: CSSProperties = {
-  "--landing-primary": landingColors.primary,
+type LandingVars = Record<`--landing-${string}`, string | number>
+
+export const landingColorVars: CSSProperties & LandingVars = {
+  "--landing-primary":       landingColors.primary,
   "--landing-primary-hover": landingColors.primaryHover,
-  "--landing-accent": landingColors.accent,
-  "--landing-accent-dark": landingColors.accentDark,
-  "--landing-accent-light": landingColors.accentLight,
-  "--landing-cta-overlay": landingColors.ctaOverlay,
-  "--landing-table-header": landingColors.tableHeader,
-  "--landing-table-row": landingColors.tableRow,
+  "--landing-accent":        landingColors.accent,
+  "--landing-accent-dark":   landingColors.accentDark,
+  "--landing-accent-light":  landingColors.accentLight,
+  "--landing-cta-overlay":   landingColors.ctaOverlay,
+  "--landing-table-header":  landingColors.tableHeader,
+  "--landing-table-row":     landingColors.tableRow,
   "--landing-table-row-alt": landingColors.tableRowAlt,
 }
