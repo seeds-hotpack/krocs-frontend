@@ -15,7 +15,7 @@ const testimonials = [
     role: "프리랜서",
   },
   {
-    text: '"괜찮아요" 문구 하나에 다시 시작할 힘이 났어요.',
+    text: '&quot;괜찮아요&quot; 문구 하나에 다시 시작할 힘이 났어요.',
     author: "박서연",
     role: "직장인",
   },
