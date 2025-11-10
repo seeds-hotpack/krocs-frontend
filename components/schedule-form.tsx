@@ -417,7 +417,7 @@ export function ScheduleForm({ schedule, onSubmit, onCancel, onDelete, defaultDa
           </Label>
         </div>
 
-        {/* Date Selection - GoalForm과 동일하게 */}
+        {/* Date Selection - 날짜와 시간 분리 */}
         <div className="space-y-3">
           <Label className="text-sm font-semibold text-[#0F1C21] flex items-center gap-2">
             <Calendar className="h-4 w-4 text-[#5D6E72]" />
@@ -425,45 +425,80 @@ export function ScheduleForm({ schedule, onSubmit, onCancel, onDelete, defaultDa
           </Label>
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
-              <Label htmlFor="startDateTime" className="text-xs text-[#5D6E72]">
-                시작 {formData.allDay ? "날짜" : "시간"}
+              <Label htmlFor="startDate" className="text-xs text-[#5D6E72]">
+                시작 날짜
               </Label>
               <Input
-                id="startDateTime"
-                type={formData.allDay ? "date" : "datetime-local"}
-                value={formData.allDay ? formData.startDate : formData.startDateTime}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    [formData.allDay ? "startDate" : "startDateTime"]: e.target.value,
-                  })
-                }
+                id="startDate"
+                type="date"
+                value={formData.startDate}
+                onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
                 className="h-12 rounded-2xl border-2 border-[#D3E6ED] bg-white text-sm text-[#0F1C21] focus:border-[#ff8b6b] focus:ring-2 focus:ring-[#ff8b6b]/20"
                 required
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="endDateTime" className="text-xs text-[#5D6E72]">
-                종료 {formData.allDay ? "날짜" : "시간"}
+              <Label htmlFor="endDate" className="text-xs text-[#5D6E72]">
+                종료 날짜
               </Label>
               <Input
-                id="endDateTime"
-                type={formData.allDay ? "date" : "datetime-local"}
-                value={formData.allDay ? formData.endDate : formData.endDateTime}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    [formData.allDay ? "endDate" : "endDateTime"]: e.target.value,
-                  })
-                }
-                min={formData.allDay ? formData.startDate : formData.startDateTime}
+                id="endDate"
+                type="date"
+                value={formData.endDate}
+                onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
+                min={formData.startDate}
                 className="h-12 rounded-2xl border-2 border-[#D3E6ED] bg-white text-sm text-[#0F1C21] focus:border-[#ff8b6b] focus:ring-2 focus:ring-[#ff8b6b]/20"
                 required
               />
             </div>
           </div>
         </div>
+
+        {/* Time Selection - 하루 종일이 아닐 때만 표시 */}
+        {!formData.allDay && (
+          <div className="space-y-3">
+            <Label className="text-sm font-semibold text-[#0F1C21] flex items-center gap-2">
+              <Clock className="h-4 w-4 text-[#5D6E72]" />
+              <span>시간 설정</span>
+            </Label>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label htmlFor="startTime" className="text-xs text-[#5D6E72]">
+                  시작 시간
+                </Label>
+                <Input
+                  id="startTime"
+                  type="time"
+                  value={formData.startDateTime.split("T")[1]}
+                  onChange={(e) => {
+                    const newStartDateTime = `${formData.startDate}T${e.target.value}`;
+                    setFormData({ ...formData, startDateTime: newStartDateTime });
+                  }}
+                  className="h-12 rounded-2xl border-2 border-[#D3E6ED] bg-white text-sm text-[#0F1C21] focus:border-[#ff8b6b] focus:ring-2 focus:ring-[#ff8b6b]/20"
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="endTime" className="text-xs text-[#5D6E72]">
+                  종료 시간
+                </Label>
+                <Input
+                  id="endTime"
+                  type="time"
+                  value={formData.endDateTime.split("T")[1]}
+                  onChange={(e) => {
+                    const newEndDateTime = `${formData.endDate}T${e.target.value}`;
+                    setFormData({ ...formData, endDateTime: newEndDateTime });
+                  }}
+                  className="h-12 rounded-2xl border-2 border-[#D3E6ED] bg-white text-sm text-[#0F1C21] focus:border-[#ff8b6b] focus:ring-2 focus:ring-[#ff8b6b]/20"
+                  required
+                />
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Reminder */}
         <div className="space-y-2">
