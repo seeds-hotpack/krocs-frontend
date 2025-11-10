@@ -140,7 +140,7 @@ export function FeatureSection() {
                   key={index}
                   className="feature-card bg-white w-[70vw] sm:w-[260px] md:w-[300px] flex-shrink-0 shadow-sm border border-gray-100"
                 >
-                  <CardContent className="p-3 md:p-4 space-y-2">
+                  <CardContent className="p-2.5 md:p-3 flex h-full flex-col items-center text-center gap-2">
                     <div className="relative w-full aspect-[9/16] rounded-lg overflow-hidden bg-gray-100">
                       <img
                         src={feature.image || "/placeholder.svg"}
@@ -148,8 +148,12 @@ export function FeatureSection() {
                         className="w-full h-full object-cover object-top"
                       />
                     </div>
-                    <h3 className="text-sm md:text-base font-bold pt-1">{feature.title}</h3>
-                    <p className="text-xs md:text-sm text-muted-foreground leading-relaxed">{feature.description}</p>
+                    <div className="mt-auto pt-2 md:pt-3 flex flex-col gap-1 w-full max-w-[85%]">
+                      <h3 className="text-sm md:text-base font-bold">{feature.title}</h3>
+                      <p className="text-xs md:text-sm text-muted-foreground leading-relaxed">
+                        {feature.description}
+                      </p>
+                    </div>
                   </CardContent>
                 </Card>
               )

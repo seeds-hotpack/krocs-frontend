@@ -8,10 +8,11 @@ import { AboutSection } from "@/components/landing/about-section"
 import { CTASection } from "@/components/landing/cta-section"
 import { Footer } from "@/components/landing/footer"
 import { Navigation } from "@/components/landing/navigation"
+import { landingColorVars } from "@/components/landing/landing-theme"
 
 export default function Home() {
   return (
-    <main className="min-h-screen">
+    <main className="min-h-screen" style={landingColorVars}>
       <Navigation />
       <HeroSection />
       <ProblemSection />

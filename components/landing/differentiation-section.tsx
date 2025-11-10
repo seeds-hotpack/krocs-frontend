@@ -13,14 +13,14 @@ export function DifferentiationSection() {
         <div className="max-w-4xl mx-auto overflow-x-auto">
           <table className="w-full border-collapse rounded-2xl overflow-hidden shadow-lg">
             <thead>
-              <tr style={{ backgroundColor: "#ffb8a3" }}>
+              <tr style={{ backgroundColor: "var(--landing-table-header)" }}>
                 <th className="p-3 md:p-4 text-left text-xs md:text-sm lg:text-base font-bold text-white">구분</th>
                 <th className="p-3 md:p-4 text-left text-xs md:text-sm lg:text-base font-bold text-white">기존 앱</th>
                 <th className="p-3 md:p-4 text-left text-xs md:text-sm lg:text-base font-bold text-white">Krocs</th>
               </tr>
             </thead>
             <tbody>
-              <tr style={{ backgroundColor: "#ffe5de" }}>
+              <tr style={{ backgroundColor: "var(--landing-table-row)" }}>
                 <td className="p-3 md:p-4 text-xs md:text-sm lg:text-base font-semibold border-b border-white">
                   동기 구조
                 </td>
@@ -29,24 +29,24 @@ export function DifferentiationSection() {
                 </td>
                 <td
                   className="p-3 md:p-4 text-xs md:text-sm lg:text-base font-semibold border-b border-white"
-                  style={{ color: "#ff8b6b" }}
+                  style={{ color: "var(--landing-accent-dark)" }}
                 >
                   내부 피드백 (복기, 감정, 의미)
                 </td>
               </tr>
-              <tr style={{ backgroundColor: "#fff0ec" }}>
+              <tr style={{ backgroundColor: "var(--landing-table-row-alt)" }}>
                 <td className="p-3 md:p-4 text-xs md:text-sm lg:text-base font-semibold border-b border-white">초점</td>
                 <td className="p-3 md:p-4 text-xs md:text-sm lg:text-base text-muted-foreground border-b border-white">
                   목표 달성
                 </td>
                 <td
                   className="p-3 md:p-4 text-xs md:text-sm lg:text-base font-semibold border-b border-white"
-                  style={{ color: "#ff8b6b" }}
+                  style={{ color: "var(--landing-accent-dark)" }}
                 >
                   실행 루프와 회복 루프
                 </td>
               </tr>
-              <tr style={{ backgroundColor: "#ffe5de" }}>
+              <tr style={{ backgroundColor: "var(--landing-table-row)" }}>
                 <td className="p-3 md:p-4 text-xs md:text-sm lg:text-base font-semibold border-b border-white">
                   설계 철학
                 </td>
@@ -55,15 +55,15 @@ export function DifferentiationSection() {
                 </td>
                 <td
                   className="p-3 md:p-4 text-xs md:text-sm lg:text-base font-semibold border-b border-white"
-                  style={{ color: "#ff8b6b" }}
+                  style={{ color: "var(--landing-accent-dark)" }}
                 >
                   유연성
                 </td>
               </tr>
-              <tr style={{ backgroundColor: "#fff0ec" }}>
+              <tr style={{ backgroundColor: "var(--landing-table-row-alt)" }}>
                 <td className="p-3 md:p-4 text-xs md:text-sm lg:text-base font-semibold">사용자 경험</td>
                 <td className="p-3 md:p-4 text-xs md:text-sm lg:text-base text-muted-foreground">일정 관리</td>
-                <td className="p-3 md:p-4 text-xs md:text-sm lg:text-base font-semibold" style={{ color: "#ff8b6b" }}>
+                <td className="p-3 md:p-4 text-xs md:text-sm lg:text-base font-semibold" style={{ color: "var(--landing-accent-dark)" }}>
                   시간 조율
                 </td>
               </tr>
