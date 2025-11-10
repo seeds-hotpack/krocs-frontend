@@ -28,7 +28,8 @@ import {
   Trash2,
   Plus,
   Flag,
-  Palette
+  Palette,
+  Sparkles
 } from "lucide-react"
 import type { Goal } from "@/api/goals"
 import { ConfirmationModal } from "@/components/ui/confirmation-modal";
@@ -124,7 +125,7 @@ export function ScheduleForm({ schedule, onSubmit, onCancel, onDelete, defaultDa
       allDay: schedule?.allDay || false,
       reminderMinutes: schedule?.reminderMinutes,
       icon: schedule?.icon || "User",
-      color: schedule?.color || "#A8D5E2",
+      color: schedule?.color || "#2196f3",
     };
   });
 
@@ -305,103 +306,54 @@ export function ScheduleForm({ schedule, onSubmit, onCancel, onDelete, defaultDa
 
   const selectedIcon = iconOptions.find((option) => option.value === formData.icon)
 
-  // Calculate duration
-  const startDate = new Date(formData.allDay ? formData.startDate : formData.startDateTime);
-  const endDate = new Date(formData.allDay ? formData.endDate : formData.endDateTime);
-  const durationDays = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
-
   return (
-    <div className="bg-white">
-      {/* Orange Header */}
-      <div className="bg-gradient-to-r from-[#FF9B7D] to-[#FFA98A] px-6 py-5 rounded-t-3xl">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Zap className="h-6 w-6 text-white" />
-            <h2 className="text-xl font-bold text-white">
+    <div className="relative w-full bg-white rounded-3xl overflow-hidden shadow-2xl">
+      {/* Header with Gradient - 동일하게 */}
+      <div className="relative px-6 py-5 bg-gradient-to-br from-[#ff8b6b] to-[#ff6b47] overflow-hidden">
+        <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-3xl"></div>
+        <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/10 rounded-full blur-2xl"></div>
+        
+        <div className="relative flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <Sparkles className="h-4 w-4 text-white flex-shrink-0" />
+            <h2 className="text-lg font-bold text-white">
               {schedule ? "일정 수정" : "일정 생성"}
             </h2>
           </div>
-          <button
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={onCancel}
-            className="w-10 h-10 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center transition-colors"
+            className="h-8 w-8 rounded-full bg-white/20 text-white backdrop-blur-sm hover:bg-white/30 transition-all flex-shrink-0"
           >
-            <X className="h-5 w-5 text-white" />
-          </button>
+            <X className="h-4 w-4" />
+          </Button>
         </div>
       </div>
 
+      {/* Form Content */}
       <form onSubmit={handleSubmit} className="p-6 space-y-6">
-        {/* Title Input */}
+        {/* Title Input - 동일하게 */}
         <div className="space-y-2">
-          <Label className="text-base font-bold text-gray-800 flex items-center gap-1">
-            일정 이름 <span className="text-red-500">*</span>
+          <Label htmlFor="title" className="text-sm font-semibold text-[#0F1C21] flex items-center gap-2">
+            <span>일정 이름</span>
+            <span className="text-red-500">*</span>
           </Label>
           <Input
+            id="title"
             value={formData.title}
             onChange={(e) => setFormData({ ...formData, title: e.target.value })}
             placeholder="예: 매일 아침 명상하기"
-            className="h-14 rounded-3xl border-2 border-gray-200 bg-gray-50 px-5 text-base focus:border-[#A8D5E2] focus:ring-0"
+            className="h-12 rounded-2xl border-2 border-[#D3E6ED] bg-white text-base text-[#0F1C21] placeholder:text-[#5D6E72]/50 focus:border-[#ff8b6b] focus:ring-2 focus:ring-[#ff8b6b]/20 transition-all"
             required
           />
         </div>
 
-        {/* Priority Buttons */}
-        <div className="space-y-3">
-          <Label className="text-base font-bold text-gray-800 flex items-center gap-2">
-            <Flag className="h-5 w-5" />
-            중요도
-          </Label>
-          <div className="grid grid-cols-3 gap-3">
-            <button
-              type="button"
-              className="h-14 rounded-3xl bg-gray-100 text-gray-600 font-medium hover:bg-gray-200 transition-colors"
-            >
-              높음
-            </button>
-            <button
-              type="button"
-              className="h-14 rounded-3xl bg-[#A8D5E2] text-gray-800 font-medium"
-            >
-              보통
-            </button>
-            <button
-              type="button"
-              className="h-14 rounded-3xl bg-gray-100 text-gray-600 font-medium hover:bg-gray-200 transition-colors"
-            >
-              낮음
-            </button>
-          </div>
-        </div>
-
-        {/* Color Picker */}
-        <div className="space-y-3">
-          <Label className="text-base font-bold text-gray-800 flex items-center gap-2">
-            <Palette className="h-5 w-5" />
-            목표 컬러
-          </Label>
-          <div className="grid grid-cols-4 gap-3">
-            {colorOptions.map(({ name, color }) => (
-              <button
-                key={name}
-                type="button"
-                className={`aspect-square rounded-[20px] transition-all ${
-                  formData.color === color
-                    ? "ring-4 ring-gray-800 ring-offset-2 scale-105"
-                    : "hover:scale-105"
-                }`}
-                style={{ backgroundColor: color }}
-                onClick={() => setFormData({ ...formData, color })}
-                title={name}
-              />
-            ))}
-          </div>
-        </div>
-
-        {/* Icon Selector */}
-        <div className="space-y-3">
-          <Label className="text-base font-bold text-gray-800">아이콘</Label>
+        {/* Icon Selection */}
+        <div className="space-y-2">
+          <Label className="text-sm font-semibold text-[#0F1C21]">아이콘</Label>
           <Select value={formData.icon} onValueChange={(value) => setFormData({ ...formData, icon: value })}>
-            <SelectTrigger className="h-14 rounded-3xl border-2 border-gray-200 bg-gray-50 px-5">
+            <SelectTrigger className="h-12 rounded-2xl border-2 border-[#D3E6ED] bg-white focus:border-[#ff8b6b] focus:ring-2 focus:ring-[#ff8b6b]/20">
               <div className="flex items-center gap-3">
                 {selectedIcon && React.createElement(selectedIcon.icon, { className: "h-5 w-5" })}
                 <span className="font-medium">{selectedIcon?.label}</span>
@@ -420,16 +372,64 @@ export function ScheduleForm({ schedule, onSubmit, onCancel, onDelete, defaultDa
           </Select>
         </div>
 
-        {/* Date Selection */}
+        {/* Color Selection - GoalForm과 동일하게 */}
         <div className="space-y-3">
-          <Label className="text-base font-bold text-gray-800 flex items-center gap-2">
-            <Calendar className="h-5 w-5" />
-            기간 설정
+          <Label className="text-sm font-semibold text-[#0F1C21] flex items-center gap-2">
+            <Palette className="h-4 w-4 text-[#5D6E72]" />
+            <span>일정 컬러</span>
           </Label>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="flex flex-wrap gap-2">
+            {colorOptions.map(({ name, color }) => {
+              const isSelected = formData.color === color
+              return (
+                <button
+                  key={name}
+                  type="button"
+                  className={`relative h-11 w-11 rounded-2xl border-2 transition-all hover:scale-110 ${
+                    isSelected ? "border-[#0F1C21] shadow-lg scale-110" : "border-white shadow-sm"
+                  }`}
+                  style={{ backgroundColor: color }}
+                  onClick={() => setFormData({ ...formData, color })}
+                  aria-label={`${name} 선택`}
+                  title={name}
+                >
+                  {isSelected && (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="h-3 w-3 bg-[#0F1C21] rounded-full"></div>
+                    </div>
+                  )}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+
+        {/* All Day Toggle */}
+        <div className="flex items-center space-x-3 p-3 bg-[#EEF5F7] rounded-2xl">
+          <Checkbox
+            id="allDay"
+            checked={formData.allDay}
+            onCheckedChange={handleAllDayChange}
+            className="border-[#99C6D6]"
+          />
+          <Label htmlFor="allDay" className="text-sm font-semibold text-[#0F1C21] cursor-pointer">
+            하루 종일
+          </Label>
+        </div>
+
+        {/* Date Selection - GoalForm과 동일하게 */}
+        <div className="space-y-3">
+          <Label className="text-sm font-semibold text-[#0F1C21] flex items-center gap-2">
+            <Calendar className="h-4 w-4 text-[#5D6E72]" />
+            <span>기간 설정</span>
+          </Label>
+          <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
-              <span className="text-sm text-gray-600">시작일</span>
+              <Label htmlFor="startDateTime" className="text-xs text-[#5D6E72]">
+                시작 {formData.allDay ? "날짜" : "시간"}
+              </Label>
               <Input
+                id="startDateTime"
                 type={formData.allDay ? "date" : "datetime-local"}
                 value={formData.allDay ? formData.startDate : formData.startDateTime}
                 onChange={(e) =>
@@ -438,13 +438,17 @@ export function ScheduleForm({ schedule, onSubmit, onCancel, onDelete, defaultDa
                     [formData.allDay ? "startDate" : "startDateTime"]: e.target.value,
                   })
                 }
-                className="h-14 rounded-3xl border-2 border-gray-200 bg-white px-5"
+                className="h-12 rounded-2xl border-2 border-[#D3E6ED] bg-white text-sm text-[#0F1C21] focus:border-[#ff8b6b] focus:ring-2 focus:ring-[#ff8b6b]/20"
                 required
               />
             </div>
+
             <div className="space-y-2">
-              <span className="text-sm text-gray-600">종료일</span>
+              <Label htmlFor="endDateTime" className="text-xs text-[#5D6E72]">
+                종료 {formData.allDay ? "날짜" : "시간"}
+              </Label>
               <Input
+                id="endDateTime"
                 type={formData.allDay ? "date" : "datetime-local"}
                 value={formData.allDay ? formData.endDate : formData.endDateTime}
                 onChange={(e) =>
@@ -454,35 +458,53 @@ export function ScheduleForm({ schedule, onSubmit, onCancel, onDelete, defaultDa
                   })
                 }
                 min={formData.allDay ? formData.startDate : formData.startDateTime}
-                className="h-14 rounded-3xl border-2 border-gray-200 bg-white px-5"
+                className="h-12 rounded-2xl border-2 border-[#D3E6ED] bg-white text-sm text-[#0F1C21] focus:border-[#ff8b6b] focus:ring-2 focus:ring-[#ff8b6b]/20"
                 required
               />
             </div>
           </div>
         </div>
 
-        {/* Duration Display */}
-        <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-3xl p-5 border-l-4 border-[#FF9B7D]">
-          <div className="flex items-center justify-between">
-            <span className="text-gray-700 font-medium">선택한 기간</span>
-            <span className="text-2xl font-bold text-gray-800">{durationDays}일</span>
-          </div>
+        {/* Reminder */}
+        <div className="space-y-2">
+          <Label htmlFor="reminderMinutes" className="text-sm font-semibold text-[#0F1C21] flex items-center gap-2">
+            <Bell className="h-4 w-4 text-[#5D6E72]" />
+            알림 (선택)
+          </Label>
+          <Select
+            value={formData.reminderMinutes?.toString() || "none"}
+            onValueChange={(value) =>
+              setFormData({ ...formData, reminderMinutes: value === "none" ? undefined : Number.parseInt(value) })
+            }
+          >
+            <SelectTrigger className="h-12 rounded-2xl border-2 border-[#D3E6ED] bg-white focus:border-[#ff8b6b] focus:ring-2 focus:ring-[#ff8b6b]/20">
+              <SelectValue placeholder="알림 시간 선택" />
+            </SelectTrigger>
+            <SelectContent className="rounded-2xl">
+              <SelectItem value="none" className="rounded-xl">알림 없음</SelectItem>
+              <SelectItem value="5" className="rounded-xl">5분 전</SelectItem>
+              <SelectItem value="10" className="rounded-xl">10분 전</SelectItem>
+              <SelectItem value="15" className="rounded-xl">15분 전</SelectItem>
+              <SelectItem value="30" className="rounded-xl">30분 전</SelectItem>
+              <SelectItem value="60" className="rounded-xl">1시간 전</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
         {/* Sub Tasks */}
         {subTasks.length > 0 && (
           <div className="space-y-3">
-            <Label className="text-base font-bold text-gray-800">세부 일정</Label>
+            <Label className="text-sm font-semibold text-[#0F1C21]">세부 일정</Label>
             <div className="space-y-2">
               {subTasks.map((task, index) => (
                 <div
                   key={`${task.id}-${index}`}
-                  className="flex items-center gap-3 p-4 bg-gray-50 rounded-2xl"
+                  className="flex items-center gap-3 p-3 bg-[#EEF5F7] rounded-2xl"
                 >
                   <Checkbox
                     checked={task.completed}
                     onCheckedChange={() => toggleSubTask(task.id, index)}
-                    className="h-5 w-5"
+                    className="h-5 w-5 border-[#99C6D6]"
                   />
                   {editingSubTaskIndex === index ? (
                     <>
@@ -493,21 +515,21 @@ export function ScheduleForm({ schedule, onSubmit, onCancel, onDelete, defaultDa
                           if (e.key === "Enter") saveInlineEdit();
                           if (e.key === "Escape") cancelInlineEdit();
                         }}
-                        className="flex-1 h-9 rounded-2xl"
+                        className="flex-1 h-9 rounded-xl border-2 border-[#D3E6ED]"
                         autoFocus
                       />
                       <Button
                         type="button"
                         size="sm"
                         onClick={saveInlineEdit}
-                        className="bg-[#FF9B7D] hover:bg-[#FF8A6B] rounded-xl"
+                        className="h-8 px-3 bg-[#ff8b6b] hover:bg-[#ff7a56] text-white rounded-xl"
                       >
                         저장
                       </Button>
                     </>
                   ) : (
                     <>
-                      <span className={`flex-1 ${task.completed ? "line-through text-gray-400" : ""}`}>
+                      <span className={`flex-1 text-sm font-medium ${task.completed ? "line-through text-[#5D6E72]" : "text-[#0F1C21]"}`}>
                         {task.title}
                       </span>
                       <Button
@@ -515,7 +537,7 @@ export function ScheduleForm({ schedule, onSubmit, onCancel, onDelete, defaultDa
                         variant="ghost"
                         size="sm"
                         onClick={() => startInlineEdit(task, index)}
-                        className="hover:bg-gray-200 rounded-xl"
+                        className="h-8 w-8 p-0 hover:bg-[#D3E6ED] rounded-xl"
                       >
                         <Pencil className="h-4 w-4" />
                       </Button>
@@ -524,7 +546,7 @@ export function ScheduleForm({ schedule, onSubmit, onCancel, onDelete, defaultDa
                         variant="ghost"
                         size="sm"
                         onClick={() => removeSubTask(task.id)}
-                        className="hover:bg-red-100 text-red-600 rounded-xl"
+                        className="h-8 w-8 p-0 hover:bg-red-100 text-red-600 rounded-xl"
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -536,21 +558,21 @@ export function ScheduleForm({ schedule, onSubmit, onCancel, onDelete, defaultDa
           </div>
         )}
 
-        {/* Action Buttons */}
-        <div className="flex gap-3 pt-4">
+        {/* Action Buttons - GoalForm과 동일하게 */}
+        <div className="flex flex-col-reverse sm:flex-row gap-3 pt-2">
           <Button
             type="button"
-            variant="outline"
+            variant="ghost"
             onClick={onCancel}
-            className="flex-1 h-14 rounded-3xl border-2 border-gray-200 bg-white text-gray-700 font-bold text-base hover:bg-gray-50"
+            className="flex-1 h-12 rounded-2xl border-2 border-[#D3E6ED] bg-white text-[#5D6E72] font-semibold hover:bg-[#EEF5F7] transition-all"
           >
             취소
           </Button>
           <Button
             type="submit"
-            className="flex-1 h-14 rounded-3xl bg-gradient-to-r from-[#FF9B7D] to-[#FFA98A] text-white font-bold text-base hover:from-[#FF8A6B] hover:to-[#FF9879] shadow-lg"
+            className="flex-1 h-12 rounded-2xl bg-gradient-to-r from-[#ff8b6b] to-[#ff6b47] text-white font-bold shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all"
           >
-            {schedule ? "일정 수정" : "일정 만들기"}
+            {schedule ? "수정 완료" : "일정 만들기"}
           </Button>
         </div>
 
@@ -559,9 +581,9 @@ export function ScheduleForm({ schedule, onSubmit, onCancel, onDelete, defaultDa
             type="button"
             variant="outline"
             onClick={() => setShowDeleteModal(true)}
-            className="w-full h-14 rounded-3xl border-2 border-red-200 text-red-600 font-bold hover:bg-red-50"
+            className="w-full h-12 rounded-2xl border-2 border-red-200 text-red-600 font-semibold hover:bg-red-50"
           >
-            <Trash2 className="h-5 w-5 mr-2" />
+            <Trash2 className="h-4 w-4 mr-2" />
             일정 삭제
           </Button>
         )}
