@@ -5,7 +5,7 @@ export function DifferentiationSection() {
     <section id="differentiation" className="py-16 md:py-24">
       <div className="container mx-auto px-4 md:px-8 lg:px-16">
         <div className="text-center mb-12 md:mb-16">
-          <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-4">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-4 break-keep text-balance">
             단순한 일정 관리와는 다릅니다.
           </h2>
         </div>
@@ -21,14 +21,14 @@ export function DifferentiationSection() {
             </thead>
             <tbody>
               <tr style={{ backgroundColor: "var(--landing-table-row)" }}>
-                <td className="p-3 md:p-4 text-xs md:text-sm lg:text-base font-semibold border-b border-white">
+                <td className="p-3 md:p-4 text-xs md:text-sm lg:text-base font-semibold border-b border-white break-keep text-balance">
                   동기 구조
                 </td>
-                <td className="p-3 md:p-4 text-xs md:text-sm lg:text-base text-muted-foreground border-b border-white">
+                <td className="p-3 md:p-4 text-xs md:text-sm lg:text-base text-muted-foreground border-b border-white break-keep text-balance">
                   외부 자극 (금전/챌린지)
                 </td>
                 <td
-                  className="p-3 md:p-4 text-xs md:text-sm lg:text-base font-semibold border-b border-white"
+                  className="p-3 md:p-4 text-xs md:text-sm lg:text-base font-semibold border-b border-white break-keep text-balance"
                   style={{ color: "var(--landing-accent-dark)" }}
                 >
                   내부 피드백 (복기, 감정, 의미)
@@ -40,14 +40,14 @@ export function DifferentiationSection() {
                   목표 달성
                 </td>
                 <td
-                  className="p-3 md:p-4 text-xs md:text-sm lg:text-base font-semibold border-b border-white"
+                  className="p-3 md:p-4 text-xs md:text-sm lg:text-base font-semibold border-b border-white break-keep text-balance"
                   style={{ color: "var(--landing-accent-dark)" }}
                 >
                   실행 루프와 회복 루프
                 </td>
               </tr>
               <tr style={{ backgroundColor: "var(--landing-table-row)" }}>
-                <td className="p-3 md:p-4 text-xs md:text-sm lg:text-base font-semibold border-b border-white">
+                <td className="p-3 md:p-4 text-xs md:text-sm lg:text-base font-semibold border-b border-white break-keep text-balance">
                   설계 철학
                 </td>
                 <td className="p-3 md:p-4 text-xs md:text-sm lg:text-base text-muted-foreground border-b border-white">
