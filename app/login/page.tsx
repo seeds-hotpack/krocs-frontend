@@ -5,6 +5,7 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import Image from "next/image"
+import krocsLogo from "@/assets/krocslogo.png"
 
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false)
@@ -36,69 +37,31 @@ export default function LoginPage() {
   ]
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-b from-purple-600 via-purple-400 to-pink-300 relative overflow-hidden">
-      <div className="absolute inset-0 pointer-events-none">
-        {slogans.map((slogan, index) => (
-          <div
-            key={index}
-            className="absolute whitespace-nowrap text-white/10 text-6xl font-bold"
-            style={{
-              top: `${15 + index * 12}%`,
-              animation: `slideText ${20 + index * 3}s linear infinite`,
-              animationDelay: `${index * 2}s`,
-            }}
-          >
-            {slogan}
-          </div>
-        ))}
-      </div>
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-[#ffc0a8] via-[#eef5f7] to-[#eef5f7] relative overflow-hidden">
 
-      <style jsx>{`
-        @keyframes slideText {
-          0% {
-            transform: translateX(-100%);
-            opacity: 0;
-          }
-          10% {
-            opacity: 1;
-          }
-          90% {
-            opacity: 1;
-          }
-          100% {
-            transform: translateX(100vw);
-            opacity: 0;
-          }
-        }
-      `}</style>
 
       {/* 헤더 */}
       <header className="w-full p-6 relative z-10">
-        <Link href="/" className="text-2xl font-bold text-white">
-          Krocs
+        <Link href="/">
+          <Image
+            src={krocsLogo}
+            alt="Krocs Logo"
+            width={100}
+            height={40}
+            className="object-contain"
+          />
         </Link>
       </header>
 
       {/* 메인 로그인 영역 */}
       <div className="flex-1 flex items-center justify-center p-4 relative z-10">
-        <div className="w-full max-w-md">
-          <div className="text-center mb-8">
-            <h1 className="text-4xl font-bold tracking-tight mb-3 text-white">로그인</h1>
-            <p className="text-white/90 text-lg">소셜 계정으로 간편하게 시작하세요</p>
-          </div>
-
-          <Card className="border-0 shadow-2xl bg-white">
+                <div className="w-full max-w-md">
+                          
+                  <Card className="border-0 shadow-2xl bg-white">
             <CardHeader className="space-y-1">
-              <div className="flex justify-center mb-4">
-                <Image
-                  src="/lrocslogo.png"
-                  alt="Krocs Logo"
-                  width={120}
-                  height={120}
-                  className="object-contain"
-                />
-              </div>
-              <CardDescription className="text-center">소셜 계정으로 간편하게 시작하세요</CardDescription>
+              <CardTitle className="text-center text-2xl font-bold text-[#ff8b6b]">로그인</CardTitle>
+              <CardDescription className="text-center text-sm text-muted-foreground">소셜 계정으로 간편하게 시작하세요</CardDescription>
+
             </CardHeader>
             <CardContent className="space-y-4">
               {/* 소셜 로그인 버튼들 */}
@@ -134,12 +97,16 @@ export default function LoginPage() {
                   variant="outline"
                   type="button"
                   disabled={isLoading}
+                  onClick={handleNaverLogin}
                   className="w-full h-14 text-base hover:bg-gray-50 bg-transparent rounded-full"
                 >
-                  <svg className="h-6 w-6 mr-3" viewBox="0 0 24 24" fill="none">
-                    <rect width="24" height="24" rx="4" fill="#03C75A" />
-                    <path d="M16.273 12.845L7.376 0H0v24h7.727V11.155L16.624 24H24V0h-7.727v12.845z" fill="white" />
-                  </svg>
+                  <Image
+                    src="/naverlogo.png"
+                    alt="Naver Logo"
+                    width={24}
+                    height={24}
+                    className="mr-3"
+                  />
                   네이버로 계속하기
                 </Button>
                 <Button
