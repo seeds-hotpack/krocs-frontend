@@ -1,3 +1,5 @@
+import Image from "next/image"
+
 export function PhoneMockup({ imageSrc }: { imageSrc: string }) {
   return (
     <div className="relative w-[280px] h-[570px] mx-auto">
@@ -9,10 +11,12 @@ export function PhoneMockup({ imageSrc }: { imageSrc: string }) {
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-6 bg-gray-900 rounded-b-2xl z-10" />
 
           {/* App screenshot */}
-          <img
+          <Image
             src={imageSrc || "/landing/placeholder.svg"}
             alt="App screenshot"
-            className="w-full h-full object-cover object-top"
+            fill
+            sizes="280px"
+            className="object-cover object-top"
           />
         </div>
       </div>

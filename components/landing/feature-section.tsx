@@ -2,6 +2,7 @@
 
 import type React from "react"
 
+import Image from "next/image"
 import { Card, CardContent } from "@/components/ui/card"
 import { MessageSquare, RefreshCw, Calendar, Bookmark, Users } from "lucide-react"
 import { useEffect, useRef, useState } from "react"
@@ -142,10 +143,12 @@ export function FeatureSection() {
                 >
                   <CardContent className="p-2.5 md:p-3 flex h-full flex-col items-center text-center gap-2">
                     <div className="relative w-full aspect-[9/16] rounded-lg overflow-hidden bg-gray-100">
-                      <img
+                      <Image
                         src={feature.image || "/placeholder.svg"}
                         alt={feature.title}
-                        className="w-full h-full object-cover object-top"
+                        fill
+                        sizes="(min-width: 1024px) 300px, (min-width: 640px) 260px, 70vw"
+                        className="object-cover object-top"
                       />
                     </div>
                     <div className="mt-auto pt-2 md:pt-3 flex flex-col gap-1 w-full max-w-[85%]">
