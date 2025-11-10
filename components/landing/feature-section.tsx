@@ -112,7 +112,7 @@ export function FeatureSection() {
     <section id="features" className="py-16 md:py-24 bg-muted/30">
       <div className="container mx-auto px-4 overflow-hidden">
         <div className="text-center mb-12 md:mb-16">
-          <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-4 text-balance">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-4 break-keep text-balance">
             Krocs가 제공하는 시간 루프 기능
           </h2>
         </div>
@@ -150,7 +150,7 @@ export function FeatureSection() {
                     </div>
                     <div className="mt-auto pt-2 md:pt-3 flex flex-col gap-1 w-full max-w-[85%]">
                       <h3 className="text-sm md:text-base font-bold">{feature.title}</h3>
-                      <p className="text-xs md:text-sm text-muted-foreground leading-relaxed">
+                      <p className="text-xs md:text-sm text-muted-foreground leading-relaxed break-keep">
                         {feature.description}
                       </p>
                     </div>

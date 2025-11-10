@@ -41,10 +41,12 @@ export function ProblemSection() {
             const Icon = problem.icon
             return (
               <Card key={index} className="border-none shadow-none bg-white">
-                <CardContent className="p-6 space-y-2">
-                  <Icon className="w-10 h-10 md:w-12 md:h-12 text-primary mb-1" />
+                <CardContent className="p-6 space-y-2 text-center">
+                  <Icon className="mx-auto w-10 h-10 md:w-12 md:h-12 text-primary mb-3" />
                   <h3 className="text-lg md:text-xl font-semibold">{problem.title}</h3>
-                  <p className="text-sm md:text-base text-muted-foreground leading-relaxed">{problem.description}</p>
+                  <p className="text-xs md:text-sm text-muted-foreground leading-relaxed break-words mt-1">
+                    {problem.description}
+                  </p>
                 </CardContent>
               </Card>
             )

@@ -36,7 +36,7 @@ export function SolutionSection() {
     >
       <div className="container mx-auto px-4 md:px-8 lg:px-16">
         <div className="text-center mb-12 md:mb-16 space-y-4">
-          <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white text-balance">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white break-keep text-balance">
             계획의 루프를 완성하는 시간 코치
           </h2>
           <div className="space-y-2">
@@ -55,7 +55,7 @@ export function SolutionSection() {
               <CardContent className="p-6 md:p-8 flex items-center justify-between gap-6">
                 <div className="flex-1 space-y-2">
                   <h3 className="text-base md:text-xl lg:text-2xl font-bold text-foreground">{step.title}</h3>
-                  <p className="text-xs md:text-sm lg:text-base text-muted-foreground leading-relaxed">
+                  <p className="text-xs md:text-sm lg:text-base text-muted-foreground leading-relaxed break-keep">
                     {step.description}
                   </p>
                 </div>
