@@ -67,7 +67,7 @@ export function Footer() {
           </div>
         </div>
 
-        <div className="mt-12 pt-8 border-t text-center text-sm text-muted-foreground">
+        <div className="mt-12 pt-8 text-center text-sm text-muted-foreground">
           <p>&copy; 2025 Krocs. All rights reserved.</p>
         </div>
       </div>

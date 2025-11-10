@@ -1,6 +1,12 @@
+import { landingColors, landingGradients } from "@/components/landing/landing-theme"
+
 export function AboutSection() {
   return (
-    <section id="about" className="py-24 relative overflow-hidden bg-gradient-to-br from-[#fff5f2] to-background">
+    <section
+      id="about"
+      className="py-24 relative overflow-hidden"
+      style={{ backgroundImage: landingGradients.aboutBackground }}
+    >
       <div className="absolute inset-0 pointer-events-none">
         <svg className="absolute bottom-0 left-0 w-full h-64 opacity-10" viewBox="0 0 1440 320">
           <path
@@ -9,8 +15,8 @@ export function AboutSection() {
           />
           <defs>
             <linearGradient id="aboutGradient" x1="0" y1="0" x2="1440" y2="0">
-              <stop offset="0%" stopColor="#ff8b6b" />
-              <stop offset="100%" stopColor="#ffb09a" />
+              <stop offset="0%" stopColor={landingColors.accent} />
+              <stop offset="100%" stopColor={landingColors.accentDark} />
             </linearGradient>
           </defs>
         </svg>
@@ -24,7 +30,7 @@ export function AboutSection() {
             </h2>
             <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold">
               <span className="inline-block">
-                시간의 신 <span className="text-[#ff8b6b]">Chronos</span>에서 온 이름
+                시간의 신 <span className="text-[var(--landing-accent-dark)]">Chronos</span>에서 온 이름
               </span>
             </h2>
           </div>
@@ -41,8 +47,8 @@ export function AboutSection() {
             <svg className="w-48 h-48 mx-auto" viewBox="0 0 200 200">
               <defs>
                 <linearGradient id="chronosGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stopColor="#ff8b6b" />
-                  <stop offset="100%" stopColor="#ffb09a" />
+                  <stop offset="0%" stopColor={landingColors.accent} />
+                  <stop offset="100%" stopColor={landingColors.accentDark} />
                 </linearGradient>
               </defs>
               <path

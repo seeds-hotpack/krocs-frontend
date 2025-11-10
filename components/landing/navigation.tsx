@@ -73,7 +73,7 @@ export function Navigation() {
             {/* CTA Button */}
             <button
               onClick={() => scrollToSection("#cta")}
-              className="hidden md:block px-6 py-2 bg-[#ff8b6b] text-white rounded-full text-sm font-medium hover:bg-[#ff7a56] transition-all shadow-md"
+              className="hidden md:block px-6 py-2 bg-[var(--landing-primary)] text-white rounded-full text-sm font-medium hover:bg-[var(--landing-primary-hover)] transition-all shadow-md"
             >
               시작하기
             </button>
@@ -99,7 +99,7 @@ export function Navigation() {
                   scrollToSection("#cta")
                   setMobileMenuOpen(false)
                 }}
-                className="w-full mt-4 px-6 py-4 bg-[#ff8b6b] text-white rounded-full text-lg font-medium hover:bg-[#ff7a56] transition-all shadow-md"
+                className="w-full mt-4 px-6 py-4 bg-[var(--landing-primary)] text-white rounded-full text-lg font-medium hover:bg-[var(--landing-primary-hover)] transition-all shadow-md"
               >
                 시작하기
               </button>

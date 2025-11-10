@@ -1,16 +1,21 @@
 "use client"
 
 import { Button } from "@/components/landing/ui/button"
+import { landingGradients } from "@/components/landing/landing-theme"
 
 export function CTASection() {
   return (
     <section
       id="cta"
-      className="py-32 relative overflow-hidden bg-gradient-to-br from-[#ff8b6b] via-[#ff9f82] to-[#ffb09a]"
+      className="py-32 relative overflow-hidden"
+      style={{ backgroundImage: landingGradients.ctaBackground }}
     >
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-white/20 rounded-full blur-3xl" />
-        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-[#ff7a56]/30 rounded-full blur-3xl" />
+        <div
+          className="absolute bottom-1/4 right-1/4 w-96 h-96 rounded-full blur-3xl"
+          style={{ backgroundColor: "var(--landing-cta-overlay)" }}
+        />
       </div>
 
       <div className="container mx-auto px-4 relative z-10">
@@ -27,7 +32,7 @@ export function CTASection() {
           <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
             <Button
               size="lg"
-              className="text-base sm:text-lg px-8 sm:px-10 py-6 sm:py-7 rounded-xl font-semibold bg-white text-[#ff8b6b] hover:bg-white/90"
+              className="text-base sm:text-lg px-8 sm:px-10 py-6 sm:py-7 rounded-xl font-semibold bg-white text-[var(--landing-accent-dark)] hover:bg-white/90"
               onClick={() => {
                 window.location.href = "/"
               }}

@@ -2,6 +2,7 @@
 
 import Image from "next/image"
 import { Card, CardContent } from "@/components/landing/ui/card"
+import { landingGradients } from "@/components/landing/landing-theme"
 
 const steps = [
   {
@@ -28,7 +29,11 @@ const steps = [
 
 export function SolutionSection() {
   return (
-    <section id="solution" className="py-16 md:py-24" style={{ backgroundColor: "#ff8b6b" }}>
+    <section
+      id="solution"
+      className="py-16 md:py-24"
+      style={{ backgroundImage: landingGradients.ctaBackground }}
+    >
       <div className="container mx-auto px-4 md:px-8 lg:px-16">
         <div className="text-center mb-12 md:mb-16 space-y-4">
           <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white text-balance">

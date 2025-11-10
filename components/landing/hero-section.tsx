@@ -17,7 +17,7 @@ export function HeroSection() {
               <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold leading-tight break-keep">
                 <span className="block">시간을 계획하는 게 아니라,</span>
                 <span className="block">
-                  <span className="text-[#ff8b6b]">조율하는 것</span>부터 시작하세요.
+                  <span className="text-[var(--landing-primary)]">조율하는 것</span>부터 시작하세요.
                 </span>
               </h1>
               <p className="text-sm sm:text-base md:text-lg lg:text-xl text-muted-foreground leading-relaxed">
@@ -28,7 +28,7 @@ export function HeroSection() {
             <div className="flex flex-col sm:flex-row gap-4">
               <Button
                 size="lg"
-                className="text-xs sm:text-sm px-6 sm:px-8 py-5 sm:py-6 rounded-full bg-[#ff8b6b] hover:bg-[#ff7a56] text-white"
+                className="text-xs sm:text-sm px-6 sm:px-8 py-5 sm:py-6 rounded-full bg-[var(--landing-primary)] hover:bg-[var(--landing-primary-hover)] text-white"
                 onClick={() => {
                 window.location.href = "/"
               }}
