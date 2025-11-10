@@ -28,7 +28,7 @@ interface SubGoal {
   sub_goal_id: number
   title: string
   completed: boolean
-  is_time_selected: boolean
+  is_time_selected?: boolean
   start_date_time?: string | null
   end_date_time?: string | null
 }

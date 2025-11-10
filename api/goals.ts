@@ -4,6 +4,9 @@ export interface SubGoal {
   sub_goal_id: number;
   title: string;
   completed: boolean;
+  is_time_selected?: boolean;
+  start_date_time?: string | null;
+  end_date_time?: string | null;
 }
 
 export interface Goal {
@@ -53,7 +56,10 @@ export const getGoals = async (params: GetGoalsParams): Promise<Goal[]> => {
       subGoals: (g.subGoals || []).map((sg: any) => ({
         sub_goal_id: sg.sub_goal_id,
         title: sg.title,
-        completed: sg.is_completed, // isCompleted -> is_completed
+        completed: sg.is_completed,
+        is_time_selected: Boolean(sg.is_time_selected),
+        start_date_time: sg.start_date_time ?? null,
+        end_date_time: sg.end_date_time ?? null,
       })),
       completionPercentage: g.completionPercentage ?? 0,
       createdAt: g.createdAt,
@@ -112,6 +118,9 @@ export const getGoalById = async (goalId: number): Promise<Goal> => {
             sub_goal_id: sg.sub_goal_id,
             title: sg.title,
             completed: sg.is_completed,
+            is_time_selected: Boolean(sg.is_time_selected),
+            start_date_time: sg.start_date_time ?? null,
+            end_date_time: sg.end_date_time ?? null,
         })),
         completionPercentage: g.completionPercentage ?? 0,
         createdAt: g.createdAt,

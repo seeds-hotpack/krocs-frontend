@@ -158,7 +158,7 @@ export default function GoalPage() {
         createdAt: updatedGoalFromApi.createdAt,
         updatedAt: updatedGoalFromApi.updatedAt,
         duration: originalGoal.duration,
-        color: updatedGoalFromApi.color,
+        color: apiPayload.color,
       }
 
       setGoals((prevGoals) => prevGoals.map((g) => (g.goalId === goalId ? finalGoal : g)))

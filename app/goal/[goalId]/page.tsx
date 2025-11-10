@@ -94,7 +94,7 @@ export default function GoalDetailPage() {
             startDate: updatedGoalFromApi.startDate,
             endDate: updatedGoalFromApi.endDate,
             completed: updatedGoalFromApi.isCompleted,
-            color: updatedGoalFromApi.color,
+            color: apiPayload.color,
             duration: calculatedDuration,
         };
       });
