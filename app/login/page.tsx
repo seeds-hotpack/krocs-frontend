@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import Image from "next/image"
 import krocsLogo from "@/assets/krocslogo.png"
-import naverLogo from "@/assets/naverlogo.png"
 
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false)
@@ -101,13 +100,14 @@ export default function LoginPage() {
                   onClick={handleNaverLogin}
                   className="w-full h-14 text-base hover:bg-gray-50 bg-transparent rounded-full"
                 >
-                  <Image
-                    src={naverLogo}
-                    alt="Naver Logo"
-                    width={24}
-                    height={24}
-                    className="mr-3"
-                  />
+                  <div className="h-6 w-6 mr-3 flex items-center justify-center">
+                    <span style={{
+                      color: "#03C75A",
+                      fontWeight: 900,
+                      fontSize: "24px",
+                      fontFamily: "'Noto Sans KR', sans-serif",
+                    }}>N</span>
+                  </div>
                   네이버로 계속하기
                 </Button>
                 <Button
