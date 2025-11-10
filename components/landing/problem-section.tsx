@@ -44,7 +44,7 @@ export function ProblemSection() {
                 <CardContent className="p-6 space-y-2 text-center">
                   <Icon className="mx-auto w-10 h-10 md:w-12 md:h-12 text-primary mb-3" />
                   <h3 className="text-lg md:text-xl font-semibold">{problem.title}</h3>
-                  <p className="text-xs md:text-sm text-muted-foreground leading-relaxed break-words mt-1">
+                  <p className="text-xs md:text-sm text-muted-foreground leading-relaxed break-words mt-1 break-keep text-balance">
                     {problem.description}
                   </p>
                 </CardContent>
