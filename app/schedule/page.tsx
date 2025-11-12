@@ -181,6 +181,7 @@ export default function SchedulePage() {
 
         subGoalResponses.forEach((res, index) => {
           const goalId = goals[index].goalId
+          const goalColor = goals[index].color // 대목표 색깔 가져오기
           res.result.subGoals.forEach((sg) => {
             if (!sg.is_time_selected) {
               return
@@ -196,7 +197,7 @@ export default function SchedulePage() {
                 endDateTime: sg.end_date_time,
                 isCompleted: sg.is_completed,
                 allDay: false, // 시간이 설정된 소목표는 타임라인에 표시
-                color: "red",
+                color: goalColor, // 대목표 색깔 사용
                 type: "subgoal",
                 subTasks: [],
                 createdAt: new Date().toISOString(),

@@ -305,6 +305,12 @@ export const ScheduleTimeline = forwardRef<{
 
   const getScheduleColor = (color?: string) => {
     console.log("getScheduleColor received color:", color);
+    
+    // Hex 색상인 경우 직접 사용
+    if (color?.startsWith('#')) {
+      return `bg-[${color}] border-[${color}] text-white`;
+    }
+    
     const colorMap = {
       blue: "bg-blue-500 border-blue-600 text-white",
       red: "bg-red-500 border-red-600 text-white",
@@ -320,6 +326,25 @@ export const ScheduleTimeline = forwardRef<{
 
   const getBubbleColor = (color?: string) => {
     console.log("getBubbleColor received color:", color);
+    
+    // Hex 색상인 경우 동적으로 생성
+    if (color?.startsWith('#')) {
+      // Hex를 RGB로 변환하여 투명도 적용
+      const hexToRgb = (hex: string) => {
+        const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+        return result ? {
+          r: parseInt(result[1], 16),
+          g: parseInt(result[2], 16),
+          b: parseInt(result[3], 16)
+        } : null;
+      };
+      
+      const rgb = hexToRgb(color);
+      if (rgb) {
+        return `border-2 text-gray-900 dark:text-gray-100`;
+      }
+    }
+    
     const colorMap = {
       blue: "bg-blue-50 border-blue-200 text-blue-900 dark:bg-blue-950 dark:border-blue-800 dark:text-blue-100",
       red: "bg-red-50 border-red-200 text-red-900 dark:bg-red-950 dark:border-red-800 dark:text-red-100",
@@ -673,38 +698,50 @@ export const ScheduleTimeline = forwardRef<{
           <div className="mb-8 pb-6 border-b border-slate-200 dark:border-slate-700">
             <h3 className="text-sm font-medium text-slate-600 dark:text-slate-400 mb-4">하루 종일</h3>
             <div className="flex gap-2 sm:gap-4 overflow-x-auto pb-2">
-              {allDaySchedules.map((schedule) => (
-                <div key={`${schedule.type}-${schedule.planId}`} className="flex-shrink-0 flex flex-col items-center gap-2">
-                  <div
-                    className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full border-2 flex items-center justify-center ${getScheduleColor(schedule.color)} relative cursor-pointer`}
-                    onClick={(e) => handleBubbleClick(schedule, e)}
-                  >
-                    {React.createElement(getScheduleIcon(schedule), { className: "h-4 w-4 sm:h-5 sm:w-5" })}
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="absolute -top-1 -right-1 h-4 w-4 sm:h-5 sm:w-5 p-0 bg-white dark:bg-slate-800 rounded-full shadow-sm"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        toggleComplete(schedule)
-                      }}
+              {allDaySchedules.map((schedule) => {
+                const isHexColor = schedule.color?.startsWith('#');
+                const iconStyle = isHexColor ? {
+                  backgroundColor: schedule.color,
+                  borderColor: schedule.color,
+                  color: 'white'
+                } : {};
+                
+                return (
+                  <div key={`${schedule.type}-${schedule.planId}`} className="flex-shrink-0 flex flex-col items-center gap-2">
+                    <div
+                      className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full border-2 flex items-center justify-center ${
+                        !isHexColor ? getScheduleColor(schedule.color) : ''
+                      } relative cursor-pointer`}
+                      onClick={(e) => handleBubbleClick(schedule, e)}
+                      style={isHexColor ? iconStyle : {}}
                     >
-                      {schedule.isCompleted ? (
-                        <CheckCircle2 className={`h-2.5 w-2.5 sm:h-3 sm:w-3 ${schedule.type === 'subgoal' ? 'text-red-600' : 'text-green-600'}`} />
-                      ) : (
-                        <Circle className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-slate-400" />
-                      )}
-                    </Button>
+                      {React.createElement(getScheduleIcon(schedule), { className: "h-4 w-4 sm:h-5 sm:w-5" })}
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="absolute -top-1 -right-1 h-4 w-4 sm:h-5 sm:w-5 p-0 bg-white dark:bg-slate-800 rounded-full shadow-sm"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          toggleComplete(schedule)
+                        }}
+                      >
+                        {schedule.isCompleted ? (
+                          <CheckCircle2 className={`h-2.5 w-2.5 sm:h-3 sm:w-3 ${schedule.type === 'subgoal' ? 'text-red-600' : 'text-green-600'}`} />
+                        ) : (
+                          <Circle className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-slate-400" />
+                        )}
+                      </Button>
+                    </div>
+                    <span
+                      className={`text-xs text-center max-w-12 sm:max-w-16 truncate ${
+                        schedule.isCompleted ? "line-through text-slate-500" : "text-slate-700 dark:text-slate-300"
+                      }`}
+                    >
+                      {schedule.title}
+                    </span>
                   </div>
-                  <span
-                    className={`text-xs text-center max-w-12 sm:max-w-16 truncate ${
-                      schedule.isCompleted ? "line-through text-slate-500" : "text-slate-700 dark:text-slate-300"
-                    }`}
-                  >
-                    {schedule.title}
-                  </span>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         )}
@@ -788,12 +825,20 @@ export const ScheduleTimeline = forwardRef<{
             const iconHeight = Math.max(32, position.height)
             const iconWidth = Math.max(32, Math.min(iconHeight * 0.8, 48))
 
-            
+            // Hex 색상 처리
+            const isHexColor = schedule.color?.startsWith('#');
+            const iconStyle = isHexColor ? {
+              backgroundColor: schedule.color,
+              borderColor: schedule.color,
+              color: 'white'
+            } : {};
 
             return (
               <div key={schedule.planId} className="absolute flex items-center" style={{ top: `${position.top}px`, height: `${position.height}px` }}>
                 <div
-                  className={`absolute left-[52px] sm:left-[76px] border-2 flex items-center justify-center cursor-pointer transition-all duration-200 ${getScheduleColor(schedule.color)} ${
+                  className={`absolute left-[52px] sm:left-[76px] border-2 flex items-center justify-center cursor-pointer transition-all duration-200 ${
+                    !isHexColor ? getScheduleColor(schedule.color) : ''
+                  } ${
                     draggedItem === schedule.planId ? "scale-110 shadow-lg" : "hover:scale-105"
                   } z-10`}
                   data-schedule-id={schedule.planId}
@@ -807,6 +852,7 @@ export const ScheduleTimeline = forwardRef<{
                     width: `${iconWidth}px`,
                     height: `${iconHeight}px`,
                     borderRadius: `${Math.min(iconWidth / 2, 20)}px`,
+                    ...(isHexColor ? iconStyle : {})
                   }}
                 >
                   {React.createElement(getScheduleIcon(schedule), {
@@ -826,8 +872,9 @@ export const ScheduleTimeline = forwardRef<{
                         top: "50%",
                         transform: "translateY(-50%)",
                         marginLeft: "-8px",
-                        borderRightColor:
-                          getBubbleColor(schedule.color)
+                        borderRightColor: isHexColor 
+                          ? `${schedule.color}40`
+                          : getBubbleColor(schedule.color)
                             .split(" ")
                             .find((c) => c.includes("border-"))
                             ?.replace("border-", "")
@@ -836,8 +883,14 @@ export const ScheduleTimeline = forwardRef<{
                     ></div>
 
                     <div
-                      className={`rounded-lg border-2 p-3 sm:p-4 shadow-sm cursor-pointer hover:shadow-md transition-shadow ${getBubbleColor(schedule.color)}`}
+                      className={`rounded-lg border-2 p-3 sm:p-4 shadow-sm cursor-pointer hover:shadow-md transition-shadow ${
+                        !isHexColor ? getBubbleColor(schedule.color) : ''
+                      }`}
                       onClick={(e) => handleBubbleClick(schedule, e)}
+                      style={isHexColor ? {
+                        backgroundColor: `${schedule.color}10`,
+                        borderColor: `${schedule.color}40`,
+                      } : {}}
                     >
                       <div className="flex items-start justify-between mb-2">
                         <div className="flex-1 min-w-0">
