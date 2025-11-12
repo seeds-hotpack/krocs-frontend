@@ -260,6 +260,7 @@ export default function GoalPage() {
                   selectedDate={selectedDate}
                   onDateSelect={(date) => setSelectedDate(date)}
                   schedules={[]}
+                  goals={goals}
                 />
               </CardContent>
             </Card>
