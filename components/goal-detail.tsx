@@ -13,6 +13,7 @@ import {
   Pencil,
   Plus,
   Trash2,
+  Target,
 } from "lucide-react"
 
 import {
@@ -126,6 +127,9 @@ export function GoalDetail({ goal, onBack, onUpdate, onDelete }: GoalDetailProps
   }
 
   const handleDeleteSubGoal = async (sub_goal_id: number) => {
+    const confirmed = window.confirm("이 소목표를 삭제하시겠습니까?")
+    if (!confirmed) return
+
     const originalSubGoals = [...subGoals]
     setSubGoals((prev) => prev.filter((sg) => sg.sub_goal_id !== sub_goal_id))
 
@@ -148,7 +152,7 @@ export function GoalDetail({ goal, onBack, onUpdate, onDelete }: GoalDetailProps
       case "MEDIUM":
         return "bg-[#BBDCE5] text-[#0F1C21]"
       case "LOW":
-        return "bg-[#EEF5F7] text-[#0F1C21]"
+        return "bg-[#DDEDF2] text-[#0F1C21]"
       default:
         return "bg-white text-[#0F1C21]"
     }
@@ -238,210 +242,284 @@ export function GoalDetail({ goal, onBack, onUpdate, onDelete }: GoalDetailProps
 
   return (
     <div className="min-h-screen bg-[#EEF5F7] text-[#0F1C21]">
-      <div className="mx-auto flex min-h-screen w-full max-w-3xl flex-col px-4 py-6 sm:px-6">
-        <div className="mb-6 flex items-center justify-between">
+      <div className="mx-auto flex min-h-screen w-full max-w-4xl flex-col px-4 py-8 sm:px-6">
+        {/* Header */}
+        <div className="mb-8 flex items-center justify-between">
           <Button
             variant="ghost"
             onClick={onBack}
-            className="flex items-center gap-2 rounded-full border border-[#99C6D6] bg-white px-4 py-2 text-sm font-semibold text-[#0F1C21] shadow-sm hover:bg-white/80"
+            className="flex items-center gap-2 rounded-full border border-[#99C6D6] bg-white px-5 py-2.5 text-sm font-semibold text-[#0F1C21] shadow-sm hover:bg-white/80 transition-all"
           >
             <ArrowLeft className="h-4 w-4" />
-            목록으로 돌아가기
+            목록으로
           </Button>
           <div className="flex items-center gap-2">
             <Button
               variant="ghost"
-              className="rounded-full border border-[#99C6D6] bg-white px-4 py-2 text-sm font-semibold text-[#0F1C21] shadow-sm hover:bg-white/80"
+              className="rounded-full border border-[#99C6D6] bg-white px-5 py-2.5 text-sm font-semibold text-[#0F1C21] shadow-sm hover:bg-white/80 transition-all"
               onClick={() => setIsGoalFormOpen(true)}
             >
-              목표 수정
+              <Pencil className="h-3.5 w-3.5 mr-1.5" />
+              수정
             </Button>
             <Button
               variant="ghost"
-              className="rounded-full border border-[#5D6E72] bg-white px-4 py-2 text-sm font-semibold text-[#5D6E72] shadow-sm hover:bg-white/80"
+              className="rounded-full border border-red-200 bg-white px-5 py-2.5 text-sm font-semibold text-red-500 shadow-sm hover:bg-red-50 transition-all"
               onClick={handleDeleteGoal}
             >
+              <Trash2 className="h-3.5 w-3.5 mr-1.5" />
               삭제
             </Button>
           </div>
         </div>
 
         <div className="space-y-6">
-          <Card className="rounded-3xl border border-[#D3E6ED] bg-white shadow-lg">
-            <CardContent className="space-y-6 p-6">
-              <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                <div className="space-y-3">
-                  <span
-                    className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${getPriorityBadgeStyle(
-                      goal.priority
-                    )}`}
-                  >
-                    {getPriorityText(goal.priority)}
-                  </span>
-                  <h1 className="text-2xl font-bold leading-snug text-[#0F1C21] sm:text-3xl">
-                    {goal.title}
-                  </h1>
-                  <div className="flex flex-wrap items-center gap-3 text-xs text-[#5D6E72]">
-                    <span className="flex items-center gap-1">
-                      <Calendar className="h-3.5 w-3.5" />
-                      {formatDate(goal.startDate)}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <Calendar className="h-3.5 w-3.5" />
-                      {formatDate(goal.endDate)}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <CheckCircle2 className="h-3.5 w-3.5" />
-                      {goal.duration}일 계획
-                    </span>
+          {/* Goal Info Card */}
+          <Card 
+            className="rounded-3xl border-2 bg-white shadow-lg overflow-hidden"
+            style={{
+              borderLeftWidth: '6px',
+              borderLeftColor: goal.color || '#BBDCE5',
+              borderTopColor: '#D3E6ED',
+              borderRightColor: '#D3E6ED',
+              borderBottomColor: '#D3E6ED'
+            }}
+          >
+            <CardContent className="p-8">
+              <div className="flex flex-col gap-6">
+                <div className="space-y-4">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="space-y-3 flex-1">
+                      <span
+                        className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-bold ${getPriorityBadgeStyle(
+                          goal.priority
+                        )}`}
+                      >
+                        {getPriorityText(goal.priority)}
+                      </span>
+                      <h1 className="text-3xl font-bold leading-tight text-[#0F1C21]">
+                        {goal.title}
+                      </h1>
+                    </div>
+                    <Button
+                      onClick={toggleGoalCompletion}
+                      className={`rounded-full px-5 py-2.5 text-sm font-semibold shadow-sm transition-all ${
+                        goal.completed
+                          ? "bg-white border-2 text-[#0F1C21] hover:bg-gray-50"
+                          : "text-white hover:opacity-90"
+                      }`}
+                      style={{
+                        backgroundColor: goal.completed ? 'white' : goal.color || '#BBDCE5',
+                        borderColor: goal.completed ? (goal.color || '#BBDCE5') : 'transparent'
+                      }}
+                    >
+                      <CheckCircle2 className="h-4 w-4 mr-2" />
+                      {goal.completed ? "완료 해제" : "완료"}
+                    </Button>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-4 text-sm text-[#5D6E72]">
+                    <div className="flex items-center gap-2">
+                      <Calendar className="h-4 w-4" />
+                      <span>{formatDate(goal.startDate)}</span>
+                    </div>
+                    <span className="text-[#D3E6ED]">→</span>
+                    <div className="flex items-center gap-2">
+                      <Calendar className="h-4 w-4" />
+                      <span>{formatDate(goal.endDate)}</span>
+                    </div>
+                    <span className="text-[#D3E6ED]">•</span>
+                    <div className="flex items-center gap-2">
+                      <Target className="h-4 w-4" />
+                      <span className="font-semibold">{goal.duration}일 계획</span>
+                    </div>
                   </div>
                 </div>
-                <Button
-                  variant="ghost"
-                  className={`rounded-full px-4 py-2 text-sm font-semibold shadow-sm ${
-                    goal.completed
-                      ? "border border-[#99C6D6] bg-white text-[#0F1C21]"
-                      : "bg-[#BBDCE5] text-[#0F1C21]"
-                  }`}
-                  onClick={toggleGoalCompletion}
-                >
-                  <CheckCircle2 className="h-4 w-4" />
-                  <span className="ml-2">{goal.completed ? "완료 해제" : "완료로 표시"}</span>
-                </Button>
-              </div>
 
-              {subGoals.length > 0 && (
-                <div className="rounded-2xl border border-[#D3E6ED] bg-[#EEF5F7] px-4 py-3 text-sm text-[#5D6E72]">
-                  소목표 진행률{" "}
-                  <span className="font-semibold text-[#0F1C21]">
-                    {completedSubGoals}/{subGoals.length} ({progressPercentage}%)
-                  </span>
-                </div>
-              )}
+                {/* Progress Section */}
+                {subGoals.length > 0 && (
+                  <div className="space-y-3 rounded-2xl bg-gradient-to-br from-[#EEF5F7] to-[#DDEDF2] p-5">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Target className="h-5 w-5" style={{ color: goal.color || '#5D6E72' }} />
+                        <span className="text-sm font-semibold text-[#0F1C21]">소목표 진행률</span>
+                      </div>
+                      <span className="text-2xl font-bold" style={{ color: goal.color || '#5D6E72' }}>
+                        {progressPercentage}%
+                      </span>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="h-3 w-full rounded-full bg-white overflow-hidden shadow-inner">
+                        <div 
+                          className="h-full transition-all duration-500 ease-out rounded-full"
+                          style={{ 
+                            width: `${progressPercentage}%`,
+                            backgroundColor: goal.color || '#BBDCE5'
+                          }}
+                        />
+                      </div>
+                      <p className="text-xs text-[#5D6E72] text-center">
+                        {completedSubGoals}/{subGoals.length} 완료
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
             </CardContent>
           </Card>
 
+          {/* Sub Goals Card */}
           <Card className="rounded-3xl border border-[#D3E6ED] bg-white shadow-md">
-            <CardContent className="space-y-5 p-6">
-              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  <h2 className="text-lg font-semibold text-[#0F1C21]">소목표</h2>
-                  <p className="text-xs text-[#5D6E72]">
-                    {subGoals.length === 0
-                      ? "아직 추가된 소목표가 없어요."
-                      : `${subGoals.length}개의 소목표 중 ${completedSubGoals}개를 완료했습니다.`}
-                  </p>
+            <CardContent className="p-8">
+              <div className="space-y-6">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <h2 className="text-xl font-bold text-[#0F1C21] flex items-center gap-2">
+                      <CheckCircle2 className="h-5 w-5" style={{ color: goal.color || '#5D6E72' }} />
+                      소목표
+                    </h2>
+                    <p className="text-sm text-[#5D6E72] mt-1">
+                      {subGoals.length === 0
+                        ? "목표를 작은 단계로 나눠 관리해보세요"
+                        : `총 ${subGoals.length}개의 소목표`}
+                    </p>
+                  </div>
+                  <Button
+                    className="flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold text-white shadow-md hover:shadow-lg transition-all"
+                    style={{ backgroundColor: goal.color || '#ff8b6b' }}
+                    onClick={() => setIsModalOpen(true)}
+                  >
+                    <Plus className="h-4 w-4" />
+                    소목표 추가
+                  </Button>
                 </div>
-                <Button
-                  className="flex items-center gap-2 rounded-full bg-[#ff8b6b] px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-[#ff6b47]"
-                  onClick={() => setIsModalOpen(true)}
-                >
-                  <Plus className="h-4 w-4" />
-                  소목표 추가
-                </Button>
-              </div>
 
-              {error && (
-                <div className="rounded-xl border border-[#5D6E72] bg-[#EEF5F7] px-3 py-2 text-xs text-[#5D6E72]">
-                  {error}
-                </div>
-              )}
+                {error && (
+                  <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
+                    {error}
+                  </div>
+                )}
 
-              {loadingSubGoals ? (
-                <div className="py-10 text-center text-sm text-[#5D6E72]">소목표를 불러오는 중...</div>
-              ) : subGoals.length === 0 ? (
-                <div className="py-10 text-center text-sm text-[#5D6E72]">
-                  목표를 작은 단계로 나눠서 관리해 보세요.
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {subGoals.map((subGoal) => {
-                    const isEditing = editingSubGoalId === subGoal.sub_goal_id
-                    return (
-                      <div
-                        key={subGoal.sub_goal_id}
-                        className="flex items-center gap-3 rounded-2xl border border-[#D3E6ED] bg-[#EEF5F7] px-3 py-3"
-                      >
-                        <Checkbox
-                          checked={subGoal.completed}
-                          onCheckedChange={() => toggleSubGoal(subGoal.sub_goal_id)}
-                          className="h-5 w-5 border-[#99C6D6] data-[state=checked]:bg-[#ff8b6b] data-[state=checked]:border-[#ff8b6b]"
-                        />
-                        {isEditing ? (
-                          <Input
-                            value={editingSubGoalTitle}
-                            onChange={(e) => setEditingSubGoalTitle(e.target.value)}
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter") saveInlineEdit(subGoal)
-                              if (e.key === "Escape") cancelInlineEdit()
-                            }}
-                            className="flex-1 bg-white text-sm text-[#0F1C21]"
-                            autoFocus
-                          />
-                        ) : (
-                          <span
-                            className={`flex-1 text-sm font-medium ${
-                              subGoal.completed ? "text-[#5D6E72] line-through" : "text-[#0F1C21]"
+                {loadingSubGoals ? (
+                  <div className="py-12 text-center">
+                    <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-current border-r-transparent align-[-0.125em] motion-reduce:animate-[spin_1.5s_linear_infinite]" style={{ color: goal.color || '#BBDCE5' }}></div>
+                    <p className="mt-3 text-sm text-[#5D6E72]">소목표를 불러오는 중...</p>
+                  </div>
+                ) : subGoals.length === 0 ? (
+                  <div className="py-12 text-center">
+                    <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full" style={{ backgroundColor: `${goal.color || '#BBDCE5'}20` }}>
+                      <Target className="h-8 w-8" style={{ color: goal.color || '#5D6E72' }} />
+                    </div>
+                    <p className="text-sm text-[#5D6E72] font-medium">아직 소목표가 없습니다</p>
+                    <p className="text-xs text-[#5D6E72] mt-1">큰 목표를 작은 단계로 나눠보세요</p>
+                  </div>
+                ) : (
+                  <div className="space-y-2.5">
+                    {subGoals.map((subGoal) => {
+                      const isEditing = editingSubGoalId === subGoal.sub_goal_id
+                      return (
+                        <div
+                          key={subGoal.sub_goal_id}
+                          className="group flex items-center gap-4 rounded-2xl border-2 border-[#D3E6ED] bg-white px-4 py-3.5 transition-all hover:shadow-md hover:border-opacity-60"
+                          style={{
+                            borderLeftWidth: '4px',
+                            borderLeftColor: subGoal.completed ? (goal.color || '#BBDCE5') : '#D3E6ED'
+                          }}
+                        >
+                          <button
+                            onClick={() => toggleSubGoal(subGoal.sub_goal_id)}
+                            className={`flex-shrink-0 h-6 w-6 rounded-full border-2 flex items-center justify-center transition-all hover:scale-110 ${
+                              subGoal.completed
+                                ? 'shadow-sm'
+                                : 'hover:border-opacity-80'
                             }`}
+                            style={subGoal.completed ? {
+                              backgroundColor: goal.color || '#5D6E72',
+                              borderColor: goal.color || '#5D6E72',
+                            } : {
+                              borderColor: goal.color || '#D3E6ED',
+                            }}
                           >
-                            {subGoal.title}
-                          </span>
-                        )}
+                            {subGoal.completed && <CheckCircle2 className="h-4 w-4 text-white" strokeWidth={3} />}
+                          </button>
 
-                        <div className="flex items-center gap-1">
                           {isEditing ? (
-                            <>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => saveInlineEdit(subGoal)}
-                                className="rounded-full px-3 py-1 text-xs font-semibold text-[#0F1C21] hover:bg-white/70"
-                              >
-                                저장
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={cancelInlineEdit}
-                                className="rounded-full px-3 py-1 text-xs font-semibold text-[#5D6E72] hover:bg-white/70"
-                              >
-                                취소
-                              </Button>
-                            </>
+                            <Input
+                              value={editingSubGoalTitle}
+                              onChange={(e) => setEditingSubGoalTitle(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") saveInlineEdit(subGoal)
+                                if (e.key === "Escape") cancelInlineEdit()
+                              }}
+                              className="flex-1 bg-[#EEF5F7] border-[#99C6D6] text-sm text-[#0F1C21] font-medium rounded-xl"
+                              autoFocus
+                            />
                           ) : (
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 rounded-full text-[#5D6E72] hover:bg-white/70"
-                              onClick={() => startInlineEdit(subGoal)}
+                            <span
+                              className={`flex-1 text-sm font-medium transition-all ${
+                                subGoal.completed ? "text-[#5D6E72] line-through opacity-60" : "text-[#0F1C21]"
+                              }`}
                             >
-                              <Pencil className="h-4 w-4" />
-                              <span className="sr-only">소목표 수정</span>
-                            </Button>
+                              {subGoal.title}
+                            </span>
                           )}
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 rounded-full text-[#5D6E72] hover:bg-white/70"
-                            onClick={() => handleDeleteSubGoal(subGoal.sub_goal_id)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                            <span className="sr-only">소목표 삭제</span>
-                          </Button>
+
+                          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            {isEditing ? (
+                              <>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => saveInlineEdit(subGoal)}
+                                  className="rounded-full px-3 py-1 h-8 text-xs font-semibold hover:bg-[#EEF5F7]"
+                                  style={{ color: goal.color || '#0F1C21' }}
+                                >
+                                  저장
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={cancelInlineEdit}
+                                  className="rounded-full px-3 py-1 h-8 text-xs font-semibold text-[#5D6E72] hover:bg-[#EEF5F7]"
+                                >
+                                  취소
+                                </Button>
+                              </>
+                            ) : (
+                              <>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 rounded-full text-[#5D6E72] hover:bg-[#EEF5F7]"
+                                  onClick={() => startInlineEdit(subGoal)}
+                                >
+                                  <Pencil className="h-3.5 w-3.5" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 rounded-full text-red-400 hover:bg-red-50"
+                                  onClick={() => handleDeleteSubGoal(subGoal.sub_goal_id)}
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                </Button>
+                              </>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    )
-                  })}
-                </div>
-              )}
+                      )
+                    })}
+                  </div>
+                )}
+              </div>
             </CardContent>
           </Card>
         </div>
       </div>
 
       {isGoalFormOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4 backdrop-blur-sm">
-          <div className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-3xl border border-[#D3E6ED] bg-white p-4 shadow-2xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm">
+          <div className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-3xl border border-[#D3E6ED] bg-white p-6 shadow-2xl">
             <GoalForm
               goal={goal as any}
               onSubmit={handleGoalFormSubmit}

@@ -245,7 +245,7 @@ export function GoalForm({ goal, onSubmit, onCancel }: GoalFormProps) {
         </div>
 
         {/* Duration Display */}
-        <div className="rounded-2xl bg-gradient-to-r from-[#EEF5F7] to-[#E0EEF3] px-5 py-4 border-l-4 border-[#ff8b6b]">
+        <div className="rounded-2xl bg-gradient-to-r from-[#EEF5F7] to-[#E0EEF3] px-5 py-4">
           <div className="flex items-center justify-between">
             <span className="text-sm text-[#5D6E72]">선택한 기간</span>
             <div className="flex items-baseline gap-1">
