@@ -248,46 +248,6 @@ export default function GoalPage() {
             height={120}
             className="object-contain"
           />
-          <div className="flex items-center gap-3">
-            <Button
-              className="h-10 rounded-full bg-[#ff8b6b] px-4 text-sm font-semibold text-white shadow-sm hover:bg-[#ff7a56] transition-colors"
-              onClick={() => {
-                setEditingGoal(null)
-                setIsFormOpen(true)
-              }}
-            >
-              <Plus className="h-4 w-4" />
-              <span className="ml-2">새 목표</span>
-            </Button>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-10 w-10 rounded-full border border-[#99C6D6] bg-white text-[#0F1C21] shadow-sm hover:bg-white/80"
-                >
-                  <Menu className="h-5 w-5" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent
-                align="end"
-                className="w-40 rounded-2xl border border-[#D3E6ED] bg-white p-2 text-sm text-[#0F1C21] shadow-md"
-              >
-                <DropdownMenuItem asChild className="rounded-xl px-3 py-2">
-                  <Link href="/">홈</Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild className="rounded-xl px-3 py-2">
-                  <Link href="/schedule">일정보기</Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild className="rounded-xl px-3 py-2">
-                  <Link href="/templates">템플릿</Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem className="rounded-xl px-3 py-2" onClick={handleLogout}>
-                  로그아웃
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
         </div>
       </header>
 
@@ -319,6 +279,46 @@ export default function GoalPage() {
                   <p className="mt-1 text-sm text-black/60">
                     {selectedDayLabel} • 전체 {totalGoals}개
                   </p>
+                </div>
+                <div className="flex items-center gap-3">
+                  <Button
+                    className="h-10 rounded-full bg-[#ff8b6b] px-4 text-sm font-semibold text-white shadow-sm hover:bg-[#ff7a56] transition-colors"
+                    onClick={() => {
+                      setEditingGoal(null)
+                      setIsFormOpen(true)
+                    }}
+                  >
+                    <Plus className="h-4 w-4" />
+                    <span className="ml-2">새 목표</span>
+                  </Button>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-10 w-10 rounded-full border border-[#99C6D6] bg-white text-[#0F1C21] shadow-sm hover:bg-white/80"
+                      >
+                        <Menu className="h-5 w-5" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent
+                      align="end"
+                      className="w-40 rounded-2xl border border-[#D3E6ED] bg-white p-2 text-sm text-[#0F1C21] shadow-md"
+                    >
+                      <DropdownMenuItem asChild className="rounded-xl px-3 py-2">
+                        <Link href="/">홈</Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild className="rounded-xl px-3 py-2">
+                        <Link href="/schedule">일정보기</Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild className="rounded-xl px-3 py-2">
+                        <Link href="/templates">템플릿</Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem className="rounded-xl px-3 py-2" onClick={handleLogout}>
+                        로그아웃
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
               </div>
             </section>
