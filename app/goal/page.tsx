@@ -16,22 +16,8 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardTitle } from "@/components/ui/card"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 
-import { Plus, Calendar, Target, CheckCircle2, Menu, ChevronDown } from "lucide-react"
+import { Plus, Calendar, Target, CheckCircle2, Menu } from "lucide-react"
 import krocsLogo from "@/assets/krocslogo.png"
-
-const FILTER_LABELS: Record<string, string> = {
-  All: "전체",
-  "In Progress": "진행 중",
-  Completed: "완료",
-  Overdue: "기한 초과",
-}
-
-const FILTER_OPTIONS = [
-  { value: "All", label: FILTER_LABELS["All"] },
-  { value: "In Progress", label: FILTER_LABELS["In Progress"] },
-  { value: "Completed", label: FILTER_LABELS["Completed"] },
-  { value: "Overdue", label: FILTER_LABELS["Overdue"] },
-]
 
 export default function GoalPage() {
   const router = useRouter()
@@ -41,7 +27,6 @@ export default function GoalPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [selectedDate, setSelectedDate] = useState(new Date())
-  const [filterStatus, setFilterStatus] = useState("All")
 
   const handleLogout = async () => {
     try {
@@ -54,7 +39,7 @@ export default function GoalPage() {
   }
 
   const fetchGoals = useCallback(
-    async (date: Date, status: string) => {
+    async (date: Date) => {
       setLoading(true)
       setError(null)
       try {
@@ -63,17 +48,8 @@ export default function GoalPage() {
         const day = String(date.getDate()).padStart(2, "0")
         const formattedDate = `${year}-${month}-${day}`
 
-        const apiStatusMap: { [key: string]: "IN_PROGRESS" | "COMPLETED" | "EXPIRED" } = {
-          "In Progress": "IN_PROGRESS",
-          Completed: "COMPLETED",
-          Overdue: "EXPIRED",
-        }
-
-        const apiStatus = apiStatusMap[status]
-
         const data = await getGoals({
           searchDate: formattedDate,
-          status: apiStatus,
         })
         setGoals(data)
       } catch (err: any) {
@@ -103,7 +79,7 @@ export default function GoalPage() {
         color: goalData.color,
       }
       await createGoalApi(1, apiData)
-      await fetchGoals(selectedDate, filterStatus)
+      await fetchGoals(selectedDate)
       setIsFormOpen(false)
     } catch (err: any) {
       setError(err?.response?.data?.message || "목표 생성에 실패했습니다.")
@@ -181,8 +157,8 @@ export default function GoalPage() {
   }
 
   useEffect(() => {
-    fetchGoals(selectedDate, filterStatus)
-  }, [selectedDate, filterStatus, fetchGoals])
+    fetchGoals(selectedDate)
+  }, [selectedDate, fetchGoals])
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
@@ -246,28 +222,11 @@ export default function GoalPage() {
   const completedCount = completedList.length
   const overdueCount = overdueList.length
 
-  const filterCounts: Record<string, number> = {
-    All: totalGoals,
-    "In Progress": inProgressCount,
-    Completed: completedCount,
-    Overdue: overdueCount,
-  }
-
-  const sections = (() => {
-    switch (filterStatus) {
-      case "In Progress":
-        return [{ title: "진행 중", goals: sortByPriority(inProgressList) }]
-      case "Completed":
-        return [{ title: "완료된 목표", goals: sortByPriority(completedList) }]
-      case "Overdue":
-        return [{ title: "기한 초과", goals: sortByPriority(overdueList) }]
-      default:
-        return [
-          { title: "진행 중", goals: sortByPriority(inProgressList) },
-          { title: "완료된 목표", goals: sortByPriority(completedList) },
-        ]
-    }
-  })()
+  const sections = [
+    { title: "진행 중", goals: sortByPriority(inProgressList) },
+    { title: "완료된 목표", goals: sortByPriority(completedList) },
+    { title: "기한 초과", goals: sortByPriority(overdueList) },
+  ]
 
   const sectionsToRender = sections.filter((section) => section.goals.length > 0)
   const hasVisibleGoals = sectionsToRender.length > 0
@@ -358,40 +317,9 @@ export default function GoalPage() {
                 <div>
                   <h2 className="text-xl font-bold text-[#0F1C21]">목표 현황</h2>
                   <p className="mt-1 text-sm text-black/60">
-                    {selectedDayLabel} • {FILTER_LABELS[filterStatus]} {filterCounts[filterStatus]}개
+                    {selectedDayLabel} • 전체 {totalGoals}개
                   </p>
                 </div>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      className="flex items-center gap-2 rounded-full border border-[#99C6D6] bg-white px-4 py-2 text-sm font-semibold text-[#0F1C21] shadow-sm hover:bg-white/80"
-                    >
-                      {FILTER_LABELS[filterStatus]}
-                      <ChevronDown className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent
-                    align="end"
-                    className="w-44 rounded-2xl border border-[#D3E6ED] bg-white p-2 text-sm text-[#0F1C21] shadow-md"
-                  >
-                    {FILTER_OPTIONS.map((option) => {
-                      const isActive = option.value === filterStatus
-                      return (
-                        <DropdownMenuItem
-                          key={option.value}
-                          onClick={() => setFilterStatus(option.value)}
-                          className={`flex items-center justify-between rounded-xl px-3 py-2 ${
-                            isActive ? "bg-[#BBDCE5]/40 font-semibold text-[#0F1C21]" : ""
-                          }`}
-                        >
-                          <span>{option.label}</span>
-                          <span className="text-xs text-black/50">{filterCounts[option.value]}</span>
-                        </DropdownMenuItem>
-                      )
-                    })}
-                  </DropdownMenuContent>
-                </DropdownMenu>
               </div>
             </section>
 
@@ -414,13 +342,9 @@ export default function GoalPage() {
                   <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[#BBDCE5]/30">
                     <Target className="h-7 w-7 text-[#0F1C21]" />
                   </div>
-                  <p className="text-base font-semibold">
-                    {filterStatus === "All" ? "등록된 목표가 없습니다" : "조건에 맞는 목표가 없어요"}
-                  </p>
+                  <p className="text-base font-semibold">등록된 목표가 없습니다</p>
                   <p className="mt-2 text-sm text-black/60">
-                    {filterStatus === "All"
-                      ? "첫 목표를 만들어 하루 루틴을 시작해보세요."
-                      : "다른 필터를 선택하거나 새로운 목표를 추가해보세요."}
+                    첫 목표를 만들어 하루 루틴을 시작해보세요.
                   </p>
                   <Button
                     className="mt-5 rounded-full bg-[#ff8b6b] px-5 py-2 text-sm font-semibold text-white shadow-md hover:bg-[#ff7a56] hover:shadow-lg transition-all"
