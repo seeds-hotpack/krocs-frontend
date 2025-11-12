@@ -26,7 +26,27 @@ export default function GoalPage() {
   const [editingGoal, setEditingGoal] = useState<Goal | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [selectedDate, setSelectedDate] = useState(new Date())
+  const [selectedDate, setSelectedDate] = useState(() => {
+    // 페이지 로드 시 localStorage에서 날짜 복원
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('goalPageSelectedDate')
+      if (saved) {
+        const date = new Date(saved)
+        if (!isNaN(date.getTime())) {
+          return date
+        }
+      }
+    }
+    return new Date()
+  })
+
+  // 날짜 변경 시 localStorage에 저장
+  const handleDateSelect = (date: Date) => {
+    setSelectedDate(date)
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('goalPageSelectedDate', date.toISOString())
+    }
+  }
 
   const handleLogout = async () => {
     try {
@@ -258,7 +278,7 @@ export default function GoalPage() {
               <CardContent className="p-0">
                 <ScheduleCalendar
                   selectedDate={selectedDate}
-                  onDateSelect={(date) => setSelectedDate(date)}
+                  onDateSelect={handleDateSelect}
                   schedules={[]}
                   goals={goals}
                 />
