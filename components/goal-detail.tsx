@@ -306,7 +306,7 @@ export function GoalDetail({ goal, onBack, onUpdate, onDelete }: GoalDetailProps
                       className={`rounded-full px-5 py-2.5 text-sm font-semibold shadow-sm transition-all ${
                         goal.completed
                           ? "bg-white border-2 text-[#0F1C21] hover:bg-gray-50"
-                          : "text-white hover:opacity-90"
+                          : "text-[#0F1C21] hover:opacity-90"
                       }`}
                       style={{
                         backgroundColor: goal.completed ? 'white' : goal.color || '#BBDCE5',
@@ -385,7 +385,7 @@ export function GoalDetail({ goal, onBack, onUpdate, onDelete }: GoalDetailProps
                     </p>
                   </div>
                   <Button
-                    className="flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold text-white shadow-md hover:shadow-lg transition-all"
+                    className="flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold text-[#0F1C21] shadow-md hover:shadow-lg transition-all"
                     style={{ backgroundColor: goal.color || '#ff8b6b' }}
                     onClick={() => setIsModalOpen(true)}
                   >
@@ -440,7 +440,7 @@ export function GoalDetail({ goal, onBack, onUpdate, onDelete }: GoalDetailProps
                               borderColor: goal.color || '#D3E6ED',
                             }}
                           >
-                            {subGoal.completed && <CheckCircle2 className="h-4 w-4 text-white" strokeWidth={3} />}
+                            {subGoal.completed && <CheckCircle2 className="h-4 w-4 text-[#0F1C21]" strokeWidth={3} />}
                           </button>
 
                           {isEditing ? (
