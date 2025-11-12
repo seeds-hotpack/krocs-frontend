@@ -445,7 +445,7 @@ export default function GoalPage() {
                                       </div>
                                     </div>
 
-                                    <div className="space-y-1.5">
+                                    <div className="space-y-1.5 max-w-[700px]">
                                       <div className="flex items-center justify-between text-[10px]">
                                         <span className="text-[#5D6E72] font-medium">
                                           {goal.subGoals.length > 0 ? `소목표 ${goal.subGoals.filter((sg) => sg.completed).length}/${goal.subGoals.length}` : '목표 진행률'}
