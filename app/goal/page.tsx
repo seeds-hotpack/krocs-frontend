@@ -394,89 +394,75 @@ export default function GoalPage() {
                               }}
                             >
                               <CardContent className="p-5">
-                                <div className="flex items-center justify-between gap-4">
-                                  {/* Checkbox + Content */}
-                                  <div className="flex items-start gap-4 flex-1 min-w-0">
-                                    <button
-                                      onClick={(e) => {
-                                        e.preventDefault()
-                                        e.stopPropagation()
-                                        toggleGoalCompletion(goal.goalId)
-                                      }}
-                                      className={`mt-1 flex-shrink-0 h-6 w-6 rounded-full border-2 flex items-center justify-center transition-all hover:scale-110 ${
-                                        isCompleted
-                                          ? 'bg-gradient-to-br shadow-sm'
-                                          : 'hover:border-opacity-80'
-                                      }`}
-                                      style={isCompleted ? {
-                                        backgroundColor: goal.color || '#5D6E72',
-                                        borderColor: goal.color || '#5D6E72',
-                                      } : {
-                                        borderColor: goal.color || '#D3E6ED',
-                                      }}
-                                    >
-                                      {isCompleted && <CheckCircle2 className="h-4 w-4 text-white" strokeWidth={3} />}
-                                    </button>
-
-                                    <div className="flex-1 min-w-0 space-y-3">
-                                      <div className="space-y-2">
-                                        <span
-                                          className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-bold ${priorityClass}`}
-                                        >
-                                          {getPriorityText(goal.priority)}
-                                        </span>
-                                        <CardTitle className={`text-lg font-bold leading-tight transition-all ${
-                                          isCompleted ? 'text-[#5D6E72]/70 line-through' : 'text-[#0F1C21] group-hover:text-[#5D6E72]'
-                                        }`}>
-                                          {goal.title}
-                                        </CardTitle>
-                                      </div>
-
-                                      <div className="flex items-center gap-4 flex-wrap text-xs text-[#5D6E72]">
-                                        <div className="flex items-center gap-1.5">
-                                          <Calendar className="h-3.5 w-3.5 flex-shrink-0" />
-                                          <span className="whitespace-nowrap">
-                                            {new Date(goal.startDate).toLocaleDateString("ko-KR", { month: "short", day: "numeric" })} - {new Date(goal.endDate).toLocaleDateString("ko-KR", { month: "short", day: "numeric" })}
-                                          </span>
-                                        </div>
-                                        <div className="flex items-center gap-1.5">
-                                          <Target className="h-3.5 w-3.5 flex-shrink-0" />
-                                          <span className={`font-semibold whitespace-nowrap ${isOverdue ? "text-red-500" : ""}`}>
-                                            {isCompleted ? "완료" : isOverdue ? `${Math.abs(daysRemaining)}일 초과` : daysRemaining === 0 ? "오늘 마감" : `D-${daysRemaining}`}
-                                          </span>
-                                        </div>
-                                      </div>
-
-                                      <div className="space-y-1.5">
-                                        <div className="flex items-center justify-between text-[10px]">
-                                          <span className="text-[#5D6E72] font-medium">
-                                            {goal.subGoals.length > 0 ? `소목표 ${goal.subGoals.filter((sg) => sg.completed).length}/${goal.subGoals.length}` : '목표 진행률'}
-                                          </span>
-                                          <span className="font-bold" style={{ color: goal.color || '#5D6E72' }}>
-                                            {progress}%
-                                          </span>
-                                        </div>
-                                        <div className="h-2 w-full rounded-full bg-[#EEF5F7] overflow-hidden">
-                                          <div 
-                                            className="h-full transition-all duration-500 ease-out rounded-full"
-                                            style={{ 
-                                              width: `${progress}%`,
-                                              backgroundColor: goal.color || '#BBDCE5'
-                                            }}
-                                          />
-                                        </div>
-                                      </div>
-                                    </div>
-                                  </div>
-
-                                  <div
-                                    className="relative flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-full shadow-sm"
-                                    style={{
-                                      background: `conic-gradient(${goal.color || '#BBDCE5'} ${progress}%, #EEF5F7 ${progress}% 100%)`
+                                <div className="flex items-start gap-4">
+                                  <button
+                                    onClick={(e) => {
+                                      e.preventDefault()
+                                      e.stopPropagation()
+                                      toggleGoalCompletion(goal.goalId)
+                                    }}
+                                    className={`mt-1 flex-shrink-0 h-6 w-6 rounded-full border-2 flex items-center justify-center transition-all hover:scale-110 ${
+                                      isCompleted
+                                        ? 'bg-gradient-to-br shadow-sm'
+                                        : 'hover:border-opacity-80'
+                                    }`}
+                                    style={isCompleted ? {
+                                      backgroundColor: goal.color || '#5D6E72',
+                                      borderColor: goal.color || '#5D6E72',
+                                    } : {
+                                      borderColor: goal.color || '#D3E6ED',
                                     }}
                                   >
-                                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white">
-                                      <span className="text-xs font-bold text-[#0F1C21]">{progress}%</span>
+                                    {isCompleted && <CheckCircle2 className="h-4 w-4 text-white" strokeWidth={3} />}
+                                  </button>
+
+                                  <div className="flex-1 min-w-0 space-y-3">
+                                    <div className="space-y-2">
+                                      <span
+                                        className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-bold ${priorityClass}`}
+                                      >
+                                        {getPriorityText(goal.priority)}
+                                      </span>
+                                      <CardTitle className={`text-lg font-bold leading-tight transition-all ${
+                                        isCompleted ? 'text-[#5D6E72]/70 line-through' : 'text-[#0F1C21] group-hover:text-[#5D6E72]'
+                                      }`}>
+                                        {goal.title}
+                                      </CardTitle>
+                                    </div>
+
+                                    <div className="flex items-center gap-4 flex-wrap text-xs text-[#5D6E72]">
+                                      <div className="flex items-center gap-1.5">
+                                        <Calendar className="h-3.5 w-3.5 flex-shrink-0" />
+                                        <span className="whitespace-nowrap">
+                                          {new Date(goal.startDate).toLocaleDateString("ko-KR", { month: "short", day: "numeric" })} - {new Date(goal.endDate).toLocaleDateString("ko-KR", { month: "short", day: "numeric" })}
+                                        </span>
+                                      </div>
+                                      <div className="flex items-center gap-1.5">
+                                        <Target className="h-3.5 w-3.5 flex-shrink-0" />
+                                        <span className={`font-semibold whitespace-nowrap ${isOverdue ? "text-red-500" : ""}`}>
+                                          {isCompleted ? "완료" : isOverdue ? `${Math.abs(daysRemaining)}일 초과` : daysRemaining === 0 ? "오늘 마감" : `D-${daysRemaining}`}
+                                        </span>
+                                      </div>
+                                    </div>
+
+                                    <div className="space-y-1.5">
+                                      <div className="flex items-center justify-between text-[10px]">
+                                        <span className="text-[#5D6E72] font-medium">
+                                          {goal.subGoals.length > 0 ? `소목표 ${goal.subGoals.filter((sg) => sg.completed).length}/${goal.subGoals.length}` : '목표 진행률'}
+                                        </span>
+                                        <span className="font-bold" style={{ color: goal.color || '#5D6E72' }}>
+                                          {progress}%
+                                        </span>
+                                      </div>
+                                      <div className="h-2 w-full rounded-full bg-[#EEF5F7] overflow-hidden">
+                                        <div 
+                                          className="h-full transition-all duration-500 ease-out rounded-full"
+                                          style={{ 
+                                            width: `${progress}%`,
+                                            backgroundColor: goal.color || '#BBDCE5'
+                                          }}
+                                        />
+                                      </div>
                                     </div>
                                   </div>
                                 </div>
