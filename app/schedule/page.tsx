@@ -195,7 +195,7 @@ export default function SchedulePage() {
                 startDateTime: sg.start_date_time,
                 endDateTime: sg.end_date_time,
                 isCompleted: sg.is_completed,
-                allDay: true,
+                allDay: false, // 시간이 설정된 소목표는 타임라인에 표시
                 color: "red",
                 type: "subgoal",
                 subTasks: [],

@@ -3,7 +3,6 @@
 import { useState, useEffect, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
 import { Checkbox } from "@/components/ui/checkbox"
 
 import {
@@ -59,8 +58,7 @@ export function GoalDetail({ goal, onBack, onUpdate, onDelete }: GoalDetailProps
   const [subGoals, setSubGoals] = useState<SubGoal[]>(goal.subGoals ?? [])
   const [loadingSubGoals, setLoadingSubGoals] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [editingSubGoalId, setEditingSubGoalId] = useState<number | null>(null)
-  const [editingSubGoalTitle, setEditingSubGoalTitle] = useState("")
+  const [editingSubGoal, setEditingSubGoal] = useState<SubGoal | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isGoalFormOpen, setIsGoalFormOpen] = useState(false)
 
@@ -183,41 +181,14 @@ export function GoalDetail({ goal, onBack, onUpdate, onDelete }: GoalDetailProps
   const progressPercentage =
     subGoals.length > 0 ? Math.round((completedSubGoals / subGoals.length) * 100) : 0
 
-  const startInlineEdit = (subGoal: SubGoal) => {
-    setEditingSubGoalId(subGoal.sub_goal_id)
-    setEditingSubGoalTitle(subGoal.title)
+  const startEditSubGoal = (subGoal: SubGoal) => {
+    setEditingSubGoal(subGoal)
+    setIsModalOpen(true)
   }
 
-  const cancelInlineEdit = () => {
-    setEditingSubGoalId(null)
-    setEditingSubGoalTitle("")
-  }
-
-  const saveInlineEdit = async (subGoal: SubGoal) => {
-    if (!editingSubGoalTitle.trim()) return
-
-    const originalSubGoals = [...subGoals]
-    setSubGoals((prev) =>
-      prev.map((sg) =>
-        sg.sub_goal_id === subGoal.sub_goal_id
-          ? { ...sg, title: editingSubGoalTitle.trim() }
-          : sg
-      )
-    )
-    cancelInlineEdit()
-
-    try {
-      await updateSubGoal(goal.goalId, subGoal.sub_goal_id, {
-        title: editingSubGoalTitle.trim(),
-        is_completed: subGoal.completed,
-        is_time_selected: Boolean(subGoal.is_time_selected),
-        start_date_time: subGoal.is_time_selected ? subGoal.start_date_time ?? undefined : undefined,
-        end_date_time: subGoal.is_time_selected ? subGoal.end_date_time ?? undefined : undefined,
-      })
-    } catch (e: any) {
-      setSubGoals(originalSubGoals)
-      setError(e.message)
-    }
+  const handleModalClose = () => {
+    setEditingSubGoal(null)
+    setIsModalOpen(false)
   }
 
   const handleGoalFormSubmit = async (data: Goal) => {
@@ -416,7 +387,6 @@ export function GoalDetail({ goal, onBack, onUpdate, onDelete }: GoalDetailProps
                 ) : (
                   <div className="space-y-2.5">
                     {subGoals.map((subGoal) => {
-                      const isEditing = editingSubGoalId === subGoal.sub_goal_id
                       return (
                         <div
                           key={subGoal.sub_goal_id}
@@ -443,68 +413,48 @@ export function GoalDetail({ goal, onBack, onUpdate, onDelete }: GoalDetailProps
                             {subGoal.completed && <CheckCircle2 className="h-4 w-4 text-[#0F1C21]" strokeWidth={3} />}
                           </button>
 
-                          {isEditing ? (
-                            <Input
-                              value={editingSubGoalTitle}
-                              onChange={(e) => setEditingSubGoalTitle(e.target.value)}
-                              onKeyDown={(e) => {
-                                if (e.key === "Enter") saveInlineEdit(subGoal)
-                                if (e.key === "Escape") cancelInlineEdit()
-                              }}
-                              className="flex-1 bg-[#EEF5F7] border-[#99C6D6] text-sm text-[#0F1C21] font-medium rounded-xl"
-                              autoFocus
-                            />
-                          ) : (
+                          <div className="flex-1 min-w-0">
                             <span
-                              className={`flex-1 text-sm font-medium transition-all ${
+                              className={`block text-sm font-medium transition-all ${
                                 subGoal.completed ? "text-[#5D6E72] line-through opacity-60" : "text-[#0F1C21]"
                               }`}
                             >
                               {subGoal.title}
                             </span>
-                          )}
+                            {subGoal.is_time_selected && subGoal.start_date_time && subGoal.end_date_time && (
+                              <span className="text-xs text-[#5D6E72] mt-0.5 block">
+                                {new Date(subGoal.start_date_time).toLocaleString('ko-KR', {
+                                  month: 'short',
+                                  day: 'numeric',
+                                  hour: '2-digit',
+                                  minute: '2-digit'
+                                })} - {new Date(subGoal.end_date_time).toLocaleString('ko-KR', {
+                                  month: 'short',
+                                  day: 'numeric',
+                                  hour: '2-digit',
+                                  minute: '2-digit'
+                                })}
+                              </span>
+                            )}
+                          </div>
 
                           <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                            {isEditing ? (
-                              <>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => saveInlineEdit(subGoal)}
-                                  className="rounded-full px-3 py-1 h-8 text-xs font-semibold hover:bg-[#EEF5F7]"
-                                  style={{ color: goal.color || '#0F1C21' }}
-                                >
-                                  저장
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={cancelInlineEdit}
-                                  className="rounded-full px-3 py-1 h-8 text-xs font-semibold text-[#5D6E72] hover:bg-[#EEF5F7]"
-                                >
-                                  취소
-                                </Button>
-                              </>
-                            ) : (
-                              <>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-8 w-8 rounded-full text-[#5D6E72] hover:bg-[#EEF5F7]"
-                                  onClick={() => startInlineEdit(subGoal)}
-                                >
-                                  <Pencil className="h-3.5 w-3.5" />
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-8 w-8 rounded-full text-red-400 hover:bg-red-50"
-                                  onClick={() => handleDeleteSubGoal(subGoal.sub_goal_id)}
-                                >
-                                  <Trash2 className="h-3.5 w-3.5" />
-                                </Button>
-                              </>
-                            )}
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 rounded-full text-[#5D6E72] hover:bg-[#EEF5F7]"
+                              onClick={() => startEditSubGoal(subGoal)}
+                            >
+                              <Pencil className="h-3.5 w-3.5" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 rounded-full text-red-400 hover:bg-red-50"
+                              onClick={() => handleDeleteSubGoal(subGoal.sub_goal_id)}
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </Button>
                           </div>
                         </div>
                       )
@@ -531,9 +481,10 @@ export function GoalDetail({ goal, onBack, onUpdate, onDelete }: GoalDetailProps
 
       <SubGoalModal
         isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
+        onClose={handleModalClose}
         onSubGoalCreated={fetchSubGoals}
         goalId={goal.goalId}
+        editingSubGoal={editingSubGoal}
       />
     </div>
   )
