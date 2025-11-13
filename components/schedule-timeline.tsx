@@ -22,10 +22,10 @@ import {
   ChevronUp,
   Clock,
   Trash2,
-  Target, // 목표 아이콘 추가
+  Target,
 } from "lucide-react"
 import { updateSubPlan } from "@/api/subplan";
-import { updateSubGoal } from "@/api/subgoals"; // 세부 목표 업데이트 API
+import { updateSubGoal } from "@/api/subgoals";
 import { Checkbox } from "@/components/ui/checkbox"
 
 interface SubTask {
@@ -58,7 +58,7 @@ interface ScheduleTimelineProps {
   selectedDate: Date
   onUpdateSchedule: (planId: number, updates: Partial<Schedule>) => void
   onUpdateSubGoal: (goalId: number, subGoalId: number, updates: { isCompleted: boolean, title: string }) => void;
-  onDeleteSchedule: (planId: number) => void; // 일정 삭제 함수
+  onDeleteSchedule: (planId: number) => void;
   onEditSchedule?: (schedule: Schedule) => void
   loading: boolean
   onScrollToCurrentTime?: () => void
@@ -85,29 +85,11 @@ export const ScheduleTimeline = forwardRef<{
   scrollToPlanId,
   onScrollToPlanIdProcessed,
 }, ref) => {
-  const [draggedItem, setDraggedItem] = useState<number | null>(null)
-  const [isDragging, setIsDragging] = useState(false); // 드래그 상태
-  const [isOverTrashStyle, setIsOverTrashStyle] = useState(false); // 휴지통 위 호버 상태 (스타일용)
-  const isOverTrash = useRef(false); // 휴지통 위 호버 상태 (로직용)
-  const trashCanRef = useRef<HTMLDivElement>(null); // 휴지통 참조
-  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
-  const [dragPosition, setDragPosition] = useState({ x: 0, y: 0 });
-  const [mouseDownPosition, setMouseDownPosition] = useState<{ x: number; y: number } | null>(null);
-  const [currentTime, setCurrentTime] = useState(new Date())
   const [expandedSchedules, setExpandedSchedules] = useState<Set<number>>(new Set())
-  const [visibleCards, setVisibleCards] = useState<Set<number>>(new Set())
-  const [showBackToCurrentTime, setShowBackToCurrentTime] = useState(false)
   const timelineRef = useRef<HTMLDivElement>(null)
-  const justScrolledToPlanRef = useRef(false); // New ref to track if we just scrolled to a specific plan
-
-  const getCurrentTimePosition = useCallback(() => {
-    const currentHour = currentTime.getHours() + currentTime.getMinutes() / 60
-    const slotHeight = 24
-    return currentHour * 4 * slotHeight
-  }, [currentTime]);
 
   useImperativeHandle(ref, () => ({
-    scrollToCurrentTime,
+    scrollToCurrentTime: () => {},
     scrollToSchedule: (planId: number) => {
       const scheduleElement = timelineRef.current?.querySelector(`[data-schedule-id="${planId}"]`) as HTMLElement;
       if (scheduleElement) {
@@ -115,165 +97,9 @@ export const ScheduleTimeline = forwardRef<{
           behavior: 'smooth',
           block: 'center',
         });
-        justScrolledToPlanRef.current = true; // Set ref after scrolling to plan
       }
     },
   }));
-
-  useEffect(() => {
-    if (scrollToPlanId && timelineRef.current) {
-      const scheduleElement = timelineRef.current.querySelector(`[data-schedule-id="${scrollToPlanId}"]`) as HTMLElement;
-      if (scheduleElement) {
-        scheduleElement.scrollIntoView({
-          behavior: 'smooth',
-          block: 'center',
-        });
-        justScrolledToPlanRef.current = true; // Set ref after scrolling to plan
-        onScrollToPlanIdProcessed();
-      }
-    }
-  }, [scrollToPlanId, onScrollToPlanIdProcessed]);
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentTime(new Date())
-    }, 60000)
-    return () => clearInterval(timer)
-  }, [])
-
-  useEffect(() => {
-    if (!loading && timelineRef.current && !scrollToPlanId) {
-      const today = new Date()
-      const isToday = selectedDate.toDateString() === today.toDateString()
-      
-      if (isToday && !justScrolledToPlanRef.current) { // Only scroll to current time if not just scrolled to a plan
-        const now = new Date();
-        const currentHour = now.getHours() + now.getMinutes() / 60
-        const slotHeight = 24
-        const currentPosition = currentHour * 4 * slotHeight
-
-        const containerHeight = timelineRef.current.clientHeight
-        const scrollTo = currentPosition - containerHeight / 2
-        
-        timelineRef.current.scrollTo({
-          top: Math.max(0, scrollTo),
-          behavior: 'smooth'
-        })
-      }
-      // Reset the ref after the effect has run, so subsequent changes can trigger current time scroll if needed
-      justScrolledToPlanRef.current = false;
-    }
-  }, [loading, selectedDate, scrollToPlanId]);
-
-  useEffect(() => {
-    const timelineElement = timelineRef.current
-    if (!timelineElement) return
-
-    let timeoutId: NodeJS.Timeout
-
-    const handleScroll = () => {
-      clearTimeout(timeoutId)
-      timeoutId = setTimeout(() => {
-        const today = new Date()
-        const isToday = selectedDate.toDateString() === today.toDateString()
-        
-        if (!isToday) {
-          setShowBackToCurrentTime(false)
-          return
-        }
-
-        const currentPosition = getCurrentTimePosition()
-        const containerHeight = timelineElement.clientHeight
-        const scrollTop = timelineElement.scrollTop
-        const scrollBottom = scrollTop + containerHeight
-        
-        const tolerance = 200
-        const isCurrentTimeVisible = 
-          currentPosition >= scrollTop - tolerance && 
-          currentPosition <= scrollBottom + tolerance
-        
-        setShowBackToCurrentTime(!isCurrentTimeVisible)
-      }, 50)
-    }
-
-    timelineElement.addEventListener('scroll', handleScroll)
-    return () => {
-      timelineElement.removeEventListener('scroll', handleScroll)
-      clearTimeout(timeoutId)
-    }
-  }, [selectedDate, currentTime, getCurrentTimePosition])
-
-  const timeSlots = []
-  for (let hour = 0; hour <= 23; hour++) {
-    for (let minute = 0; minute < 60; minute += 15) {
-      const time = hour + minute / 60
-      const displayHour = hour > 12 ? hour - 12 : hour === 0 ? 12 : hour
-      const ampm = hour >= 12 ? "PM" : "AM"
-      const minuteStr = minute === 0 ? "00" : minute.toString().padStart(2, "0")
-
-      timeSlots.push({
-        time,
-        hour,
-        minute,
-        label: `${displayHour}:${minuteStr} ${ampm}`,
-        shortLabel: minute === 0 ? `${displayHour}:00` : `${displayHour}:${minuteStr}`,
-        isHour: minute === 0,
-      })
-    }
-  }
-
-  const isMultiDayOrAllDay = (schedule: Schedule) => {
-    if (schedule.allDay) {
-      return true;
-    }
-    const startDate = new Date(schedule.startDateTime);
-    const endDate = new Date(schedule.endDateTime);
-
-    const durationMs = endDate.getTime() - startDate.getTime();
-    const durationHours = durationMs / (1000 * 60 * 60);
-
-    return durationHours > 24;
-  };
-
-  const allDaySchedules = schedules.filter(isMultiDayOrAllDay);
-  const timedSchedules = schedules.filter(s => !isMultiDayOrAllDay(s));
-
-  const getDisplaySchedules = (schedules: Schedule[], selectedDate: Date) => {
-    const displaySchedules: Schedule[] = [];
-    const selectedDateMidnight = new Date(selectedDate);
-    selectedDateMidnight.setHours(0, 0, 0, 0);
-    const nextDayMidnight = new Date(selectedDate);
-    nextDayMidnight.setDate(selectedDate.getDate() + 1);
-    nextDayMidnight.setHours(0, 0, 0, 0);
-
-    schedules.forEach(schedule => {
-      const start = new Date(schedule.startDateTime);
-      const end = new Date(schedule.endDateTime);
-
-      if (start.getTime() >= selectedDateMidnight.getTime() && end.getTime() <= nextDayMidnight.getTime()) {
-        displaySchedules.push(schedule);
-      } else if (start.getTime() < selectedDateMidnight.getTime() && end.getTime() > nextDayMidnight.getTime()) {
-        displaySchedules.push({
-          ...schedule,
-          startDateTime: selectedDateMidnight.toISOString(),
-          endDateTime: nextDayMidnight.toISOString(),
-        });
-      } else if (start.getTime() >= selectedDateMidnight.getTime() && start.getTime() < nextDayMidnight.getTime() && end.getTime() > nextDayMidnight.getTime()) {
-        displaySchedules.push({
-          ...schedule,
-          endDateTime: nextDayMidnight.toISOString(),
-        });
-      } else if (start.getTime() < selectedDateMidnight.getTime() && end.getTime() > selectedDateMidnight.getTime() && end.getTime() <= nextDayMidnight.getTime()) {
-        displaySchedules.push({
-          ...schedule,
-          startDateTime: selectedDateMidnight.toISOString(),
-        });
-      }
-    });
-    return displaySchedules;
-  };
-
-  const schedulesToDisplayOnTimeline = getDisplaySchedules(timedSchedules, selectedDate);
 
   const iconMap = {
     User,
@@ -304,238 +130,22 @@ export const ScheduleTimeline = forwardRef<{
   }
 
   const getScheduleColor = (color?: string) => {
-    console.log("getScheduleColor received color:", color);
-    
-    // Hex 색상인 경우 직접 사용
     if (color?.startsWith('#')) {
-      return `bg-[${color}] border-[${color}] text-white`;
+      return color;
     }
     
-    const colorMap = {
-      blue: "bg-blue-500 border-blue-600 text-white",
-      red: "bg-red-500 border-red-600 text-white",
-      green: "bg-green-500 border-green-600 text-white",
-      purple: "bg-purple-500 border-purple-600 text-white",
-      orange: "bg-orange-500 border-orange-600 text-white",
-      pink: "bg-pink-500 border-pink-600 text-white",
-      yellow: "bg-yellow-500 border-yellow-600 text-white",
-      indigo: "bg-indigo-500 border-indigo-600 text-white",
+    const colorMap: Record<string, string> = {
+      blue: "#2196f3",
+      red: "#f44336",
+      green: "#4caf50",
+      purple: "#9c27b0",
+      orange: "#ff9800",
+      pink: "#e91e63",
+      yellow: "#ffeb3b",
+      indigo: "#607d8b",
     }
     return colorMap[color as keyof typeof colorMap] || colorMap.blue
   }
-
-  const getBubbleColor = (color?: string) => {
-    console.log("getBubbleColor received color:", color);
-    
-    // Hex 색상인 경우 동적으로 생성
-    if (color?.startsWith('#')) {
-      // Hex를 RGB로 변환하여 투명도 적용
-      const hexToRgb = (hex: string) => {
-        const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-        return result ? {
-          r: parseInt(result[1], 16),
-          g: parseInt(result[2], 16),
-          b: parseInt(result[3], 16)
-        } : null;
-      };
-      
-      const rgb = hexToRgb(color);
-      if (rgb) {
-        return `border-2 text-gray-900 dark:text-gray-100`;
-      }
-    }
-    
-    const colorMap = {
-      blue: "bg-blue-50 border-blue-200 text-blue-900 dark:bg-blue-950 dark:border-blue-800 dark:text-blue-100",
-      red: "bg-red-50 border-red-200 text-red-900 dark:bg-red-950 dark:border-red-800 dark:text-red-100",
-      green: "bg-green-50 border-green-200 text-green-900 dark:bg-green-950 dark:border-green-800 dark:text-green-100",
-      purple:
-        "bg-purple-50 border-purple-200 text-purple-900 dark:bg-purple-950 dark:border-purple-800 dark:text-purple-100",
-      orange:
-        "bg-orange-50 border-orange-200 text-orange-900 dark:bg-orange-950 dark:border-orange-800 dark:text-orange-100",
-      pink: "bg-pink-50 border-pink-200 text-pink-900 dark:bg-pink-950 dark:border-pink-800 dark:text-pink-100",
-      yellow:
-        "bg-yellow-50 border-yellow-200 text-yellow-900 dark:bg-yellow-950 dark:border-yellow-800 dark:text-yellow-100",
-      indigo:
-        "bg-indigo-50 border-indigo-200 text-indigo-900 dark:bg-indigo-950 dark:border-indigo-800 dark:text-indigo-100",
-    }
-    return colorMap[color as keyof typeof colorMap] || colorMap.blue
-  }
-
-  const getScheduleDuration = (schedule: Schedule) => {
-    const start = new Date(schedule.startDateTime)
-    const end = new Date(schedule.endDateTime)
-    const durationHours = (end.getTime() - start.getTime()) / (1000 * 60 * 60)
-    return Math.max(0.25, durationHours)
-  }
-
-  const getScheduleHeight = (schedule: Schedule) => {
-    const duration = getScheduleDuration(schedule)
-    const slotHeight = 24
-    const height = duration * 4 * slotHeight
-    return height
-  }
-
-  const getSchedulePosition = (schedule: Schedule) => {
-    const startTime = new Date(schedule.startDateTime)
-    const startHour = startTime.getHours() + startTime.getMinutes() / 60
-    const slotHeight = 24
-    const position = Math.round(startHour * 4) * slotHeight
-    return {
-      top: position,
-      height: getScheduleHeight(schedule),
-      exactStartTime: startHour,
-    }
-  }
-
-  const snapToGrid = (y: number) => {
-    const slotHeight = 24
-    return Math.round(y / slotHeight) * slotHeight
-  }
-
-  const getTimeFromPosition = (position: number) => {
-    const slotHeight = 24
-    const slotIndex = Math.round(position / slotHeight)
-    const hour = Math.floor(slotIndex / 4)
-    const minute = (slotIndex % 4) * 15
-    return { hour: Math.max(0, Math.min(23, hour)), minute }
-  }
-
-  const getOverlapAreas = () => {
-    const overlapAreas: Array<{ start: Date; end: Date; schedules: Schedule[] }> = []
-    for (let i = 0; i < timedSchedules.length; i++) {
-      for (let j = i + 1; j < timedSchedules.length; j++) {
-        const schedule1 = timedSchedules[i]
-        const schedule2 = timedSchedules[j]
-        const start1 = new Date(schedule1.startDateTime)
-        const end1 = new Date(schedule1.endDateTime)
-        const start2 = new Date(schedule2.startDateTime)
-        const end2 = new Date(schedule2.endDateTime)
-        if (start1 < end2 && end1 > start2) {
-          const overlapStart = new Date(Math.max(start1.getTime(), start2.getTime()))
-          const overlapEnd = new Date(Math.min(end1.getTime(), end2.getTime()))
-          let merged = false
-          for (const area of overlapAreas) {
-            if (area.start <= overlapEnd && area.end >= overlapStart) {
-              area.start = new Date(Math.min(area.start.getTime(), overlapStart.getTime()))
-              area.end = new Date(Math.max(area.end.getTime(), overlapEnd.getTime()))
-              if (!area.schedules.includes(schedule1)) area.schedules.push(schedule1)
-              if (!area.schedules.includes(schedule2)) area.schedules.push(schedule2)
-              merged = true
-              break
-            }
-          }
-          if (!merged) {
-            overlapAreas.push({ start: overlapStart, end: overlapEnd, schedules: [schedule1, schedule2] })
-          }
-        }
-      }
-    }
-    return overlapAreas
-  }
-
-  const handleMouseDown = (e: React.MouseEvent, schedule: Schedule) => {
-    if (schedule.type === 'subgoal' || !timelineRef.current) return;
-    const planId = schedule.planId;
-
-    const startMouseDownPos = { x: e.clientX, y: e.clientY };
-    
-    const timelineRect = timelineRef.current.getBoundingClientRect();
-    const scrollTop = timelineRef.current.scrollTop;
-    const clickY = e.clientY - timelineRect.top + scrollTop;
-    const originalPosition = getSchedulePosition(schedule);
-
-    const dragOffset = { x: e.clientX - timelineRect.left, y: clickY - originalPosition.top };
-    
-    setDraggedItem(planId);
-    setIsDragging(true); // 드래그 시작
-
-    const handleMouseMove = (moveEvent: MouseEvent) => {
-      setDragPosition({ x: moveEvent.clientX, y: moveEvent.clientY });
-      const currentY = moveEvent.clientY - timelineRect.top + scrollTop;
-      const newY = currentY - dragOffset.y;
-      const snappedY = snapToGrid(Math.max(0, newY));
-      const draggedElement = document.querySelector(`[data-schedule-id="${planId}"]`) as HTMLElement;
-      const draggedContainer = draggedElement?.parentElement as HTMLElement;
-
-      if (draggedElement && draggedContainer) {
-        const transformY = snappedY - originalPosition.top;
-        draggedContainer.style.transform = `translateY(${transformY}px)`;
-        draggedContainer.style.zIndex = "50";
-        draggedContainer.style.opacity = "0.9";
-      }
-
-      if (trashCanRef.current) {
-        const trashRect = trashCanRef.current.getBoundingClientRect();
-        const isCurrentlyOver = 
-          moveEvent.clientX >= trashRect.left &&
-          moveEvent.clientX <= trashRect.right &&
-          moveEvent.clientY >= trashRect.top &&
-          moveEvent.clientY <= trashRect.bottom;
-        
-        isOverTrash.current = isCurrentlyOver;
-        setIsOverTrashStyle(isCurrentlyOver);
-      }
-    };
-
-    const handleMouseUp = (upEvent: MouseEvent) => {
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('mouseup', handleMouseUp);
-
-      const draggedElement = document.querySelector(`[data-schedule-id="${planId}"]`) as HTMLElement;
-      const draggedContainer = draggedElement?.parentElement as HTMLElement;
-      if (draggedElement && draggedContainer) {
-        draggedContainer.style.transform = "";
-        draggedContainer.style.zIndex = "";
-        draggedContainer.style.opacity = "";
-      }
-
-      setDraggedItem(null);
-      setIsDragging(false);
-
-      if (isOverTrash.current) {
-        onDeleteSchedule(planId);
-      } else {
-        const distance = Math.sqrt(
-          Math.pow(upEvent.clientX - startMouseDownPos.x, 2) +
-          Math.pow(upEvent.clientY - startMouseDownPos.y, 2)
-        );
-  
-        if (distance >= 5) {
-            const currentY = upEvent.clientY - timelineRect.top + scrollTop;
-            const newY = currentY - dragOffset.y;
-            const snappedY = snapToGrid(Math.max(0, newY));
-            const newTime = getTimeFromPosition(snappedY);
-            const newStart = new Date(selectedDate);
-            newStart.setHours(newTime.hour, newTime.minute, 0, 0);
-            const duration = new Date(schedule.endDateTime).getTime() - new Date(schedule.startDateTime).getTime();
-            const newEnd = new Date(newStart.getTime() + duration);
-    
-            const formatToAPIDate = (date: Date) => {
-              const year = date.getFullYear();
-              const month = String(date.getMonth() + 1).padStart(2, '0');
-              const day = String(date.getDate()).padStart(2, '0');
-              const hours = String(date.getHours()).padStart(2, '0');
-              const minutes = String(date.getMinutes()).padStart(2, '0');
-              return `${year}-${month}-${day}T${hours}:${minutes}`;
-            };
-    
-            onUpdateSchedule(planId, {
-              startDateTime: formatToAPIDate(newStart),
-              endDateTime: formatToAPIDate(newEnd),
-            });
-        }
-      }
-
-      isOverTrash.current = false;
-      setIsOverTrashStyle(false);
-    };
-
-    window.addEventListener('mousemove', handleMouseMove);
-    window.addEventListener('mouseup', handleMouseUp);
-
-    e.preventDefault();
-  };
 
   const toggleComplete = (schedule: Schedule) => {
     if (schedule.type === 'subgoal' && schedule.goalId) {
@@ -583,37 +193,10 @@ export const ScheduleTimeline = forwardRef<{
     setExpandedSchedules(newExpanded)
   }
 
-  const toggleCardVisibility = (planId: number) => {
-    const newVisible = new Set(visibleCards)
-    if (newVisible.has(planId)) {
-      newVisible.delete(planId)
-    } else {
-      newVisible.add(planId)
-    }
-    setVisibleCards(newVisible)
-  }
-
-  const scrollToCurrentTime = () => {
-    if (timelineRef.current) {
-      const currentPosition = getCurrentTimePosition()
-      const containerHeight = timelineRef.current.clientHeight
-      const scrollTo = currentPosition - containerHeight / 2
-      timelineRef.current.scrollTo({
-        top: Math.max(0, scrollTo),
-        behavior: 'smooth'
-      })
-      if (onScrollToCurrentTime) {
-        onScrollToCurrentTime()
-      }
-    }
-  }
-
-  const handleBubbleClick = (schedule: Schedule, e: React.MouseEvent) => {
-    e.stopPropagation()
+  const handleScheduleClick = (schedule: Schedule) => {
     if (schedule.type === 'schedule' && onEditSchedule) {
       onEditSchedule(schedule)
     }
-    // Subgoal click can be handled here in the future
   }
 
   const formatTime = (dateString: string) => {
@@ -640,15 +223,22 @@ export const ScheduleTimeline = forwardRef<{
     }
   }
 
+  // 시간순으로 정렬된 일정만 표시
+  const sortedSchedules = [...schedules]
+    .filter(s => !s.allDay) // 하루 종일 일정 제외
+    .sort((a, b) => new Date(a.startDateTime).getTime() - new Date(b.startDateTime).getTime())
+
   if (loading) {
     return (
-      <div className="h-full overflow-y-auto p-6">
-        <div className="space-y-4">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="flex items-center gap-4">
-              <div className="w-16 h-4 bg-slate-200 dark:bg-slate-700 rounded animate-pulse"></div>
-              <div className="w-12 h-12 bg-slate-200 dark:bg-slate-700 rounded-full animate-pulse"></div>
-              <div className="flex-1 h-16 bg-slate-200 dark:bg-slate-700 rounded animate-pulse"></div>
+      <div className="p-6">
+        <div className="space-y-6">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <div key={i} className="flex gap-4">
+              <div className="w-20 h-6 bg-gray-200 rounded animate-pulse"></div>
+              <div className="flex-1">
+                <div className="w-16 h-16 bg-gray-200 rounded-full animate-pulse mb-2"></div>
+                <div className="h-6 bg-gray-200 rounded animate-pulse"></div>
+              </div>
             </div>
           ))}
         </div>
@@ -656,300 +246,124 @@ export const ScheduleTimeline = forwardRef<{
     )
   }
 
-  return (
-    <div className="h-full overflow-y-auto" ref={timelineRef}>
-      <div className="flex justify-center gap-2 p-4 border-b border-slate-200 dark:border-slate-700 sticky top-0 bg-slate-50/80 dark:bg-slate-900/80 backdrop-blur-sm z-30">
-        <Button
-          variant={filterType === 'all' ? 'default' : 'outline'}
-          onClick={() => onFilterTypeChange('all')}
-          className="px-4 py-2 text-sm font-medium"
-        >
-          전체
-        </Button>
-        <Button
-          variant={filterType === 'schedules' ? 'default' : 'outline'}
-          onClick={() => onFilterTypeChange('schedules')}
-          className="px-4 py-2 text-sm font-medium"
-        >
-          일정
-        </Button>
-        <Button
-          variant={filterType === 'subgoals' ? 'default' : 'outline'}
-          onClick={() => onFilterTypeChange('subgoals')}
-          className="px-4 py-2 text-sm font-medium"
-        >
-          세부목표
-        </Button>
+  if (sortedSchedules.length === 0) {
+    return (
+      <div className="text-center py-16">
+        <Calendar className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+        <h3 className="text-lg font-medium text-gray-900 mb-2">오늘 일정이 없습니다</h3>
+        <p className="text-gray-500">첫 번째 일정을 추가해보세요</p>
       </div>
-      <div className="relative p-6">
-        {showBackToCurrentTime && (
-          <div className="sticky top-6 z-50 flex justify-center">
-            <Button
-              onClick={scrollToCurrentTime}
-              className="bg-slate-800/80 hover:bg-slate-700/80 text-white backdrop-blur-sm border border-slate-600/50 shadow-lg transition-all duration-200 hover:scale-105"
-              size="sm"
+    )
+  }
+
+  return (
+    <div className="p-6" ref={timelineRef}>
+      <div className="relative">
+        {sortedSchedules.map((schedule, index) => {
+          const isExpanded = expandedSchedules.has(schedule.planId)
+          const isLast = index === sortedSchedules.length - 1
+          const scheduleColor = getScheduleColor(schedule.color)
+          const IconComponent = getScheduleIcon(schedule)
+
+          return (
+            <div 
+              key={schedule.planId} 
+              className="flex gap-6 relative"
+              data-schedule-id={schedule.planId}
             >
-              <Clock className="h-4 w-4 mr-2" />
-              현재 시간으로 돌아가기
-            </Button>
-          </div>
-        )}
-        {allDaySchedules.length > 0 && (
-          <div className="mb-8 pb-6 border-b border-slate-200 dark:border-slate-700">
-            <h3 className="text-sm font-medium text-slate-600 dark:text-slate-400 mb-4">하루 종일</h3>
-            <div className="flex gap-2 sm:gap-4 overflow-x-auto pb-2">
-              {allDaySchedules.map((schedule) => {
-                const isHexColor = schedule.color?.startsWith('#');
-                const iconStyle = isHexColor ? {
-                  backgroundColor: schedule.color,
-                  borderColor: schedule.color,
-                  color: 'white'
-                } : {};
-                
-                return (
-                  <div key={`${schedule.type}-${schedule.planId}`} className="flex-shrink-0 flex flex-col items-center gap-2">
-                    <div
-                      className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full border-2 flex items-center justify-center ${
-                        !isHexColor ? getScheduleColor(schedule.color) : ''
-                      } relative cursor-pointer`}
-                      onClick={(e) => handleBubbleClick(schedule, e)}
-                      style={isHexColor ? iconStyle : {}}
-                    >
-                      {React.createElement(getScheduleIcon(schedule), { className: "h-4 w-4 sm:h-5 sm:w-5" })}
+              {/* 시간 표시 */}
+              <div className="w-24 flex-shrink-0 pt-2">
+                <div className="text-sm font-medium text-gray-900">
+                  {formatTime(schedule.startDateTime)}
+                </div>
+              </div>
+
+              {/* 타임라인 */}
+              <div className="relative flex flex-col items-center">
+                {/* 아이콘 */}
+                <div 
+                  className="w-14 h-14 rounded-full flex items-center justify-center text-white shadow-md relative z-10 cursor-pointer hover:scale-105 transition-transform"
+                  style={{ backgroundColor: scheduleColor }}
+                  onClick={() => toggleComplete(schedule)}
+                >
+                  <IconComponent className="w-6 h-6" />
+                  {schedule.isCompleted && (
+                    <div className="absolute -top-1 -right-1 w-5 h-5 bg-green-500 rounded-full flex items-center justify-center">
+                      <CheckCircle2 className="w-3 h-3 text-white" />
+                    </div>
+                  )}
+                </div>
+
+                {/* 연결선 */}
+                {!isLast && (
+                  <div 
+                    className="w-0.5 flex-1 mt-2 mb-2" 
+                    style={{ backgroundColor: scheduleColor, minHeight: '40px' }}
+                  />
+                )}
+              </div>
+
+              {/* 일정 내용 */}
+              <div className="flex-1 pb-8">
+                <div 
+                  className="bg-white rounded-2xl p-4 shadow-sm border border-gray-200 cursor-pointer hover:shadow-md transition-shadow"
+                  onClick={() => handleScheduleClick(schedule)}
+                >
+                  <div className="flex items-start justify-between mb-2">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 text-xs text-gray-500 mb-1">
+                        <span>
+                          {formatTime(schedule.startDateTime)} - {formatTime(schedule.endDateTime)}
+                        </span>
+                        <span className="text-gray-400">•</span>
+                        <span>{getDuration(schedule.startDateTime, schedule.endDateTime)}</span>
+                        {schedule.reminderMinutes && (
+                          <>
+                            <span className="text-gray-400">•</span>
+                            <div className="flex items-center gap-1">
+                              <Bell className="h-3 w-3" />
+                              <span>{schedule.reminderMinutes}분 전</span>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                      <h3 
+                        className={`font-semibold text-gray-900 ${schedule.isCompleted ? "line-through opacity-60" : ""}`}
+                      >
+                        {schedule.title}
+                      </h3>
+                    </div>
+                    
+                    {schedule.subTasks && schedule.subTasks.length > 0 && (
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="absolute -top-1 -right-1 h-4 w-4 sm:h-5 sm:w-5 p-0 bg-white dark:bg-slate-800 rounded-full shadow-sm"
+                        className="h-8 w-8 p-0 hover:bg-gray-100 rounded-full ml-2"
                         onClick={(e) => {
                           e.stopPropagation()
-                          toggleComplete(schedule)
+                          toggleExpanded(schedule.planId)
                         }}
                       >
-                        {schedule.isCompleted ? (
-                          <CheckCircle2 className={`h-2.5 w-2.5 sm:h-3 sm:w-3 ${schedule.type === 'subgoal' ? 'text-red-600' : 'text-green-600'}`} />
-                        ) : (
-                          <Circle className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-slate-400" />
-                        )}
+                        {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                       </Button>
-                    </div>
-                    <span
-                      className={`text-xs text-center max-w-12 sm:max-w-16 truncate ${
-                        schedule.isCompleted ? "line-through text-slate-500" : "text-slate-700 dark:text-slate-300"
-                      }`}
-                    >
-                      {schedule.title}
-                    </span>
+                    )}
                   </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
 
-        <div
-          className="relative"
-          style={{ height: `${24 * 4 * 24}px` }}
-        >
-          {/* Timeline Line */}
-          <div className="absolute left-[52px] sm:left-[76px] top-0 bottom-0 w-0.5 bg-slate-300 dark:bg-slate-600"></div>
-
-          {/* Time Labels */}
-          {timeSlots.map((slot, slotIndex) => (
-            <div
-              key={`${slot.hour}-${slot.minute}`}
-              className="absolute left-0 flex items-center"
-              style={{ top: `${slotIndex * 24}px` }}
-            >
-              <div className="w-12 sm:w-16 text-right pr-2 sm:pr-4">
-                {slot.isHour && (
-                  <span className="text-xs sm:text-sm font-medium text-slate-600 dark:text-slate-400">{slot.shortLabel}</span>
-                )}
-              </div>
-              <div
-                className={`w-1 sm:w-2 h-0.5 ${slot.isHour ? "bg-slate-400 dark:bg-slate-500" : "bg-slate-200 dark:bg-slate-700"}`}
-              ></div>
-            </div>
-          ))}
-
-          {/* Overlap Areas */}
-          {getOverlapAreas().map((overlap, index) => {
-            const startHour = overlap.start.getHours() + overlap.start.getMinutes() / 60
-            const endHour = overlap.end.getHours() + overlap.end.getMinutes() / 60
-            const startPosition = Math.round(startHour * 4) * 24
-            const endPosition = Math.round(endHour * 4) * 24
-            const height = endPosition - startPosition
-            
-            const overlapCount = overlap.schedules.length
-            const opacity = Math.min(0.8, 0.2 + (overlapCount - 2) * 0.2)
-            const borderOpacity = Math.min(0.8, 0.3 + (overlapCount - 2) * 0.1)
-            
-            return (
-              <div
-                key={`overlap-${index}`}
-                className="absolute left-[52px] sm:left-[76px] right-2 sm:right-6 border z-5 flex items-center justify-center"
-                style={{
-                  top: `${startPosition}px`,
-                  height: `${height}px`,
-                  backgroundColor: `rgba(239, 68, 68, ${opacity})`,
-                  borderColor: `rgba(252, 165, 165, ${borderOpacity})`,
-                  borderWidth: '1px',
-                }}
-                title={`겹치는 일정 (${overlapCount}개): ${overlap.schedules.map(s => s.title).join(', ')}`}
-              >
-                <div className="bg-white/90 dark:bg-slate-800/90 px-2 py-1 rounded text-xs font-medium text-red-600 dark:text-red-400 shadow-sm">
-                  일정이 겹쳐있습니다! 조정해주세요!
-                </div>
-              </div>
-            )
-          })}
-
-          {/* Current Time Indicator */}
-          {currentTime.toDateString() === selectedDate.toDateString() && (
-            <div
-              className="absolute left-[52px] sm:left-[76px] right-2 sm:right-6 h-0.5 bg-red-500 z-20 flex items-center"
-              style={{ top: `${getCurrentTimePosition()}px` }}
-            >
-              <div className="w-3 h-3 bg-red-500 rounded-full -ml-1.5"></div>
-              <div className="ml-2 text-xs text-red-600 bg-white dark:bg-slate-800 px-2 py-1 rounded shadow-sm">
-                {currentTime.toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" })}
-              </div>
-            </div>
-          )}
-
-          {/* Schedule Icons and Bubbles */}
-          {schedulesToDisplayOnTimeline.map((schedule, index) => {
-            const position = getSchedulePosition(schedule)
-            const isExpanded = expandedSchedules.has(schedule.planId)
-            const isEven = index % 2 === 0
-            
-            const iconHeight = Math.max(32, position.height)
-            const iconWidth = Math.max(32, Math.min(iconHeight * 0.8, 48))
-
-            // Hex 색상 처리
-            const isHexColor = schedule.color?.startsWith('#');
-            const iconStyle = isHexColor ? {
-              backgroundColor: schedule.color,
-              borderColor: schedule.color,
-              color: 'white'
-            } : {};
-
-            return (
-              <div key={schedule.planId} className="absolute flex items-center" style={{ top: `${position.top}px`, height: `${position.height}px` }}>
-                <div
-                  className={`absolute left-[52px] sm:left-[76px] border-2 flex items-center justify-center cursor-pointer transition-all duration-200 ${
-                    !isHexColor ? getScheduleColor(schedule.color) : ''
-                  } ${
-                    draggedItem === schedule.planId ? "scale-110 shadow-lg" : "hover:scale-105"
-                  } z-10`}
-                  data-schedule-id={schedule.planId}
-                  onMouseDown={(e) => handleMouseDown(e, schedule)}
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    toggleCardVisibility(schedule.planId)
-                  }}
-                  style={{
-                    transform: "translateX(-50%)",
-                    width: `${iconWidth}px`,
-                    height: `${iconHeight}px`,
-                    borderRadius: `${Math.min(iconWidth / 2, 20)}px`,
-                    ...(isHexColor ? iconStyle : {})
-                  }}
-                >
-                  {React.createElement(getScheduleIcon(schedule), {
-                    className: `${iconHeight > 48 ? "h-6 w-6" : "h-4 w-4"}`,
-                  })}
-                </div>
-
-                {visibleCards.has(schedule.planId) && (
-                  <div
-                    className={`absolute left-24 sm:left-32 w-64 sm:w-72 md:w-80 lg:w-72 xl:w-80 ${
-                      draggedItem === schedule.planId ? "opacity-75" : ""
-                    }`}
-                  >
-                    <div
-                      className="absolute left-0 w-0 h-0 border-t-8 border-b-8 border-r-8 border-t-transparent border-b-transparent"
-                      style={{
-                        top: "50%",
-                        transform: "translateY(-50%)",
-                        marginLeft: "-8px",
-                        borderRightColor: isHexColor 
-                          ? `${schedule.color}40`
-                          : getBubbleColor(schedule.color)
-                            .split(" ")
-                            .find((c) => c.includes("border-"))
-                            ?.replace("border-", "")
-                            ?.replace("200", "300") || "#cbd5e1",
-                      }}
-                    ></div>
-
-                    <div
-                      className={`rounded-lg border-2 p-3 sm:p-4 shadow-sm cursor-pointer hover:shadow-md transition-shadow ${
-                        !isHexColor ? getBubbleColor(schedule.color) : ''
-                      }`}
-                      onClick={(e) => handleBubbleClick(schedule, e)}
-                      style={isHexColor ? {
-                        backgroundColor: `${schedule.color}10`,
-                        borderColor: `${schedule.color}40`,
-                      } : {}}
-                    >
-                      <div className="flex items-start justify-between mb-2">
-                        <div className="flex-1 min-w-0">
-                          <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 text-xs mb-1">
-                            <span className="truncate">
-                              {formatTime(schedule.startDateTime)} - {formatTime(schedule.endDateTime)} (
-                              {getDuration(schedule.startDateTime, schedule.endDateTime)})
-                            </span>
-                            {schedule.reminderMinutes && (
-                              <div className="flex items-center gap-1">
-                                <Bell className="h-3 w-3 flex-shrink-0" />
-                                <span className="truncate">{schedule.reminderMinutes}분 전</span>
-                              </div>
-                            )}
-                          </div>
-                          <h3 className={`font-medium text-sm ${schedule.isCompleted ? "line-through opacity-60" : ""} truncate`}>
-                            {schedule.title}
-                          </h3>
-                        </div>
-                        <div className="flex items-center gap-1 ml-2 flex-shrink-0">
-                          {schedule.subTasks && schedule.subTasks.length > 0 && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-6 w-6 p-0 hover:bg-black/10 dark:hover:bg-white/10 rounded-full"
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                toggleExpanded(schedule.planId)
-                              }}
-                            >
-                              {isExpanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
-                            </Button>
-                          )}
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-6 w-6 p-0 hover:bg-black/10 dark:hover:bg-white/10 rounded-full"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              toggleComplete(schedule)
-                            }}
-                          >
-                            {schedule.isCompleted ? (
-                              <CheckCircle2 className="h-4 w-4 text-green-600" />
-                            ) : (
-                              <Circle className="h-4 w-4 opacity-60" />
-                            )}
-                          </Button>
-                        </div>
-                      </div>
-
-                      {schedule.subTasks && schedule.subTasks.length > 0 && isExpanded && (
-                        <div className="mt-3 space-y-2 border-t border-black/10 dark:border-white/10 pt-2">
+                  {/* 서브태스크 */}
+                  {schedule.subTasks && schedule.subTasks.length > 0 && (
+                    <>
+                      {isExpanded ? (
+                        <div className="mt-3 space-y-2 border-t border-gray-100 pt-3">
                           {schedule.subTasks.map((subTask) => (
-                            <div key={subTask.id} className="flex items-center gap-2 text-xs" onClick={(e) => e.stopPropagation()}>
+                            <div 
+                              key={subTask.id} 
+                              className="flex items-center gap-2 text-sm"
+                              onClick={(e) => e.stopPropagation()}
+                            >
                               <Checkbox
                                 checked={subTask.completed}
                                 onCheckedChange={() => toggleSubTask(schedule.planId, subTask.id)}
-                                className="h-3 w-3"
+                                className="h-4 w-4"
                               />
                               <span className={`flex-1 ${subTask.completed ? "line-through opacity-60" : ""}`}>
                                 {subTask.title}
@@ -957,55 +371,20 @@ export const ScheduleTimeline = forwardRef<{
                             </div>
                           ))}
                         </div>
-                      )}
-
-                      {schedule.subTasks && schedule.subTasks.length > 0 && !isExpanded && (
-                        <div className="text-xs opacity-60 mt-1">
+                      ) : (
+                        <div className="text-xs text-gray-500 mt-2 flex items-center gap-1">
+                          <CheckCircle2 className="h-3 w-3" />
                           {schedule.subTasks.filter((t) => t.completed).length}/{schedule.subTasks.length} 완료
                         </div>
                       )}
-                    </div>
-                  </div>
-                )}
-              </div>
-            )
-          })}
-
-          {draggedItem && (
-            <div
-              className="fixed pointer-events-none z-50 opacity-75"
-              style={{
-                left: dragPosition.x - 20,
-                top: dragPosition.y - 20,
-              }}
-            >
-              <div className="w-10 h-10 bg-slate-600 rounded-full flex items-center justify-center text-white shadow-lg">
-                <Calendar className="h-5 w-5" />
+                    </>
+                  )}
+                </div>
               </div>
             </div>
-          )}
-        </div>
-
-        {timedSchedules.length === 0 && allDaySchedules.length === 0 && (
-          <div className="text-center py-12">
-            <Calendar className="h-12 w-12 text-slate-300 dark:text-slate-600 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-slate-900 dark:text-slate-100 mb-2">오늘 일정이 없습니다</h3>
-            <p className="text-slate-600 dark:text-slate-400">첫 번째 일정을 추가해보세요</p>
-          </div>
-        )}
+          )
+        })}
       </div>
-
-      {/* 휴지통 아이콘 */}
-      {isDragging && (
-        <div
-          ref={trashCanRef}
-          className={`fixed bottom-10 right-10 z-[100] flex items-center justify-center w-24 h-24 rounded-full transition-all duration-300 ease-in-out ${
-            isOverTrashStyle ? "bg-red-500 scale-125" : "bg-slate-800/80 backdrop-blur-sm border border-slate-600/50"
-          }`}
-        >
-          <Trash2 className={`h-10 w-10 text-white transition-transform duration-300 ${isOverTrashStyle ? "rotate-12 scale-110" : ""}`} />
-        </div>
-      )}
     </div>
   )
 })

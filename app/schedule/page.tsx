@@ -514,15 +514,6 @@ export default function SchedulePage() {
                       ))}
                     </DropdownMenuContent>
                   </DropdownMenu>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="rounded-full border border-[#99C6D6] bg-white px-3 py-1.5 text-xs font-semibold text-[#0F1C21] shadow-sm hover:bg-white/80"
-                    onClick={() => timelineRef.current?.scrollToCurrentTime?.()}
-                  >
-                    <Clock className="h-3 w-3 mr-1" />
-                    현재 시간
-                  </Button>
                 </div>
               </div>
             </section>
