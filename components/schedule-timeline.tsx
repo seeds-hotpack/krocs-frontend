@@ -463,15 +463,7 @@ export const ScheduleTimeline = forwardRef<{
                           </span>
                           <span className="text-gray-400">•</span>
                           <span>{getDuration(schedule.startDateTime, schedule.endDateTime)}</span>
-                          {schedule.type === 'subgoal' && (
-                            <>
-                              <span className="text-gray-400">•</span>
-                              <span className="px-2 py-0.5 bg-purple-100 text-purple-700 rounded-full flex items-center gap-1">
-                                <Target className="h-3 w-3" />
-                                세부목표
-                              </span>
-                            </>
-                          )}
+                          {schedule.type === 'subgoal'}
                           {schedule.reminderMinutes && (
                             <>
                               <span className="text-gray-400">•</span>
