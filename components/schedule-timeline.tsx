@@ -387,16 +387,20 @@ export const ScheduleTimeline = forwardRef<{
             return (
               <div
                 key={schedule.planId}
-                className="flex gap-6 relative"
+                className="flex gap-3 relative"
                 data-schedule-id={schedule.planId}
               >
-                {/* 시간 표시 - 시작/종료 시간 모두 표시 */}
-                <div className="w-24 flex-shrink-0 pt-2">
-                  <div className="text-xs font-semibold text-gray-900">
-                    {formatTime(schedule.startDateTime)}
-                  </div>
-                  <div className="text-xs text-gray-500 mt-1">
-                    {formatTime(schedule.endDateTime)}
+                {/* 시간 표시 영역 */}
+                <div className="w-20 flex-shrink-0 relative flex items-start" style={{ height: `${getIconHeight(schedule.startDateTime, schedule.endDateTime)}px` }}>
+                  <div className="flex flex-col justify-between h-full w-full">
+                    {/* 시작 시간 */}
+                    <div className="text-xs font-semibold text-gray-900 whitespace-nowrap">
+                      {formatTime(schedule.startDateTime)}
+                    </div>
+                    {/* 종료 시간 */}
+                    <div className="text-xs text-gray-500 whitespace-nowrap">
+                      {formatTime(schedule.endDateTime)}
+                    </div>
                   </div>
                 </div>
 
@@ -409,7 +413,7 @@ export const ScheduleTimeline = forwardRef<{
                       style={{ 
                         backgroundColor: scheduleColor,
                         height: `${getIconHeight(schedule.startDateTime, schedule.endDateTime)}px`,
-                        borderRadius: '28px' // w-14의 절반
+                        borderRadius: '28px'
                       }}
                       onClick={() => handleScheduleClick(schedule)}
                     >
