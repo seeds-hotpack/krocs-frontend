@@ -387,11 +387,11 @@ export const ScheduleTimeline = forwardRef<{
             return (
               <div
                 key={schedule.planId}
-                className="flex gap-3 relative"
+                className="flex gap-5 relative"
                 data-schedule-id={schedule.planId}
               >
                 {/* 시간 표시 영역 */}
-                <div className="w-20 flex-shrink-0 relative flex items-start" style={{ height: `${getIconHeight(schedule.startDateTime, schedule.endDateTime)}px` }}>
+                <div className="w-15 flex-shrink-0 relative flex items-start" style={{ height: `${getIconHeight(schedule.startDateTime, schedule.endDateTime)}px` }}>
                   <div className="flex flex-col justify-between h-full w-full">
                     {/* 시작 시간 */}
                     <div className="text-xs font-semibold text-gray-900 whitespace-nowrap">
