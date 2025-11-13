@@ -69,6 +69,7 @@ export function GoalDetail({ goal, onBack, onUpdate, onDelete }: GoalDetailProps
       const res = await getSubGoals(goal.goalId)
       setSubGoals(
         res.result.subGoals
+          .filter((sg: APISubGoal) => sg.status !== 'INACTIVE') // INACTIVE 제외
           .map((sg: APISubGoal) => ({
             sub_goal_id: sg.sub_goal_id,
             title: sg.title,
@@ -125,14 +126,13 @@ export function GoalDetail({ goal, onBack, onUpdate, onDelete }: GoalDetailProps
   }
 
   const handleDeleteSubGoal = async (sub_goal_id: number) => {
-    const confirmed = window.confirm("이 세부목표를 삭제하시겠습니까?")
-    if (!confirmed) return
-
     const originalSubGoals = [...subGoals]
     setSubGoals((prev) => prev.filter((sg) => sg.sub_goal_id !== sub_goal_id))
 
     try {
       await deleteSubGoal(goal.goalId, sub_goal_id)
+      // 삭제 후 서버에서 최신 데이터 가져오기
+      await fetchSubGoals()
     } catch (e: any) {
       setSubGoals(originalSubGoals)
       setError(e.message)
@@ -485,6 +485,7 @@ export function GoalDetail({ goal, onBack, onUpdate, onDelete }: GoalDetailProps
         onSubGoalCreated={fetchSubGoals}
         goalId={goal.goalId}
         editingSubGoal={editingSubGoal}
+        onDelete={handleDeleteSubGoal}
       />
     </div>
   )

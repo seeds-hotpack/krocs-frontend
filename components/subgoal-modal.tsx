@@ -5,12 +5,13 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
-import { X, Clock, Calendar, Sparkles } from "lucide-react"
+import { X, Clock, Calendar, Sparkles, Trash2 } from "lucide-react"
 import {
   CreateSubGoalRequest,
   createSubGoal,
   updateSubGoal,
 } from "@/api/subgoals"
+import { ConfirmationModal } from "@/components/ui/confirmation-modal"
 
 interface SubGoal {
   sub_goal_id: number
@@ -27,6 +28,7 @@ interface SubGoalModalProps {
   onSubGoalCreated: () => void
   goalId: number
   editingSubGoal?: SubGoal | null
+  onDelete?: (subGoalId: number) => void
 }
 
 export function SubGoalModal({
@@ -35,6 +37,7 @@ export function SubGoalModal({
                                onSubGoalCreated,
                                goalId,
                                editingSubGoal = null,
+                               onDelete,
                              }: SubGoalModalProps) {
   const [title, setTitle] = useState("")
   const [isTimeSelected, setIsTimeSelected] = useState(false)
@@ -44,6 +47,7 @@ export function SubGoalModal({
   const [endDate, setEndDate] = useState("")
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
 
   const isEditMode = !!editingSubGoal
 
@@ -283,8 +287,36 @@ export function SubGoalModal({
                 {loading ? `${isEditMode ? '수정' : '추가'} 중...` : isEditMode ? "수정 완료" : "소목표 추가"}
               </Button>
             </div>
+
+            {/* Delete Button - 편집 모드일 때만 표시 */}
+            {isEditMode && onDelete && editingSubGoal && (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setShowDeleteModal(true)}
+                className="w-full h-12 rounded-2xl border-2 border-red-200 text-red-600 font-semibold hover:bg-red-50"
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                세부목표 삭제
+              </Button>
+            )}
           </div>
         </div>
+
+        <ConfirmationModal
+          isOpen={showDeleteModal}
+          onClose={() => setShowDeleteModal(false)}
+          onConfirm={() => {
+            if (editingSubGoal && onDelete) {
+              onDelete(editingSubGoal.sub_goal_id);
+            }
+            setShowDeleteModal(false);
+            handleClose();
+          }}
+          title="세부목표 삭제"
+          message="정말로 이 세부목표를 삭제하시겠습니까?"
+          confirmText="삭제"
+        />
       </div>
   )
 }
