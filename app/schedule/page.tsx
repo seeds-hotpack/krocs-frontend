@@ -174,41 +174,77 @@ export default function SchedulePage() {
         const goals = await getGoals({ searchDate: formatDateToYYYYMMDD(selectedDate) })
         setGoalList(goals)
 
+        console.log("🎯 Goals for selected date:", goals)
+
         const subGoalResponses = await Promise.all(goals.map((goal) => getSubGoals(goal.goalId)))
 
-        const timeSelectedSubGoals: Schedule[] = []
-        const selectedDay = formatDateToYYYYMMDD(selectedDate)
+        const allSubGoals: Schedule[] = []
 
         subGoalResponses.forEach((res, index) => {
-          const goalId = goals[index].goalId
-          const goalColor = goals[index].color // 대목표 색깔 가져오기
+          const goal = goals[index]
+          const goalId = goal.goalId
+          const goalColor = goal.color
+          
+          console.log(`🔍 Processing goal ${goalId}: ${goal.title}`, res.result.subGoals)
+          
           res.result.subGoals.forEach((sg) => {
-            if (!sg.is_time_selected) {
-              return
-            }
-            const startDate = sg.start_date_time?.split("T")[0]
-            if (startDate === selectedDay) {
-              timeSelectedSubGoals.push({
+            // 시간이 선택된 소목표
+            if (sg.is_time_selected && sg.start_date_time) {
+              const startDate = sg.start_date_time.split("T")[0]
+              const selectedDay = formatDateToYYYYMMDD(selectedDate)
+              
+              // 시간이 선택된 소목표는 해당 날짜에만 표시
+              if (startDate === selectedDay) {
+                console.log(`  ✅ Adding timed subgoal: ${sg.title}`)
+                allSubGoals.push({
+                  planId: sg.sub_goal_id,
+                  goalId,
+                  subGoalId: sg.sub_goal_id,
+                  title: sg.title,
+                  startDateTime: sg.start_date_time,
+                  endDateTime: sg.end_date_time,
+                  isCompleted: sg.is_completed,
+                  allDay: false,
+                  color: goalColor,
+                  type: "subgoal",
+                  subTasks: [],
+                  createdAt: new Date().toISOString(),
+                  updatedAt: new Date().toISOString(),
+                  isTimeSelected: true,
+                })
+              }
+            } 
+            // 하루 종일 소목표 (시간이 선택되지 않은 경우)
+            // 목표의 날짜에 따라 표시됨
+            else if (!sg.is_time_selected) {
+              console.log(`  ✅ Adding all-day subgoal: ${sg.title} (from goal: ${goal.title})`)
+              
+              // 하루 종일 소목표는 목표의 날짜를 사용
+              const goalStartDate = new Date(goal.startDate)
+              const goalStartDateString = formatDateToYYYYMMDD(goalStartDate)
+              
+              allSubGoals.push({
                 planId: sg.sub_goal_id,
                 goalId,
                 subGoalId: sg.sub_goal_id,
                 title: sg.title,
-                startDateTime: sg.start_date_time,
-                endDateTime: sg.end_date_time,
+                startDateTime: `${goalStartDateString}T00:00:00`,
+                endDateTime: `${goalStartDateString}T23:59:59`,
                 isCompleted: sg.is_completed,
-                allDay: false, // 시간이 설정된 소목표는 타임라인에 표시
-                color: goalColor, // 대목표 색깔 사용
+                allDay: true,
+                color: goalColor,
                 type: "subgoal",
                 subTasks: [],
                 createdAt: new Date().toISOString(),
                 updatedAt: new Date().toISOString(),
-                isTimeSelected: true,
+                isTimeSelected: false,
               })
             }
           })
         })
 
-        setSubGoalSchedules(timeSelectedSubGoals)
+        console.log("📦 Final allSubGoals:", allSubGoals)
+        setSubGoalSchedules(allSubGoals)
       } catch (err) {
         console.error("Failed to fetch goals or sub-goals:", err)
       }

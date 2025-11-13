@@ -223,9 +223,10 @@ export const ScheduleTimeline = forwardRef<{
     }
   }
 
-  // 시간순으로 정렬된 일정만 표시
-  const sortedSchedules = [...schedules]
-    .filter(s => !s.allDay) // 하루 종일 일정 제외
+  // 하루 종일 일정과 시간 지정 일정 분리
+  const allDaySchedules = schedules.filter(s => s.allDay)
+  const timedSchedules = schedules
+    .filter(s => !s.allDay)
     .sort((a, b) => new Date(a.startDateTime).getTime() - new Date(b.startDateTime).getTime())
 
   if (loading) {
@@ -246,7 +247,7 @@ export const ScheduleTimeline = forwardRef<{
     )
   }
 
-  if (sortedSchedules.length === 0) {
+  if (allDaySchedules.length === 0 && timedSchedules.length === 0) {
     return (
       <div className="text-center py-16">
         <Calendar className="h-16 w-16 text-gray-300 mx-auto mb-4" />
@@ -258,133 +259,213 @@ export const ScheduleTimeline = forwardRef<{
 
   return (
     <div className="p-6" ref={timelineRef}>
-      <div className="relative">
-        {sortedSchedules.map((schedule, index) => {
-          const isExpanded = expandedSchedules.has(schedule.planId)
-          const isLast = index === sortedSchedules.length - 1
-          const scheduleColor = getScheduleColor(schedule.color)
-          const IconComponent = getScheduleIcon(schedule)
+      {/* 하루 종일 일정 섹션 */}
+      {allDaySchedules.length > 0 && (
+        <div className="mb-8 pb-6 border-b-2 border-gray-200">
+          <h3 className="text-sm font-semibold text-gray-500 mb-4 uppercase tracking-wide">하루 종일</h3>
+          <div className="flex flex-wrap gap-4">
+            {allDaySchedules.map((schedule) => {
+              const scheduleColor = getScheduleColor(schedule.color)
+              const IconComponent = getScheduleIcon(schedule)
 
-          return (
-            <div 
-              key={schedule.planId} 
-              className="flex gap-6 relative"
-              data-schedule-id={schedule.planId}
-            >
-              {/* 시간 표시 */}
-              <div className="w-24 flex-shrink-0 pt-2">
-                <div className="text-sm font-medium text-gray-900">
-                  {formatTime(schedule.startDateTime)}
-                </div>
-              </div>
-
-              {/* 타임라인 */}
-              <div className="relative flex flex-col items-center">
-                {/* 아이콘 */}
-                <div 
-                  className="w-14 h-14 rounded-full flex items-center justify-center text-white shadow-md relative z-10 cursor-pointer hover:scale-105 transition-transform"
-                  style={{ backgroundColor: scheduleColor }}
-                  onClick={() => toggleComplete(schedule)}
+              return (
+                <div
+                  key={schedule.planId}
+                  data-schedule-id={schedule.planId}
+                  className="flex flex-col items-center gap-2 group"
                 >
-                  <IconComponent className="w-6 h-6" />
-                  {schedule.isCompleted && (
-                    <div className="absolute -top-1 -right-1 w-5 h-5 bg-green-500 rounded-full flex items-center justify-center">
-                      <CheckCircle2 className="w-3 h-3 text-white" />
-                    </div>
-                  )}
-                </div>
-
-                {/* 연결선 */}
-                {!isLast && (
-                  <div 
-                    className="w-0.5 flex-1 mt-2 mb-2" 
-                    style={{ backgroundColor: scheduleColor, minHeight: '40px' }}
-                  />
-                )}
-              </div>
-
-              {/* 일정 내용 */}
-              <div className="flex-1 pb-8">
-                <div 
-                  className="bg-white rounded-2xl p-4 shadow-sm border border-gray-200 cursor-pointer hover:shadow-md transition-shadow"
-                  onClick={() => handleScheduleClick(schedule)}
-                >
-                  <div className="flex items-start justify-between mb-2">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 text-xs text-gray-500 mb-1">
-                        <span>
-                          {formatTime(schedule.startDateTime)} - {formatTime(schedule.endDateTime)}
-                        </span>
-                        <span className="text-gray-400">•</span>
-                        <span>{getDuration(schedule.startDateTime, schedule.endDateTime)}</span>
-                        {schedule.reminderMinutes && (
-                          <>
-                            <span className="text-gray-400">•</span>
-                            <div className="flex items-center gap-1">
-                              <Bell className="h-3 w-3" />
-                              <span>{schedule.reminderMinutes}분 전</span>
-                            </div>
-                          </>
-                        )}
-                      </div>
-                      <h3 
-                        className={`font-semibold text-gray-900 ${schedule.isCompleted ? "line-through opacity-60" : ""}`}
-                      >
-                        {schedule.title}
-                      </h3>
+                  {/* 동그란 아이콘 */}
+                  <div className="relative">
+                    <div
+                      className="w-16 h-16 rounded-full flex items-center justify-center text-white shadow-md cursor-pointer hover:scale-110 transition-transform"
+                      style={{ backgroundColor: scheduleColor }}
+                      onClick={() => handleScheduleClick(schedule)}
+                    >
+                      <IconComponent className="w-7 h-7" />
                     </div>
                     
+                    {/* 완료 체크 버튼 */}
+                    <button
+                      className="absolute -top-1 -right-1 w-6 h-6 bg-white rounded-full flex items-center justify-center shadow-sm hover:scale-110 transition-transform border-2"
+                      style={{ borderColor: schedule.isCompleted ? '#22c55e' : '#e5e7eb' }}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        toggleComplete(schedule)
+                      }}
+                    >
+                      {schedule.isCompleted ? (
+                        <CheckCircle2 className="w-4 h-4 text-green-500" />
+                      ) : (
+                        <Circle className="w-4 h-4 text-gray-400" />
+                      )}
+                    </button>
+
+                    {/* 세부목표 배지 */}
+                    {schedule.type === 'subgoal'}
+                  </div>
+
+                  {/* 제목 */}
+                  <div className="text-center max-w-[80px]">
+                    <p
+                      className={`text-xs font-medium text-gray-900 truncate ${
+                        schedule.isCompleted ? "line-through opacity-60" : ""
+                      }`}
+                      title={schedule.title}
+                    >
+                      {schedule.title}
+                    </p>
                     {schedule.subTasks && schedule.subTasks.length > 0 && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-8 w-8 p-0 hover:bg-gray-100 rounded-full ml-2"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          toggleExpanded(schedule.planId)
-                        }}
-                      >
-                        {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                      </Button>
+                      <p className="text-[10px] text-gray-500 mt-0.5">
+                        {schedule.subTasks.filter((t) => t.completed).length}/{schedule.subTasks.length}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* 시간 지정 일정 타임라인 */}
+      {timedSchedules.length > 0 && (
+        <div className="relative">
+          {timedSchedules.map((schedule, index) => {
+            const isExpanded = expandedSchedules.has(schedule.planId)
+            const isLast = index === timedSchedules.length - 1
+            const scheduleColor = getScheduleColor(schedule.color)
+            const IconComponent = getScheduleIcon(schedule)
+
+            return (
+              <div
+                key={schedule.planId}
+                className="flex gap-6 relative"
+                data-schedule-id={schedule.planId}
+              >
+                {/* 시간 표시 */}
+                <div className="w-24 flex-shrink-0 pt-2">
+                  <div className="text-sm font-medium text-gray-900">
+                    {formatTime(schedule.startDateTime)}
+                  </div>
+                </div>
+
+                {/* 타임라인 */}
+                <div className="relative flex flex-col items-center">
+                  {/* 아이콘 */}
+                  <div
+                    className="w-14 h-14 rounded-full flex items-center justify-center text-white shadow-md relative z-10 cursor-pointer hover:scale-105 transition-transform"
+                    style={{ backgroundColor: scheduleColor }}
+                    onClick={() => toggleComplete(schedule)}
+                  >
+                    <IconComponent className="w-6 h-6" />
+                    {schedule.isCompleted && (
+                      <div className="absolute -top-1 -right-1 w-5 h-5 bg-green-500 rounded-full flex items-center justify-center">
+                        <CheckCircle2 className="w-3 h-3 text-white" />
+                      </div>
                     )}
                   </div>
 
-                  {/* 서브태스크 */}
-                  {schedule.subTasks && schedule.subTasks.length > 0 && (
-                    <>
-                      {isExpanded ? (
-                        <div className="mt-3 space-y-2 border-t border-gray-100 pt-3">
-                          {schedule.subTasks.map((subTask) => (
-                            <div 
-                              key={subTask.id} 
-                              className="flex items-center gap-2 text-sm"
-                              onClick={(e) => e.stopPropagation()}
-                            >
-                              <Checkbox
-                                checked={subTask.completed}
-                                onCheckedChange={() => toggleSubTask(schedule.planId, subTask.id)}
-                                className="h-4 w-4"
-                              />
-                              <span className={`flex-1 ${subTask.completed ? "line-through opacity-60" : ""}`}>
-                                {subTask.title}
-                              </span>
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <div className="text-xs text-gray-500 mt-2 flex items-center gap-1">
-                          <CheckCircle2 className="h-3 w-3" />
-                          {schedule.subTasks.filter((t) => t.completed).length}/{schedule.subTasks.length} 완료
-                        </div>
-                      )}
-                    </>
+                  {/* 연결선 */}
+                  {!isLast && (
+                    <div
+                      className="w-0.5 flex-1 mt-2 mb-2"
+                      style={{ backgroundColor: scheduleColor, minHeight: '40px' }}
+                    />
                   )}
                 </div>
+
+                {/* 일정 내용 */}
+                <div className="flex-1 pb-8">
+                  <div
+                    className="bg-white rounded-2xl p-4 shadow-sm border border-gray-200 cursor-pointer hover:shadow-md transition-shadow"
+                    onClick={() => handleScheduleClick(schedule)}
+                  >
+                    <div className="flex items-start justify-between mb-2">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 text-xs text-gray-500 mb-1">
+                          <span>
+                            {formatTime(schedule.startDateTime)} - {formatTime(schedule.endDateTime)}
+                          </span>
+                          <span className="text-gray-400">•</span>
+                          <span>{getDuration(schedule.startDateTime, schedule.endDateTime)}</span>
+                          {schedule.type === 'subgoal' && (
+                            <>
+                              <span className="text-gray-400">•</span>
+                              <span className="px-2 py-0.5 bg-purple-100 text-purple-700 rounded-full flex items-center gap-1">
+                                <Target className="h-3 w-3" />
+                                세부목표
+                              </span>
+                            </>
+                          )}
+                          {schedule.reminderMinutes && (
+                            <>
+                              <span className="text-gray-400">•</span>
+                              <div className="flex items-center gap-1">
+                                <Bell className="h-3 w-3" />
+                                <span>{schedule.reminderMinutes}분 전</span>
+                              </div>
+                            </>
+                          )}
+                        </div>
+                        <h3
+                          className={`font-semibold text-gray-900 ${schedule.isCompleted ? "line-through opacity-60" : ""}`}
+                        >
+                          {schedule.title}
+                        </h3>
+                      </div>
+
+                      {schedule.subTasks && schedule.subTasks.length > 0 && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 w-8 p-0 hover:bg-gray-100 rounded-full ml-2"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            toggleExpanded(schedule.planId)
+                          }}
+                        >
+                          {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                        </Button>
+                      )}
+                    </div>
+
+                    {/* 서브태스크 */}
+                    {schedule.subTasks && schedule.subTasks.length > 0 && (
+                      <>
+                        {isExpanded ? (
+                          <div className="mt-3 space-y-2 border-t border-gray-100 pt-3">
+                            {schedule.subTasks.map((subTask) => (
+                              <div
+                                key={subTask.id}
+                                className="flex items-center gap-2 text-sm"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <Checkbox
+                                  checked={subTask.completed}
+                                  onCheckedChange={() => toggleSubTask(schedule.planId, subTask.id)}
+                                  className="h-4 w-4"
+                                />
+                                <span className={`flex-1 ${subTask.completed ? "line-through opacity-60" : ""}`}>
+                                  {subTask.title}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="text-xs text-gray-500 mt-2 flex items-center gap-1">
+                            <CheckCircle2 className="h-3 w-3" />
+                            {schedule.subTasks.filter((t) => t.completed).length}/{schedule.subTasks.length} 완료
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </div>
+                </div>
               </div>
-            </div>
-          )
-        })}
-      </div>
+            )
+          })}
+        </div>
+      )}
     </div>
   )
 })
