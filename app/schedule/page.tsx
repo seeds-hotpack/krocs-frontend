@@ -14,6 +14,7 @@ import { Calendar, CheckCircle2, ChevronDown, Clock, Plus, Target, Menu } from "
 import { ScheduleTimeline } from "@/components/schedule-timeline"
 import { ScheduleCalendar } from "@/components/schedule-calendar"
 import { ScheduleForm } from "@/components/schedule-form"
+import { SubGoalModal } from "@/components/subgoal-modal"
 
 import { getGoals, type Goal } from "@/api/goals"
 import { getSubGoals, updateSubGoal } from "@/api/subgoals"
@@ -83,6 +84,18 @@ export default function SchedulePage() {
   const [error, setError] = useState<string | null>(null)
   const [refreshTrigger, setRefreshTrigger] = useState(0)
   const [filterType, setFilterType] = useState<"all" | "schedules" | "subgoals">("all")
+  const [showSubGoalModal, setShowSubGoalModal] = useState(false)
+  const [editingSubGoal, setEditingSubGoal] = useState<{
+    goalId: number
+    subGoal: {
+      sub_goal_id: number
+      title: string
+      completed: boolean
+      is_time_selected: boolean
+      start_date_time?: string | null
+      end_date_time?: string | null
+    }
+  } | null>(null)
 
   const timelineRef = useRef<{
     scrollToCurrentTime: () => void
@@ -395,8 +408,25 @@ export default function SchedulePage() {
   }
 
   const handleEditSchedule = (schedule: Schedule) => {
-    setEditingSchedule(schedule)
-    setShowForm(true)
+    if (schedule.type === 'subgoal' && schedule.goalId) {
+      // 소목표인 경우 소목표 모달 열기
+      setEditingSubGoal({
+        goalId: schedule.goalId,
+        subGoal: {
+          sub_goal_id: schedule.subGoalId || schedule.planId,
+          title: schedule.title,
+          completed: schedule.isCompleted,
+          is_time_selected: schedule.isTimeSelected || false,
+          start_date_time: schedule.startDateTime,
+          end_date_time: schedule.endDateTime,
+        }
+      })
+      setShowSubGoalModal(true)
+    } else {
+      // 일정인 경우 일정 모달 열기
+      setEditingSchedule(schedule)
+      setShowForm(true)
+    }
   }
 
   const handleUpdateSchedule = (
@@ -614,6 +644,21 @@ export default function SchedulePage() {
             />
           </div>
         </div>
+      )}
+
+      {showSubGoalModal && editingSubGoal && (
+        <SubGoalModal
+          isOpen={showSubGoalModal}
+          onClose={() => {
+            setShowSubGoalModal(false)
+            setEditingSubGoal(null)
+          }}
+          onSubGoalCreated={() => {
+            setRefreshTrigger((prev) => prev + 1)
+          }}
+          goalId={editingSubGoal.goalId}
+          editingSubGoal={editingSubGoal.subGoal}
+        />
       )}
     </div>
   )

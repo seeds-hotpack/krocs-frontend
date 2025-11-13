@@ -194,7 +194,7 @@ export const ScheduleTimeline = forwardRef<{
   }
 
   const handleScheduleClick = (schedule: Schedule) => {
-    if (schedule.type === 'schedule' && onEditSchedule) {
+    if (onEditSchedule) {
       onEditSchedule(schedule)
     }
   }
