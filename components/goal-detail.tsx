@@ -125,7 +125,7 @@ export function GoalDetail({ goal, onBack, onUpdate, onDelete }: GoalDetailProps
   }
 
   const handleDeleteSubGoal = async (sub_goal_id: number) => {
-    const confirmed = window.confirm("이 소목표를 삭제하시겠습니까?")
+    const confirmed = window.confirm("이 세부목표를 삭제하시겠습니까?")
     if (!confirmed) return
 
     const originalSubGoals = [...subGoals]
@@ -302,7 +302,7 @@ export function GoalDetail({ goal, onBack, onUpdate, onDelete }: GoalDetailProps
                     <span className="text-[#D3E6ED]">•</span>
                     <div className="flex items-center gap-2">
                       <Target className="h-4 w-4" />
-                      <span className="font-semibold">{goal.duration}일 계획</span>
+                      <span className="font-semibold">{goal.duration + 1}일 계획</span>
                     </div>
                   </div>
                 </div>
@@ -313,7 +313,7 @@ export function GoalDetail({ goal, onBack, onUpdate, onDelete }: GoalDetailProps
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <Target className="h-5 w-5" style={{ color: goal.color || '#5D6E72' }} />
-                        <span className="text-sm font-semibold text-[#0F1C21]">소목표 진행률</span>
+                        <span className="text-sm font-semibold text-[#0F1C21]">세부목표 진행률</span>
                       </div>
                       <span className="text-2xl font-bold" style={{ color: goal.color || '#5D6E72' }}>
                         {progressPercentage}%
@@ -347,12 +347,12 @@ export function GoalDetail({ goal, onBack, onUpdate, onDelete }: GoalDetailProps
                   <div>
                     <h2 className="text-xl font-bold text-[#0F1C21] flex items-center gap-2">
                       <CheckCircle2 className="h-5 w-5" style={{ color: goal.color || '#5D6E72' }} />
-                      소목표
+                      세부목표
                     </h2>
                     <p className="text-sm text-[#5D6E72] mt-1">
                       {subGoals.length === 0
                         ? "목표를 작은 단계로 나눠 관리해보세요"
-                        : `총 ${subGoals.length}개의 소목표`}
+                        : `총 ${subGoals.length}개의 세부목표`}
                     </p>
                   </div>
                   <Button
@@ -361,7 +361,7 @@ export function GoalDetail({ goal, onBack, onUpdate, onDelete }: GoalDetailProps
                     onClick={() => setIsModalOpen(true)}
                   >
                     <Plus className="h-4 w-4" />
-                    소목표 추가
+                    세부목표 추가
                   </Button>
                 </div>
 
@@ -374,14 +374,14 @@ export function GoalDetail({ goal, onBack, onUpdate, onDelete }: GoalDetailProps
                 {loadingSubGoals ? (
                   <div className="py-12 text-center">
                     <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-current border-r-transparent align-[-0.125em] motion-reduce:animate-[spin_1.5s_linear_infinite]" style={{ color: goal.color || '#BBDCE5' }}></div>
-                    <p className="mt-3 text-sm text-[#5D6E72]">소목표를 불러오는 중...</p>
+                    <p className="mt-3 text-sm text-[#5D6E72]">세부목표를 불러오는 중...</p>
                   </div>
                 ) : subGoals.length === 0 ? (
                   <div className="py-12 text-center">
                     <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full" style={{ backgroundColor: `${goal.color || '#BBDCE5'}20` }}>
                       <Target className="h-8 w-8" style={{ color: goal.color || '#5D6E72' }} />
                     </div>
-                    <p className="text-sm text-[#5D6E72] font-medium">아직 소목표가 없습니다</p>
+                    <p className="text-sm text-[#5D6E72] font-medium">아직 세부목표가 없습니다</p>
                     <p className="text-xs text-[#5D6E72] mt-1">큰 목표를 작은 단계로 나눠보세요</p>
                   </div>
                 ) : (
