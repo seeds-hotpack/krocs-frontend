@@ -318,7 +318,7 @@ export const ScheduleTimeline = forwardRef<{
 
               return (
                 <div
-                  key={schedule.planId}
+                  key={`${schedule.type}-${schedule.planId}`}
                   data-schedule-id={schedule.planId}
                   className="flex flex-col items-center gap-2 group"
                 >
@@ -386,7 +386,7 @@ export const ScheduleTimeline = forwardRef<{
 
             return (
               <div
-                key={schedule.planId}
+                key={`${schedule.type}-${schedule.planId}`}
                 className="flex gap-5 relative"
                 data-schedule-id={schedule.planId}
               >
