@@ -223,6 +223,20 @@ export const ScheduleTimeline = forwardRef<{
     }
   }
 
+  // 일정 길이에 따른 아이콘 높이 계산 (분 단위)
+  const getIconHeight = (start: string, end: string) => {
+    const startTime = new Date(start)
+    const endTime = new Date(end)
+    const diffMs = endTime.getTime() - startTime.getTime()
+    const diffMins = Math.round(diffMs / (1000 * 60))
+    
+    // 최소 56px (기본), 15분당 +14px
+    // 30분 = 56px, 1시간 = 84px, 2시간 = 140px
+    const baseHeight = 56
+    const additionalHeight = Math.floor(diffMins / 15) * 7
+    return Math.min(baseHeight + additionalHeight, 200) // 최대 200px
+  }
+
   // 하루 종일 일정과 시간 지정 일정 분리
   const allDaySchedules = schedules.filter(s => s.allDay)
   const timedSchedules = schedules
@@ -376,20 +390,27 @@ export const ScheduleTimeline = forwardRef<{
                 className="flex gap-6 relative"
                 data-schedule-id={schedule.planId}
               >
-                {/* 시간 표시 */}
+                {/* 시간 표시 - 시작/종료 시간 모두 표시 */}
                 <div className="w-24 flex-shrink-0 pt-2">
-                  <div className="text-sm font-medium text-gray-900">
+                  <div className="text-xs font-semibold text-gray-900">
                     {formatTime(schedule.startDateTime)}
+                  </div>
+                  <div className="text-xs text-gray-500 mt-1">
+                    {formatTime(schedule.endDateTime)}
                   </div>
                 </div>
 
                 {/* 타임라인 */}
                 <div className="relative flex flex-col items-center">
-                  {/* 아이콘 */}
+                  {/* 아이콘 - 일정 길이에 비례하는 높이 */}
                   <div className="relative">
                     <div
-                      className="w-14 h-14 rounded-full flex items-center justify-center text-white shadow-md cursor-pointer hover:scale-110 transition-transform"
-                      style={{ backgroundColor: scheduleColor }}
+                      className="w-14 rounded-full flex items-center justify-center text-white shadow-md cursor-pointer hover:scale-105 transition-transform"
+                      style={{ 
+                        backgroundColor: scheduleColor,
+                        height: `${getIconHeight(schedule.startDateTime, schedule.endDateTime)}px`,
+                        borderRadius: '28px' // w-14의 절반
+                      }}
                       onClick={() => handleScheduleClick(schedule)}
                     >
                       <IconComponent className="w-6 h-6" />
