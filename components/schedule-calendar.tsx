@@ -35,6 +35,15 @@ export function ScheduleCalendar({ selectedDate, onDateSelect, schedules, goals 
   const [currentMonth, setCurrentMonth] = useState(new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1))
   const [monthlyPlans, setMonthlyPlans] = useState<DailyPlan[]>([]);
   const [loadingMonthlyPlans, setLoadingMonthlyPlans] = useState(false);
+  const [today, setToday] = useState<Date | null>(null);
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+    setToday(now);
+  }, []);
 
   useEffect(() => {
     const fetchMonthlyPlans = async () => {
@@ -56,8 +65,6 @@ export function ScheduleCalendar({ selectedDate, onDateSelect, schedules, goals 
 
   const daysInMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0).getDate()
   const firstDayOfMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1).getDay()
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
 
   const previousMonth = () => {
     setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1))
@@ -86,6 +93,48 @@ export function ScheduleCalendar({ selectedDate, onDateSelect, schedules, goals 
   };
 
   const renderCalendarDays = () => {
+    if (!isMounted) {
+      // 서버 사이드 렌더링 및 초기 로딩 시 기본 스타일로 렌더링
+      const days = []
+      const totalCells = Math.ceil((daysInMonth + firstDayOfMonth) / 7) * 7
+
+      for (let i = 0; i < firstDayOfMonth; i++) {
+        days.push(
+          <button
+            key={`prev-${i}`}
+            className="aspect-square flex items-center justify-center text-[#5D6E72]/40 hover:bg-[#EEF5F7] rounded-xl transition-all text-sm"
+          >
+            {new Date(currentMonth.getFullYear(), currentMonth.getMonth(), -firstDayOfMonth + i + 1).getDate()}
+          </button>,
+        )
+      }
+
+      for (let day = 1; day <= daysInMonth; day++) {
+        days.push(
+          <button
+            key={day}
+            className="aspect-square flex flex-col items-center justify-center rounded-xl transition-all relative group text-sm font-medium text-[#5D6E72] hover:bg-[#EEF5F7]"
+          >
+            <span>{day}</span>
+          </button>,
+        )
+      }
+
+      const remainingCells = totalCells - days.length
+      for (let day = 1; day <= remainingCells; day++) {
+        days.push(
+          <button
+            key={`next-${day}`}
+            className="aspect-square flex items-center justify-center text-[#5D6E72]/40 hover:bg-[#EEF5F7] rounded-xl transition-all text-sm"
+          >
+            {day}
+          </button>,
+        )
+      }
+
+      return days
+    }
+
     const days = []
     const totalCells = Math.ceil((daysInMonth + firstDayOfMonth) / 7) * 7
 
@@ -107,7 +156,7 @@ export function ScheduleCalendar({ selectedDate, onDateSelect, schedules, goals 
     for (let day = 1; day <= daysInMonth; day++) {
       const date = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day)
       date.setHours(0, 0, 0, 0)
-      const isToday = date.getTime() === today.getTime()
+      const isToday = today ? date.getTime() === today.getTime() : false
       const isSelected = date.getTime() === selectedDate.getTime()
       const daySchedules = getMonthlySchedulesForDate(date)
       const dayGoals = getGoalsForDate(date)
