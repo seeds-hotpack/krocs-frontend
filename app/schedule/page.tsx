@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 
-import { Calendar, CheckCircle2, ChevronDown, Clock, Plus, Target, Menu } from "lucide-react"
+import { Calendar, Plus, Menu } from "lucide-react"
 
 import { ScheduleTimeline } from "@/components/schedule-timeline"
 import { ScheduleCalendar } from "@/components/schedule-calendar"
@@ -543,43 +543,8 @@ export default function SchedulePage() {
                 <div>
                   <h2 className="text-xl font-bold text-[#0F1C21]">일정 타임라인</h2>
                   <p className="mt-1 text-sm text-black/60">
-                    {selectedDayLabel} • {FILTER_LABELS[filterType]} {timelineItems.length}개
+                    {selectedDayLabel} • {timelineItems.length}개
                   </p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        className="flex items-center gap-2 rounded-full border border-[#99C6D6] bg-white px-4 py-2 text-sm font-semibold text-[#0F1C21] shadow-sm hover:bg-white/80"
-                      >
-                        {FILTER_LABELS[filterType]}
-                        <ChevronDown className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent
-                      align="end"
-                      className="w-36 rounded-2xl border border-[#D3E6ED] bg-white p-2 text-sm text-[#0F1C21] shadow-md"
-                    >
-                      {(
-                        [
-                          { value: "all", label: FILTER_LABELS["all"] },
-                          { value: "schedules", label: FILTER_LABELS["schedules"] },
-                          { value: "subgoals", label: FILTER_LABELS["subgoals"] },
-                        ] as const
-                      ).map((option) => (
-                        <DropdownMenuItem
-                          key={option.value}
-                          onClick={() => setFilterType(option.value)}
-                          className={`rounded-xl px-3 py-2 ${
-                            filterType === option.value ? "bg-[#BBDCE5]/40 font-semibold text-[#0F1C21]" : ""
-                          }`}
-                        >
-                          {option.label}
-                        </DropdownMenuItem>
-                      ))}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
                 </div>
               </div>
             </section>

@@ -259,6 +259,40 @@ export const ScheduleTimeline = forwardRef<{
 
   return (
     <div className="p-6" ref={timelineRef}>
+      {/* 필터 버튼 */}
+      <div className="mb-6 flex gap-2">
+        <Button
+          onClick={() => onFilterTypeChange('all')}
+          className={`rounded-full px-4 py-2 text-sm font-semibold transition-all ${
+            filterType === 'all'
+              ? 'bg-[#ff8b6b] text-white shadow-sm hover:bg-[#ff7a56]'
+              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+          }`}
+        >
+          전체
+        </Button>
+        <Button
+          onClick={() => onFilterTypeChange('schedules')}
+          className={`rounded-full px-4 py-2 text-sm font-semibold transition-all ${
+            filterType === 'schedules'
+              ? 'bg-[#ff8b6b] text-white shadow-sm hover:bg-[#ff7a56]'
+              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+          }`}
+        >
+          일정
+        </Button>
+        <Button
+          onClick={() => onFilterTypeChange('subgoals')}
+          className={`rounded-full px-4 py-2 text-sm font-semibold transition-all ${
+            filterType === 'subgoals'
+              ? 'bg-[#ff8b6b] text-white shadow-sm hover:bg-[#ff7a56]'
+              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+          }`}
+        >
+          세부목표
+        </Button>
+      </div>
+
       {/* 하루 종일 일정 섹션 */}
       {allDaySchedules.length > 0 && (
         <div className="mb-8 pb-6 border-b-2 border-gray-200">
