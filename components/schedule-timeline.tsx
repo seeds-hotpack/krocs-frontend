@@ -386,17 +386,33 @@ export const ScheduleTimeline = forwardRef<{
                 {/* 타임라인 */}
                 <div className="relative flex flex-col items-center">
                   {/* 아이콘 */}
-                  <div
-                    className="w-14 h-14 rounded-full flex items-center justify-center text-white shadow-md relative z-10 cursor-pointer hover:scale-105 transition-transform"
-                    style={{ backgroundColor: scheduleColor }}
-                    onClick={() => toggleComplete(schedule)}
-                  >
-                    <IconComponent className="w-6 h-6" />
-                    {schedule.isCompleted && (
-                      <div className="absolute -top-1 -right-1 w-5 h-5 bg-green-500 rounded-full flex items-center justify-center">
-                        <CheckCircle2 className="w-3 h-3 text-white" />
-                      </div>
-                    )}
+                  <div className="relative">
+                    <div
+                      className="w-14 h-14 rounded-full flex items-center justify-center text-white shadow-md cursor-pointer hover:scale-110 transition-transform"
+                      style={{ backgroundColor: scheduleColor }}
+                      onClick={() => handleScheduleClick(schedule)}
+                    >
+                      <IconComponent className="w-6 h-6" />
+                    </div>
+                    
+                    {/* 완료 체크 버튼 */}
+                    <button
+                      className="absolute -top-1 -right-1 w-6 h-6 bg-white rounded-full flex items-center justify-center shadow-sm hover:scale-110 transition-transform border-2 z-10"
+                      style={{ borderColor: schedule.isCompleted ? '#22c55e' : '#e5e7eb' }}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        toggleComplete(schedule)
+                      }}
+                    >
+                      {schedule.isCompleted ? (
+                        <CheckCircle2 className="w-4 h-4 text-green-500" />
+                      ) : (
+                        <Circle className="w-4 h-4 text-gray-400" />
+                      )}
+                    </button>
+
+                    {/* 세부목표 배지 */}
+                    {schedule.type === 'subgoal'}
                   </div>
 
                   {/* 연결선 */}
