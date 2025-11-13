@@ -1,6 +1,6 @@
 "use client"
 
-import React, { forwardRef, useImperativeHandle, useCallback, useState, useRef, useEffect } from "react"
+import React, { forwardRef, useImperativeHandle, useState, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import {
   CheckCircle2,
@@ -20,8 +20,6 @@ import {
   Gamepad2,
   ChevronDown,
   ChevronUp,
-  Clock,
-  Trash2,
   Target,
 } from "lucide-react"
 import { updateSubPlan } from "@/api/subplan";
@@ -238,7 +236,7 @@ export const ScheduleTimeline = forwardRef<{
   }
 
   // 하루 종일 일정과 시간 지정 일정 분리
-  const allDaySchedules = schedules.filter(s => s.allDay)
+  const allDaySchedules = schedules.filter(s => s.allDay && s.type !== 'subgoal')
   const timedSchedules = schedules
     .filter(s => !s.allDay)
     .sort((a, b) => new Date(a.startDateTime).getTime() - new Date(b.startDateTime).getTime())
@@ -347,9 +345,6 @@ export const ScheduleTimeline = forwardRef<{
                         <Circle className="w-4 h-4 text-gray-400" />
                       )}
                     </button>
-
-                    {/* 세부목표 배지 */}
-                    {schedule.type === 'subgoal'}
                   </div>
 
                   {/* 제목 */}
@@ -435,9 +430,6 @@ export const ScheduleTimeline = forwardRef<{
                         <Circle className="w-4 h-4 text-gray-400" />
                       )}
                     </button>
-
-                    {/* 세부목표 배지 */}
-                    {schedule.type === 'subgoal'}
                   </div>
 
                   {/* 연결선 */}
@@ -463,7 +455,6 @@ export const ScheduleTimeline = forwardRef<{
                           </span>
                           <span className="text-gray-400">•</span>
                           <span>{getDuration(schedule.startDateTime, schedule.endDateTime)}</span>
-                          {schedule.type === 'subgoal'}
                           {schedule.reminderMinutes && (
                             <>
                               <span className="text-gray-400">•</span>
