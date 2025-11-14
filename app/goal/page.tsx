@@ -12,7 +12,7 @@ import { logout } from "@/api/auth"
 import { getSubGoals, deleteSubGoal, updateSubGoal } from "@/api/subgoals"
 import { ScheduleCalendar } from "@/components/schedule-calendar"
 import { GoalForm } from "@/components/goal-form"
-import { SubGoalModal } from "@/components/subgoal-modal"
+import { SubGoalModal, type SubGoalModalData } from "@/components/subgoal-modal"
 import { RetrospectiveFlow } from "@/components/retrospective/retrospective-flow"
 
 import { Button } from "@/components/ui/button"
@@ -28,15 +28,6 @@ interface SubGoal {
   title: string
   completed: boolean
   is_time_selected?: boolean
-  start_date_time?: string | null
-  end_date_time?: string | null
-}
-
-interface EditableSubGoal {
-  sub_goal_id: number
-  title: string
-  completed: boolean
-  is_time_selected: boolean
   start_date_time?: string | null
   end_date_time?: string | null
 }
@@ -64,7 +55,7 @@ export default function GoalPage() {
   const [expandedGoals, setExpandedGoals] = useState<Set<number>>(new Set())
   const [subGoalsMap, setSubGoalsMap] = useState<Record<number, SubGoal[]>>({})
   const [loadingSubGoals, setLoadingSubGoals] = useState<Set<number>>(new Set())
-  const [editingSubGoal, setEditingSubGoal] = useState<EditableSubGoal | null>(null)
+  const [editingSubGoal, setEditingSubGoal] = useState<SubGoalModalData | null>(null)
   const [isSubGoalModalOpen, setIsSubGoalModalOpen] = useState(false)
   const [currentGoalId, setCurrentGoalId] = useState<number | null>(null)
   const [retrospectiveGoal, setRetrospectiveGoal] = useState<Goal | null>(null)

@@ -22,16 +22,9 @@ import {
   SubGoal as APISubGoal,
 } from "@/api/subgoals"
 import { GoalForm } from "@/components/goal-form"
-import { SubGoalModal } from "@/components/subgoal-modal"
+import { SubGoalModal, type SubGoalModalData } from "@/components/subgoal-modal"
 
-interface SubGoal {
-  sub_goal_id: number
-  title: string
-  completed: boolean
-  is_time_selected?: boolean
-  start_date_time?: string | null
-  end_date_time?: string | null
-}
+type SubGoal = SubGoalModalData
 
 interface Goal {
   goalId: number
@@ -55,10 +48,18 @@ interface GoalDetailProps {
 }
 
 export function GoalDetail({ goal, onBack, onUpdate, onDelete }: GoalDetailProps) {
-  const [subGoals, setSubGoals] = useState<SubGoal[]>(goal.subGoals ?? [])
+  const [subGoals, setSubGoals] = useState<SubGoal[]>(
+    () =>
+      (goal.subGoals ?? []).map((sg) => ({
+        ...sg,
+        is_time_selected: Boolean(sg.is_time_selected),
+        start_date_time: sg.start_date_time ?? null,
+        end_date_time: sg.end_date_time ?? null,
+      }))
+  )
   const [loadingSubGoals, setLoadingSubGoals] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [editingSubGoal, setEditingSubGoal] = useState<SubGoal | null>(null)
+  const [editingSubGoal, setEditingSubGoal] = useState<SubGoalModalData | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isGoalFormOpen, setIsGoalFormOpen] = useState(false)
 
@@ -69,7 +70,6 @@ export function GoalDetail({ goal, onBack, onUpdate, onDelete }: GoalDetailProps
       const res = await getSubGoals(goal.goalId)
       setSubGoals(
         res.result.subGoals
-          .filter((sg: APISubGoal) => sg.status !== 'INACTIVE') // INACTIVE 제외
           .map((sg: APISubGoal) => ({
             sub_goal_id: sg.sub_goal_id,
             title: sg.title,
@@ -92,7 +92,14 @@ export function GoalDetail({ goal, onBack, onUpdate, onDelete }: GoalDetailProps
   }, [fetchSubGoals])
 
   useEffect(() => {
-    setSubGoals(goal.subGoals ?? [])
+    setSubGoals(
+      (goal.subGoals ?? []).map((sg) => ({
+        ...sg,
+        is_time_selected: Boolean(sg.is_time_selected),
+        start_date_time: sg.start_date_time ?? null,
+        end_date_time: sg.end_date_time ?? null,
+      }))
+    )
   }, [goal.subGoals])
 
   const toggleSubGoal = async (sub_goal_id: number) => {
