@@ -706,24 +706,16 @@ export default function GoalPage() {
                                             세부목표 ({subGoals.filter(sg => sg.completed).length}/{subGoals.length})
                                           </h4>
                                           <Button
-                                            className="h-8 rounded-full bg-[#ff8b6b] px-3 text-xs font-semibold text-white shadow-sm hover:bg-[#ff7a56] transition-colors"
-                                            onClick={() => openSubGoalModal(goal.goalId)}
+                                              className="h-8 w-8 rounded-full bg-[#ff8b6b] p-0 text-white shadow-sm hover:bg-[#ff7a56] transition-colors flex items-center justify-center"
+                                              onClick={() => openSubGoalModal(goal.goalId)}
                                           >
-                                            <Plus className="h-3.5 w-3.5" />
-                                            <span className="ml-1.5">추가</span>
+                                            <Plus className="h-4 w-4" />
                                           </Button>
                                         </div>
 
                                         {subGoals.length === 0 ? (
                                           <div className="text-center py-6 text-sm text-[#5D6E72]">
                                             <p className="mb-3">아직 등록된 세부목표가 없습니다.</p>
-                                            <Button
-                                              className="rounded-full bg-[#ff8b6b] px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-[#ff7a56]"
-                                              onClick={() => openSubGoalModal(goal.goalId)}
-                                            >
-                                              <Plus className="h-3.5 w-3.5" />
-                                              <span className="ml-1.5">첫 세부목표 추가하기</span>
-                                            </Button>
                                           </div>
                                         ) : (
                                           <div className="space-y-2">
