@@ -44,18 +44,7 @@ export default function LoginPage() {
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-[#ffc0a8] via-[#eef5f7] to-[#eef5f7] relative overflow-hidden">
 
 
-      {/* 헤더 */}
-      <header className="w-full p-6 relative z-10">
-        <Link href="/landing">
-          <Image
-            src={krocsLogo}
-            alt="Krocs Logo"
-            width={100}
-            height={40}
-            className="object-contain"
-          />
-        </Link>
-      </header>
+
 
       {/* 메인 로그인 영역 */}
       <div className="flex-1 flex items-center justify-center p-4 relative z-10">
@@ -63,13 +52,15 @@ export default function LoginPage() {
                           
                   <Card className="border-0 shadow-2xl bg-white">
             <CardHeader className="space-y-1">
-              <Image
-            src={krocsLogo}
-            alt="Krocs Logo"
-            width={100}
-            height={40}
-            className="object-contain block mx-auto"
-          />
+              <Link href="/landing">
+                <Image
+                  src={krocsLogo}
+                  alt="Krocs Logo"
+                  width={100}
+                  height={40}
+                  className="object-contain block mx-auto"
+                />
+              </Link>
               <CardDescription className="text-center text-sm text-muted-foreground">소셜 계정으로 간편하게 시작하세요</CardDescription>
 
             </CardHeader>
