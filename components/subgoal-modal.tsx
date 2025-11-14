@@ -125,7 +125,22 @@ export function SubGoalModal({
       onSubGoalCreated()
       handleClose()
     } catch (e: any) {
-      setError(e.message || `소목표 ${isEditMode ? '수정' : '생성'}에 실패했습니다.`)
+      console.error("소목표 API 호출 실패:", e)
+      if (e.response?.data?.code === "GLOBAL401") {
+        alert(e.response.data.message || "인증에 실패했습니다. 다시 로그인해주세요.")
+      } else if (e.response?.data?.code === "SUBGOAL400" || e.response?.data?.code === "SUBGOAL500" || e.response?.data?.code === "SUBGOAL404") {
+        alert(e.response.data.message || `소목표 ${isEditMode ? '수정' : '생성'}에 실패했습니다.`)
+      } else if ((e.response?.data?.code === "BAD_REQUEST_BODY400" || e.response?.data?.code === "VALIDATION400") && e.response?.data?.result) {
+        const errorResult = e.response.data.result
+        const errorMessages = Object.values(errorResult)
+        if (errorMessages.length > 0 && typeof errorMessages[0] === 'string') {
+          alert(errorMessages[0])
+        } else {
+          alert(e.response.data.message || "잘못된 요청입니다.")
+        }
+      } else {
+        setError(e.message || `소목표 ${isEditMode ? '수정' : '생성'}에 실패했습니다.`)
+      }
     } finally {
       setLoading(false)
     }

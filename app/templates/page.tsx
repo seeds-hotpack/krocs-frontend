@@ -1,6 +1,7 @@
-'use client'
+"use client"
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import axios from 'axios';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -57,6 +58,7 @@ function useDebounce<T>(value: T, delay: number): T {
 }
 
 export default function TemplatesPage() {
+  const router = useRouter();
   const [templates, setTemplates] = useState<Template[]>([]);
   const [totalTemplates, setTotalTemplates] = useState(0);
   const [showForm, setShowForm] = useState(false);
@@ -77,6 +79,39 @@ export default function TemplatesPage() {
   const [templateForGoal, setTemplateForGoal] = useState<Template | null>(null);
   const [isCreatingGoal, setIsCreatingGoal] = useState(false);
   const listSectionRef = useRef<HTMLDivElement | null>(null);
+
+  const handleTemplateApiError = useCallback((error: any, context: string) => {
+    console.error(`Template API Error (${context}):`, error);
+
+    if (error.response?.status === 401 || error.response?.data?.code === "GLOBAL401") {
+      alert(error.response?.data?.message || "인증에 실패했습니다.");
+      router.push("/login");
+      return;
+    }
+
+    if (error.response?.status === 400 && error.response?.data?.detail) {
+      alert(error.response.data.detail);
+      return;
+    }
+
+    if ((error.response?.data?.code === "VALIDATION400" || error.response?.data?.code === "BAD_REQUEST_BODY400") && error.response?.data?.result) {
+      const errorResult = error.response.data.result;
+      const errorMessages = Object.values(errorResult);
+      if (errorMessages.length > 0 && typeof errorMessages[0] === 'string') {
+        alert(errorMessages[0]);
+      } else {
+        alert(error.response.data.message || "잘못된 요청입니다.");
+      }
+      return;
+    }
+
+    if (error.response?.data?.message) {
+      alert(error.response.data.message);
+      return;
+    }
+
+    alert(`${context}에 실패했습니다.`);
+  }, [router]);
 
   const priorityCounts = useMemo(
     () =>
@@ -155,8 +190,8 @@ export default function TemplatesPage() {
         setError(null);
       } catch (err) {
         if (!isMounted) return;
+        handleTemplateApiError(err, '템플릿 조회');
         setError('템플릿을 불러오는데 실패했습니다.');
-        console.error(err);
       } finally {
         if (isMounted) {
           setIsLoading(false);
@@ -169,7 +204,7 @@ export default function TemplatesPage() {
     return () => {
       isMounted = false;
     };
-  }, [fetchTemplatesData]);
+  }, [fetchTemplatesData, handleTemplateApiError]);
 
   const handleAddNew = () => {
     setEditingTemplate(null);
@@ -207,8 +242,7 @@ export default function TemplatesPage() {
         setCurrentPage((prev) => Math.max(1, prev - 1));
       }
     } catch (err) {
-      console.error('Failed to delete template:', err);
-      alert('템플릿 삭제에 실패했습니다. 다시 시도해 주세요.');
+      handleTemplateApiError(err, '템플릿 삭제');
     } finally {
       setShowDeleteModal(false);
       setTemplateToDelete(null);
@@ -264,14 +298,7 @@ export default function TemplatesPage() {
       setShowForm(false);
       setEditingTemplate(null);
     } catch (error) {
-      console.error('Failed to save template:', error);
-      if (axios.isAxiosError(error) && error.response?.status === 409) {
-        alert('이미 사용 중인 템플릿 제목입니다. 다른 제목을 사용해주세요.');
-      } else {
-        alert('템플릿 저장에 실패했습니다.');
-        setShowForm(false);
-        setEditingTemplate(null);
-      }
+      handleTemplateApiError(error, editingTemplate ? '템플릿 수정' : '템플릿 생성');
     }
   };
 

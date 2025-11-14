@@ -94,13 +94,17 @@ export function GoalForm({ goal, onSubmit, onCancel }: GoalFormProps) {
     if (!formData.color || !formData.color.trim()) {
       nextErrors.color = "목표 색상을 선택해 주세요."
     }
-    setErrors(nextErrors)
-    return !Object.values(nextErrors).some(Boolean)
+    return nextErrors
   }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (!validateForm()) {
+    const validationErrors = validateForm()
+    setErrors(validationErrors)
+
+    const firstError = Object.values(validationErrors).find(error => error)
+    if (firstError) {
+      alert(firstError)
       return
     }
 

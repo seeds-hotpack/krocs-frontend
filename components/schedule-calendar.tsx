@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { ChevronLeft, ChevronRight, X } from "lucide-react"
 import { getMonthlyPlans, DailyPlan } from "@/api/subplan";
@@ -32,6 +33,7 @@ interface ScheduleCalendarProps {
 }
 
 export function ScheduleCalendar({ selectedDate, onDateSelect, schedules, goals = [], onClose }: ScheduleCalendarProps) {
+  const router = useRouter()
   const [currentMonth, setCurrentMonth] = useState(new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1))
   const [monthlyPlans, setMonthlyPlans] = useState<DailyPlan[]>([]);
   const [loadingMonthlyPlans, setLoadingMonthlyPlans] = useState(false);
@@ -53,15 +55,23 @@ export function ScheduleCalendar({ selectedDate, onDateSelect, schedules, goals 
         const month = currentMonth.getMonth() + 1;
         const data = await getMonthlyPlans(year, month);
         setMonthlyPlans(data);
-      } catch (error) {
+      } catch (error: any) {
         console.error("Failed to fetch monthly plans:", error);
         setMonthlyPlans([]);
+        if (error.response?.status === 401 || error.response?.data?.code === "GLOBAL401") {
+          alert(error.response?.data?.message || "인증에 실패했습니다. 다시 로그인해주세요.");
+          router.push("/login");
+        } else if (error.response?.data?.code === "PLAN500") {
+          alert(error.response.data.message || "일정 조회에 실패했습니다.");
+        } else {
+          alert(error.response?.data?.message || "일정 조회에 실패했습니다.");
+        }
       } finally {
         setLoadingMonthlyPlans(false);
       }
     };
     fetchMonthlyPlans();
-  }, [currentMonth]);
+  }, [currentMonth, router]);
 
   const daysInMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0).getDate()
   const firstDayOfMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1).getDay()

@@ -118,7 +118,19 @@ export default function GoalPage() {
       await refreshGoals()
       setIsFormOpen(false)
     } catch (err: any) {
-      setError(err?.response?.data?.message || "목표 생성에 실패했습니다.")
+      if (err.response?.data?.code === "BAD_REQUEST_BODY400" && err.response?.data?.result) {
+        const errorResult = err.response.data.result
+        const errorMessages = Object.values(errorResult)
+        if (errorMessages.length > 0 && typeof errorMessages[0] === "string") {
+          alert(errorMessages[0])
+        } else {
+          alert(err.response.data.message || "잘못된 요청입니다.")
+        }
+      } else if (err.response?.data?.code === "GOAL500") {
+        alert(err.response.data.message || "목표 생성에 실패했습니다.")
+      } else {
+        setError(err?.response?.data?.message || "목표 생성에 실패했습니다.")
+      }
       console.error(err)
     } finally {
       setLoading(false)
@@ -181,7 +193,21 @@ export default function GoalPage() {
       }
     } catch (err: any) {
       setGoals((prevGoals) => prevGoals.map((g) => (g.goalId === goalId ? originalGoal : g)))
-      setError(err?.response?.data?.message || "목표 수정에 실패했습니다.")
+      if (err.response?.data?.code === "BAD_REQUEST_BODY400" && err.response?.data?.result) {
+        const errorResult = err.response.data.result
+        const errorMessages = Object.values(errorResult)
+        if (errorMessages.length > 0 && typeof errorMessages[0] === "string") {
+          alert(errorMessages[0])
+        } else {
+          alert(err.response.data.message || "잘못된 요청입니다.")
+        }
+      } else if (err.response?.data?.code === "GOAL400") {
+        alert(err.response.data.message || "목표 수정 중 오류가 발생했습니다.")
+      } else if (err.response?.data?.code === "GOAL500") {
+        alert(err.response.data.message || "목표 수정에 실패했습니다.")
+      } else {
+        setError(err?.response?.data?.message || "목표 수정에 실패했습니다.")
+      }
       console.error(err)
     }
   }
@@ -215,8 +241,16 @@ export default function GoalPage() {
               end_date_time: sg.end_date_time,
             }))
           }))
-        } catch (err) {
+        } catch (err: any) {
           console.error("세부목표 불러오기 실패:", err)
+          if (err.response?.status === 401 || err.response?.data?.code === "GLOBAL401") {
+            alert(err.response?.data?.message || "인증에 실패했습니다. 다시 로그인해주세요.")
+            router.push("/login")
+          } else if (err.response?.data?.code === "SUBGOAL500") {
+            alert(err.response.data.message || "소목표 조회에 실패했습니다.")
+          } else {
+            alert(err.response?.data?.message || "세부목표를 불러오는데 실패했습니다.")
+          }
         } finally {
           setLoadingSubGoals(prev => {
             const newSet = new Set(prev)
@@ -290,7 +324,18 @@ export default function GoalPage() {
         ...prev,
         [goalId]: originalSubGoals
       }))
-      setError(e.message || "세부목표 삭제에 실패했습니다.")
+      console.error("세부목표 삭제 실패:", e)
+
+      if (e.response?.status === 401 || e.response?.data?.code === "GLOBAL401") {
+        alert(e.response?.data?.message || "인증에 실패했습니다. 다시 로그인해주세요.")
+        router.push("/login")
+      } else if (e.response?.status === 400 && e.response?.data?.detail) {
+        alert(e.response.data.detail)
+      } else if (e.response?.data?.code === "VALIDATION400" || e.response?.data?.code === "SUBGOAL404" || e.response?.data?.code === "SUBGOAL500") {
+        alert(e.response.data.message || "세부목표 삭제에 실패했습니다.")
+      } else {
+        setError(e.message || "세부목표 삭제에 실패했습니다.")
+      }
     }
   }
 
@@ -383,9 +428,13 @@ export default function GoalPage() {
         next.delete(goalId)
         return next
       })
-    } catch (error) {
+    } catch (error: any) {
       console.error(error)
-      alert("목표 삭제에 실패했습니다.")
+      if (error.response?.data?.message) {
+        alert(error.response.data.message)
+      } else {
+        alert("목표 삭제에 실패했습니다.")
+      }
     } finally {
       setDeletingGoalId(null)
     }

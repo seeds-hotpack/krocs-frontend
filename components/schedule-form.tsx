@@ -157,6 +157,44 @@ export function ScheduleForm({ schedule, onSubmit, onCancel, onDelete, defaultDa
     });
   }, [schedule, defaultDate]);
 
+  const handleApiError = (error: any, context: string) => {
+    console.error(`API ${context} 실패:`, error);
+
+    // GLOBAL401
+    if (error.response?.status === 401 || error.response?.data?.code === "GLOBAL401") {
+      alert(error.response?.data?.message || "인증에 실패했습니다.");
+      // Redirection to login should be handled by a top-level component
+      return;
+    }
+
+    // 400 Bad Request with detail (for delete)
+    if (error.response?.status === 400 && error.response?.data?.detail) {
+      alert(error.response.data.detail);
+      return;
+    }
+
+    // VALIDATION400 / BAD_REQUEST_BODY400 with result object
+    if ((error.response?.data?.code === "VALIDATION400" || error.response?.data?.code === "BAD_REQUEST_BODY400") && error.response?.data?.result) {
+      const errorResult = error.response.data.result;
+      const errorMessages = Object.values(errorResult);
+      if (errorMessages.length > 0 && typeof errorMessages[0] === 'string') {
+        alert(errorMessages[0]);
+      } else {
+        alert(error.response.data.message || "잘못된 요청입니다.");
+      }
+      return;
+    }
+
+    // Other specific codes with a message property
+    if (error.response?.data?.message) {
+      alert(error.response.data.message);
+      return;
+    }
+
+    // Fallback for any other errors
+    alert(`${context}에 실패했습니다.`);
+  };
+
   const addSubTask = async () => {
     if (!newSubTask.trim()) return;
     if (!schedule?.planId) {
@@ -184,8 +222,7 @@ export function ScheduleForm({ schedule, onSubmit, onCancel, onDelete, defaultDa
           setNewSubTask("");
       }
     } catch (error) {
-      console.error("API를 통한 세부 일정 생성 실패:", error);
-      alert("세부 일정 추가에 실패했습니다.");
+      handleApiError(error, "세부 일정 추가");
     }
   };
 
@@ -199,8 +236,7 @@ export function ScheduleForm({ schedule, onSubmit, onCancel, onDelete, defaultDa
       setSubTasks(newSubTasks);
       onSubTasksUpdate(schedule.planId, newSubTasks);
     } catch (error) {
-      console.error("Failed to delete sub-task:", error);
-      alert("세부 일정 삭제에 실패했습니다.");
+      handleApiError(error, "세부 일정 삭제");
     }
   }
 
@@ -222,8 +258,7 @@ export function ScheduleForm({ schedule, onSubmit, onCancel, onDelete, defaultDa
       onSubTaskChange(schedule.planId, index, updatedSubTask);
 
     } catch (error) {
-      console.error("API를 통한 세부 일정 완료 상태 변경 실패:", error);
-      alert("세부 일정 완료 상태 변경에 실패했습니다.");
+      handleApiError(error, "세부 일정 완료 상태 변경");
     }
   };
 
@@ -257,8 +292,7 @@ export function ScheduleForm({ schedule, onSubmit, onCancel, onDelete, defaultDa
       
       cancelInlineEdit();
     } catch (error) {
-      console.error("API를 통한 세부 일정 수정 실패:", error);
-      alert("세부 일정 수정에 실패했습니다.");
+      handleApiError(error, "세부 일정 수정");
     }
   };
 

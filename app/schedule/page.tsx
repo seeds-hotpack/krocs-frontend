@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useRef, useMemo } from "react"
+import { useRouter } from "next/navigation"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
@@ -91,6 +92,7 @@ const normalizeColorValue = (color?: string) => {
 }
 
 export default function SchedulePage() {
+  const router = useRouter()
   const [schedules, setSchedules] = useState<Schedule[]>([])
   const [subGoalSchedules, setSubGoalSchedules] = useState<Schedule[]>([])
   const [goalList, setGoalList] = useState<Goal[]>([])
@@ -166,17 +168,26 @@ export default function SchedulePage() {
         }))
 
         setSchedules(adaptedSchedules)
-      } catch (err) {
-        setError("일정을 불러오는 데 실패했습니다.")
+      } catch (err: any) {
+        console.error("일정을 불러오는 데 실패했습니다.", err)
         setSchedules([])
-        console.error(err)
+        if (err.response?.status === 401 || err.response?.data?.code === "GLOBAL401") {
+          alert(err.response?.data?.message || "인증에 실패했습니다. 다시 로그인해주세요.")
+          router.push("/login")
+        } else if (err.response?.status === 400 && err.response?.data?.detail) {
+          alert(err.response.data.detail)
+        } else if (err.response?.data?.code === "PLAN404" || err.response?.data?.code === "PLAN500" || err.response?.data?.code === "TIMELINE404") {
+          alert(err.response.data.message || "일정을 불러오는 데 실패했습니다.")
+        } else {
+          alert(err.response?.data?.message || "일정을 불러오는 데 실패했습니다.")
+        }
       } finally {
         setLoading(false)
       }
     }
 
     fetchSchedules()
-  }, [selectedDate, refreshTrigger])
+  }, [selectedDate, refreshTrigger, router])
 
   useEffect(() => {
     const fetchGoalsAndSubGoals = async () => {
@@ -332,9 +343,24 @@ export default function SchedulePage() {
       setShowForm(false)
       setEditingSchedule(null)
       setRefreshTrigger((prev) => prev + 1)
-    } catch (err) {
+    } catch (err: any) {
       console.error("Failed to create schedule:", err)
-      setError("일정 생성에 실패했습니다.")
+      if (err.response?.status === 401 || err.response?.data?.code === "GLOBAL401") {
+        alert(err.response?.data?.message || "인증에 실패했습니다. 다시 로그인해주세요.")
+        router.push("/login")
+      } else if (err.response?.data?.code === "PLAN500") {
+        alert(err.response.data.message || "일정 생성에 실패했습니다.")
+      } else if ((err.response?.data?.code === "VALIDATION400" || err.response?.data?.code === "BAD_REQUEST_BODY400") && err.response?.data?.result) {
+        const errorResult = err.response.data.result
+        const errorMessages = Object.values(errorResult)
+        if (errorMessages.length > 0 && typeof errorMessages[0] === 'string') {
+          alert(errorMessages[0])
+        } else {
+          alert(err.response.data.message || "잘못된 요청입니다.")
+        }
+      } else {
+        setError("일정 생성에 실패했습니다.")
+      }
     }
   }
 
@@ -375,9 +401,24 @@ export default function SchedulePage() {
       setRefreshTrigger((prev) => prev + 1)
       setShowForm(false)
       setEditingSchedule(null)
-    } catch (err) {
+    } catch (err: any) {
       console.error("Failed to update schedule:", err)
-      setError("일정 수정에 실패했습니다.")
+      if (err.response?.status === 401 || err.response?.data?.code === "GLOBAL401") {
+        alert(err.response?.data?.message || "인증에 실패했습니다. 다시 로그인해주세요.")
+        router.push("/login")
+      } else if (err.response?.data?.code === "PLAN400" || err.response?.data?.code === "PLAN404" || err.response?.data?.code === "PLAN500") {
+        alert(err.response.data.message || "일정 수정에 실패했습니다.")
+      } else if (err.response?.data?.code === "BAD_REQUEST_BODY400" && err.response?.data?.result) {
+        const errorResult = err.response.data.result
+        const errorMessages = Object.values(errorResult)
+        if (errorMessages.length > 0 && typeof errorMessages[0] === 'string') {
+          alert(errorMessages[0])
+        } else {
+          alert(err.response.data.message || "잘못된 요청입니다.")
+        }
+      } else {
+        alert(err.response?.data?.message || "일정 수정에 실패했습니다.")
+      }
     }
   }
 
@@ -387,9 +428,16 @@ export default function SchedulePage() {
       setRefreshTrigger((prev) => prev + 1)
       setShowForm(false)
       setEditingSchedule(null)
-    } catch (err) {
+    } catch (err: any) {
       console.error("Failed to delete schedule:", err)
-      setError("일정 삭제에 실패했습니다.")
+      if (err.response?.status === 401 || err.response?.data?.code === "GLOBAL401") {
+        alert(err.response?.data?.message || "인증에 실패했습니다. 다시 로그인해주세요.")
+        router.push("/login")
+      } else if (err.response?.data?.code === "PLAN404" || err.response?.data?.code === "PLAN500") {
+        alert(err.response.data.message || "일정 삭제에 실패했습니다.")
+      } else {
+        alert(err.response?.data?.message || "일정 삭제에 실패했습니다.")
+      }
     }
   }
 
