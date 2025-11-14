@@ -499,6 +499,15 @@ export default function SchedulePage() {
       
 
       <main className="mx-auto max-w-7xl px-6 py-6">
+        <Button
+          variant="outline"
+          className="self-start rounded-full border-[#99C6D6] px-4 text-sm font-semibold text-[#0F1C21]"
+          onClick={() => router.push('/goal')}
+        >
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          목표 현황으로 돌아가기
+        </Button>
+
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
           {/* Left Sidebar - Calendar */}
           <div className="lg:col-span-1">
