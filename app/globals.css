@@ -120,3 +120,40 @@
     @apply bg-background text-foreground;
   }
 }
+
+.login-btn {
+  @apply w-full h-14 text-base rounded-full flex items-center justify-center font-semibold;
+  transition: background-color 0.3s ease;
+  border: 1px solid #e0e0e0;
+}
+
+.login-btn svg {
+  margin-right: 10px;
+}
+
+.google-btn {
+  background-color: white;
+  color: #333;
+}
+
+.google-btn:hover {
+  background-color: #f5f5f5;
+}
+
+.kakao-btn {
+  background-color: #fee500;
+  color: #191919;
+}
+
+.kakao-btn:hover {
+  background-color: #fada00;
+}
+
+.naver-btn {
+  background-color: #03c75a;
+  color: white;
+}
+
+.naver-btn:hover {
+  background-color: #02b250;
+}
