@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { Menu, X } from "lucide-react"
 import Image from "next/image"
+import Link from "next/link"
 
 const navItems = [
   { label: "문제", href: "#problem" },
@@ -42,12 +43,9 @@ export function Navigation() {
       >
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between h-16">
-            <button
-              onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-              className="flex items-center hover:opacity-80 transition-opacity"
-            >
+            <Link href="/" className="flex items-center hover:opacity-80 transition-opacity">
               <Image src="/landing/images/krocs-logo.png" alt="Krocs" width={120} height={40} className="h-10 w-auto" />
-            </button>
+            </Link>
 
             {/* Desktop Navigation Items */}
             <div className="hidden md:flex items-center gap-1 bg-white/60 backdrop-blur-sm rounded-full px-2 py-1 shadow-sm">

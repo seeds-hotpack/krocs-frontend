@@ -1,42 +1,30 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
-import Link from "next/link"
 import { useRouter } from "next/navigation"
-import Image from "next/image"
 
-import { getGoals, Goal } from "@/api/goals"
+import { getGoals, Goal, deleteBigGoal } from "@/api/goals"
 import { update_Goal as updateGoalApi, type UpdateGoalRequest } from "@/api/updateGoal"
 import { createGoal as createGoalApi } from "@/api/createGoal"
-import { logout } from "@/api/auth"
 import { getSubGoals, deleteSubGoal, updateSubGoal } from "@/api/subgoals"
 import { ScheduleCalendar } from "@/components/schedule-calendar"
 import { GoalForm } from "@/components/goal-form"
-import { SubGoalModal } from "@/components/subgoal-modal"
+import { SubGoalModal, type SubGoalModalData } from "@/components/subgoal-modal"
 import { RetrospectiveFlow } from "@/components/retrospective/retrospective-flow"
+import { toKoreanISOString } from "@/lib/korean-time"
+import { AppNavigationBar } from "@/components/app-navigation-bar"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardTitle } from "@/components/ui/card"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Checkbox } from "@/components/ui/checkbox"
 
-import { Plus, Calendar, Target, CheckCircle2, Menu, ChevronDown, ChevronRight, Pencil, Trash2 } from "lucide-react"
-import krocsLogo from "@/assets/krocslogo.png"
+import { Plus, Calendar, Target, CheckCircle2, ChevronDown, ChevronRight, Pencil, Trash2, MoreHorizontal } from "lucide-react"
 
 interface SubGoal {
   sub_goal_id: number
   title: string
   completed: boolean
   is_time_selected?: boolean
-  start_date_time?: string | null
-  end_date_time?: string | null
-}
-
-interface EditableSubGoal {
-  sub_goal_id: number
-  title: string
-  completed: boolean
-  is_time_selected: boolean
   start_date_time?: string | null
   end_date_time?: string | null
 }
@@ -64,26 +52,18 @@ export default function GoalPage() {
   const [expandedGoals, setExpandedGoals] = useState<Set<number>>(new Set())
   const [subGoalsMap, setSubGoalsMap] = useState<Record<number, SubGoal[]>>({})
   const [loadingSubGoals, setLoadingSubGoals] = useState<Set<number>>(new Set())
-  const [editingSubGoal, setEditingSubGoal] = useState<EditableSubGoal | null>(null)
+  const [editingSubGoal, setEditingSubGoal] = useState<SubGoalModalData | null>(null)
   const [isSubGoalModalOpen, setIsSubGoalModalOpen] = useState(false)
   const [currentGoalId, setCurrentGoalId] = useState<number | null>(null)
   const [retrospectiveGoal, setRetrospectiveGoal] = useState<Goal | null>(null)
+  const [deletingGoalId, setDeletingGoalId] = useState<number | null>(null)
+  const [actionMenuGoalId, setActionMenuGoalId] = useState<number | null>(null)
 
   // 날짜 변경 시 localStorage에 저장
   const handleDateSelect = (date: Date) => {
     setSelectedDate(date)
     if (typeof window !== 'undefined') {
-      localStorage.setItem('goalPageSelectedDate', date.toISOString())
-    }
-  }
-
-  const handleLogout = async () => {
-    try {
-      await logout()
-      alert("로그아웃 되었습니다.")
-      router.push("/login")
-    } catch {
-      alert("로그아웃에 실패했습니다.")
+      localStorage.setItem('goalPageSelectedDate', toKoreanISOString(date))
     }
   }
 
@@ -163,7 +143,7 @@ export default function GoalPage() {
       startDate: updatedGoal.startDate,
       endDate: updatedGoal.endDate,
       isCompleted: updatedGoal.completed,
-      color: updatedGoal.color,
+      color: updatedGoal.color || "#bbdefb",
     }
 
     try {
@@ -375,6 +355,40 @@ export default function GoalPage() {
   }
 
   useEffect(() => {
+    const handleClickOutside = () => setActionMenuGoalId(null)
+    window.addEventListener("click", handleClickOutside)
+    return () => window.removeEventListener("click", handleClickOutside)
+  }, [])
+
+  const handleEditGoalClick = (goal: Goal) => {
+    setEditingGoal(goal)
+    setIsFormOpen(true)
+  }
+
+  const handleDeleteGoal = async (goalId: number) => {
+    if (!confirm("정말로 이 목표를 삭제하시겠습니까?")) return
+    setDeletingGoalId(goalId)
+    try {
+      await deleteBigGoal(goalId)
+      if (editingGoal?.goalId === goalId) {
+        setEditingGoal(null)
+        setIsFormOpen(false)
+      }
+      await refreshGoals()
+      setExpandedGoals((prev) => {
+        const next = new Set(prev)
+        next.delete(goalId)
+        return next
+      })
+    } catch (error) {
+      console.error(error)
+      alert("목표 삭제에 실패했습니다.")
+    } finally {
+      setDeletingGoalId(null)
+    }
+  }
+
+  useEffect(() => {
     fetchGoals(selectedDate)
   }, [selectedDate, fetchGoals])
 
@@ -474,17 +488,7 @@ export default function GoalPage() {
 
   return (
     <div className="min-h-screen bg-[#EEF5F7] text-[#0F1C21]">
-      <header className="sticky top-0 z-20 border-b border-[#D3E6ED] bg-[#EEF5F7]/95 px-6 py-3 backdrop-blur">
-        <div className="mx-auto flex max-w-7xl items-center justify-between">
-          <Image 
-            src={krocsLogo}
-            alt="Krocs Logo" 
-            width={120}
-            height={120}
-            className="object-contain"
-          />
-        </div>
-      </header>
+      <AppNavigationBar className="sticky top-0 z-30" contentClassName="w-full max-w-7xl px-6" />
 
       <main className="mx-auto max-w-7xl px-6 py-6">
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
@@ -527,34 +531,6 @@ export default function GoalPage() {
                     <Plus className="h-4 w-4" />
                     <span className="ml-2">새 목표</span>
                   </Button>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-10 w-10 rounded-full border border-[#99C6D6] bg-white text-[#0F1C21] shadow-sm hover:bg-white/80"
-                      >
-                        <Menu className="h-5 w-5" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent
-                      align="end"
-                      className="w-40 rounded-2xl border border-[#D3E6ED] bg-white p-2 text-sm text-[#0F1C21] shadow-md"
-                    >
-                      <DropdownMenuItem asChild className="rounded-xl px-3 py-2">
-                        <Link href="/">홈</Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem asChild className="rounded-xl px-3 py-2">
-                        <Link href="/schedule">일정보기</Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem asChild className="rounded-xl px-3 py-2">
-                        <Link href="/templates">템플릿</Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem className="rounded-xl px-3 py-2" onClick={handleLogout}>
-                        로그아웃
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
                 </div>
               </div>
             </section>
@@ -639,7 +615,7 @@ export default function GoalPage() {
                               }}
                             >
                               <CardContent className="p-5">
-                                <div className="flex items-center justify-between gap-4">
+                                <div className="flex items-start justify-between gap-4">
                                   <div className="flex items-start gap-4 flex-1 min-w-0">
                                     <button
                                       onClick={(e) => {
@@ -661,21 +637,63 @@ export default function GoalPage() {
                                     </button>
                                     <div className="flex-1 min-w-0 space-y-3">
                                       <div className="space-y-2">
-                                        <div className="flex items-center justify-between">
+                                        <div className="flex items-center justify-between gap-2">
                                           <span
                                             className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-bold ${priorityClass}`}
                                           >
                                             {getPriorityText(goal.priority)}
                                           </span>
-                                          <button
-                                            onClick={() => toggleGoalExpansion(goal.goalId)}
-                                            className="flex items-center gap-1 text-xs text-[#5D6E72] hover:text-[#0F1C21] transition-colors"
-                                          >
-                                            <span className="font-medium">세부목표</span>
-                                            <ChevronRight
-                                              className={`h-4 w-4 transition-transform ${isExpanded ? 'rotate-90' : ''}`}
-                                            />
-                                          </button>
+                                          <div className="flex items-center gap-1 text-xs font-medium text-[#5D6E72]">
+                                            <button
+                                              onClick={() => toggleGoalExpansion(goal.goalId)}
+                                              className="flex items-center gap-1 rounded-full border border-[#D3E6ED] bg-[#F7FBFC] px-2 py-1 transition-colors hover:text-[#0F1C21]"
+                                            >
+                                              <span>세부목표</span>
+                                              <ChevronRight
+                                                className={`h-4 w-4 transition-transform ${isExpanded ? "rotate-90" : ""}`}
+                                              />
+                                            </button>
+                                            <div className="relative">
+                                              <button
+                                                onClick={(e) => {
+                                                  e.stopPropagation()
+                                                  setActionMenuGoalId((prev) => (prev === goal.goalId ? null : goal.goalId))
+                                                }}
+                                                className="ml-1 flex h-7 w-7 items-center justify-center rounded-full border border-[#D3E6ED] bg-white text-[#5D6E72] transition-colors hover:bg-[#EEF5F7]"
+                                                aria-label="목표 작업 열기"
+                                              >
+                                                <MoreHorizontal className="h-4 w-4" />
+                                              </button>
+                                              {actionMenuGoalId === goal.goalId && (
+                                                <div
+                                                  className="absolute right-0 top-8 z-10 w-32 rounded-2xl border border-[#D3E6ED] bg-white p-2 text-sm shadow-lg"
+                                                  onClick={(e) => e.stopPropagation()}
+                                                >
+                                                  <button
+                                                    className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-[#0F1C21] transition-colors hover:bg-[#EEF5F7]"
+                                                    onClick={() => {
+                                                      handleEditGoalClick(goal)
+                                                      setActionMenuGoalId(null)
+                                                    }}
+                                                  >
+                                                    <Pencil className="h-4 w-4" />
+                                                    수정
+                                                  </button>
+                                                  <button
+                                                    className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-[#d85b48] transition-colors hover:bg-[#FFECEA]"
+                                                    onClick={() => {
+                                                      handleDeleteGoal(goal.goalId)
+                                                      setActionMenuGoalId(null)
+                                                    }}
+                                                    disabled={deletingGoalId === goal.goalId}
+                                                  >
+                                                    <Trash2 className="h-4 w-4" />
+                                                    삭제
+                                                  </button>
+                                                </div>
+                                              )}
+                                            </div>
+                                          </div>
                                         </div>
                                         <CardTitle className={`text-lg font-bold leading-tight transition-all ${
                                           isCompleted ? 'text-[#5D6E72]/70 line-through' : 'text-[#0F1C21]'
@@ -716,16 +734,6 @@ export default function GoalPage() {
                                           />
                                         </div>
                                       </div>
-                                    </div>
-                                  </div>
-                                  <div
-                                    className="relative flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-full shadow-sm"
-                                    style={{
-                                      background: `conic-gradient(${goal.color || '#BBDCE5'} ${progress}%, #EEF5F7 ${progress}% 100%)`,
-                                    }}
-                                  >
-                                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white">
-                                      <span className="text-xs font-bold text-[#0F1C21]">{progress}%</span>
                                     </div>
                                   </div>
                                 </div>
@@ -865,4 +873,3 @@ export default function GoalPage() {
       />
     </div>
   )
-}

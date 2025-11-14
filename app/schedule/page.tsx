@@ -1,24 +1,20 @@
 "use client"
 
 import { useState, useEffect, useRef, useMemo } from "react"
-import Link from "next/link"
-import Image from "next/image"
-import { useRouter } from "next/navigation"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 
-import { Calendar, Plus, Menu } from "lucide-react"
+import { Calendar, Plus } from "lucide-react"
 
 import { ScheduleTimeline } from "@/components/schedule-timeline"
 import { ScheduleCalendar } from "@/components/schedule-calendar"
 import { ScheduleForm } from "@/components/schedule-form"
 import { SubGoalModal } from "@/components/subgoal-modal"
+import { AppNavigationBar } from "@/components/app-navigation-bar"
 
 import { getGoals, type Goal } from "@/api/goals"
 import { getSubGoals, updateSubGoal } from "@/api/subgoals"
-import { logout } from "@/api/auth"
 import {
   getPlans,
   createPlan,
@@ -31,6 +27,7 @@ import {
 } from "@/api/subplan"
 
 import krocsLogo from "@/assets/krocslogo.png"
+import { toKoreanISOString } from "@/lib/korean-time"
 
 export interface SubTask {
   id: string
@@ -71,8 +68,29 @@ const FILTER_LABELS: Record<"all" | "schedules" | "subgoals", string> = {
   subgoals: "세부목표",
 }
 
+const DEFAULT_SCHEDULE_COLOR = "#2196f3"
+
+const COLOR_NAME_TO_HEX: Record<string, string> = {
+  blue: "#2196f3",
+  red: "#F44336",
+  green: "#4caf50",
+  purple: "#9c27b0",
+  orange: "#ff9800",
+  pink: "#e91e63",
+  yellow: "#ffeb3b",
+  indigo: "#607d8b",
+}
+
+const normalizeColorValue = (color?: string) => {
+  if (!color) return DEFAULT_SCHEDULE_COLOR
+  const normalized = color.trim().toLowerCase()
+  if (normalized.startsWith("#")) {
+    return normalized
+  }
+  return COLOR_NAME_TO_HEX[normalized as keyof typeof COLOR_NAME_TO_HEX] || DEFAULT_SCHEDULE_COLOR
+}
+
 export default function SchedulePage() {
-  const router = useRouter()
   const [schedules, setSchedules] = useState<Schedule[]>([])
   const [subGoalSchedules, setSubGoalSchedules] = useState<Schedule[]>([])
   const [goalList, setGoalList] = useState<Goal[]>([])
@@ -102,16 +120,6 @@ export default function SchedulePage() {
     scrollToSchedule: (planId: number) => void
   }>(null)
 
-  const handleLogout = async () => {
-    try {
-      await logout()
-      alert("로그아웃 되었습니다.")
-      router.push("/login")
-    } catch {
-      alert("로그아웃에 실패했습니다.")
-    }
-  }
-
   useEffect(() => {
     const fetchSchedules = async () => {
       setLoading(true)
@@ -119,17 +127,6 @@ export default function SchedulePage() {
       try {
         const formattedDate = formatDateToYYYYMMDD(selectedDate)
         const fetchedPlans: Plan[] = await getPlans(formattedDate)
-
-        const hexToColorNameMap: Record<string, string> = {
-          "#2196f3": "blue",
-          "#f44336": "red",
-          "#4caf50": "green",
-          "#9c27b0": "purple",
-          "#ff9800": "orange",
-          "#e91e63": "pink",
-          "#ffeb3b": "yellow",
-          "#607d8b": "indigo",
-        }
 
         const reverseCategoryMap: Record<string, string> = {
           WORK: "Briefcase",
@@ -149,7 +146,7 @@ export default function SchedulePage() {
           goalId: plan.goal_id,
           subGoalId: plan.sub_goal_id,
           title: plan.title,
-          color: hexToColorNameMap[plan.color.toLowerCase()] || "blue",
+          color: normalizeColorValue(plan.color),
           icon: reverseCategoryMap[plan.plan_category] || "User",
           subTasks: plan.sub_plans
             .map((subPlan) => ({
@@ -196,7 +193,7 @@ export default function SchedulePage() {
         subGoalResponses.forEach((res, index) => {
           const goal = goals[index]
           const goalId = goal.goalId
-          const goalColor = goal.color
+          const goalColor = normalizeColorValue(goal.color)
           
           console.log(`🔍 Processing goal ${goalId}: ${goal.title}`, res.result.subGoals)
           
@@ -221,8 +218,8 @@ export default function SchedulePage() {
                   color: goalColor,
                   type: "subgoal",
                   subTasks: [],
-                  createdAt: new Date().toISOString(),
-                  updatedAt: new Date().toISOString(),
+                  createdAt: toKoreanISOString(),
+                  updatedAt: toKoreanISOString(),
                   isTimeSelected: true,
                 })
               }
@@ -248,8 +245,8 @@ export default function SchedulePage() {
                 color: goalColor,
                 type: "subgoal",
                 subTasks: [],
-                createdAt: new Date().toISOString(),
-                updatedAt: new Date().toISOString(),
+                createdAt: toKoreanISOString(),
+                updatedAt: toKoreanISOString(),
                 isTimeSelected: false,
               })
             }
@@ -320,7 +317,7 @@ export default function SchedulePage() {
       start_date_time: scheduleData.startDateTime,
       end_date_time: scheduleData.endDateTime,
       all_day: scheduleData.allDay,
-      color: scheduleData.color || "#2196f3",
+      color: normalizeColorValue(scheduleData.color),
       plan_category: categoryMap[scheduleData.icon || ""] || "ETC",
     }
 
@@ -361,17 +358,6 @@ export default function SchedulePage() {
       Gamepad2: "GAME",
     }
 
-    const colorNameToHexMap: Record<string, string> = {
-      blue: "#2196f3",
-      red: "#f44336",
-      green: "#4caf50",
-      purple: "#9c27b0",
-      orange: "#ff9800",
-      pink: "#e91e63",
-      yellow: "#ffeb3b",
-      indigo: "#607d8b",
-    }
-
     const updatedSchedule = { ...originalSchedule, ...updates }
 
     const apiPayload: UpdatePlanRequest = {
@@ -380,7 +366,7 @@ export default function SchedulePage() {
       end_date_time: updatedSchedule.endDateTime,
       all_day: updatedSchedule.allDay,
       is_completed: updatedSchedule.isCompleted,
-      color: colorNameToHexMap[updatedSchedule.color || "blue"] || "#2196f3",
+      color: normalizeColorValue(updatedSchedule.color || originalSchedule.color),
       plan_category: categoryMap[updatedSchedule.icon || ""] || "ETC",
     }
 
@@ -462,18 +448,7 @@ export default function SchedulePage() {
 
   return (
     <div className="min-h-screen bg-[#EEF5F7] text-[#0F1C21]">
-      {/* Header - Goal 페이지 스타일 */}
-      <header className="sticky top-0 z-20 border-b border-[#D3E6ED] bg-[#EEF5F7]/95 px-6 py-3 backdrop-blur">
-        <div className="mx-auto flex max-w-7xl items-center justify-between">
-          <Image 
-            src={krocsLogo}
-            alt="Krocs Logo" 
-            width={120}
-            height={120}
-            className="object-contain"
-          />
-        </div>
-      </header>
+      <AppNavigationBar className="sticky top-0 z-30" contentClassName="w-full max-w-7xl px-6" />
 
       <main className="mx-auto max-w-7xl px-6 py-6">
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
@@ -517,34 +492,6 @@ export default function SchedulePage() {
                     <Plus className="h-4 w-4" />
                     <span className="ml-2">새 일정</span>
                   </Button>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-10 w-10 rounded-full border border-[#99C6D6] bg-white text-[#0F1C21] shadow-sm hover:bg-white/80"
-                      >
-                        <Menu className="h-5 w-5" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent
-                      align="end"
-                      className="w-40 rounded-2xl border border-[#D3E6ED] bg-white p-2 text-sm text-[#0F1C21] shadow-md"
-                    >
-                      <DropdownMenuItem asChild className="rounded-xl px-3 py-2">
-                        <Link href="/">홈</Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem asChild className="rounded-xl px-3 py-2">
-                        <Link href="/goal">목표관리</Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem asChild className="rounded-xl px-3 py-2">
-                        <Link href="/templates">템플릿</Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem className="rounded-xl px-3 py-2" onClick={handleLogout}>
-                        로그아웃
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
                 </div>
               </div>
             </section>
