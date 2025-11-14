@@ -6,9 +6,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { X, Plus, Pencil, Trash2 } from 'lucide-react';
-import type { Template, SubTemplate } from '@/app/templates/page';
+import type { Template } from '@/api/templates';
 import { updateSubTemplate, deleteSubTemplate } from '@/api/templates';
 import { ConfirmationModal } from '@/components/ui/confirmation-modal';
+
+type EditableSubTemplate = Template['subTemplates'][number];
 
 interface TemplateFormProps {
   template?: Template | null;
@@ -20,10 +22,10 @@ export function TemplateForm({ template, onSubmit, onCancel }: TemplateFormProps
   const [title, setTitle] = useState('');
   const [priority, setPriority] = useState<'HIGH' | 'MEDIUM' | 'LOW'>('MEDIUM');
   const [duration, setDuration] = useState(1);
-  const [subTemplates, setSubTemplates] = useState<SubTemplate[]>([]);
+  const [subTemplates, setSubTemplates] = useState<EditableSubTemplate[]>([]);
 
   const [newSubTemplateTitle, setNewSubTemplateTitle] = useState('');
-  const [editingSubTemplate, setEditingSubTemplate] = useState<SubTemplate | null>(null);
+  const [editingSubTemplate, setEditingSubTemplate] = useState<EditableSubTemplate | null>(null);
   const [editingSubTemplateTitle, setEditingSubTemplateTitle] = useState('');
   const [durationError, setDurationError] = useState<string | null>(null);
 
@@ -76,7 +78,7 @@ export function TemplateForm({ template, onSubmit, onCancel }: TemplateFormProps
 
   const handleAddSubTemplate = () => {
     if (!newSubTemplateTitle.trim()) return;
-    const newSub: SubTemplate = {
+    const newSub: EditableSubTemplate = {
       sub_template_id: Date.now(), // 임시 ID
       template_id: template?.templateId || 0,
       title: newSubTemplateTitle.trim(),

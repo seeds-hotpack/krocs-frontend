@@ -1,74 +1,108 @@
 'use client'
 
-import type { Template } from '@/app/templates/page';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import type { Template } from '@/api/templates';
 import { Button } from '@/components/ui/button';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { MoreVertical, Clock, Zap, ListChecks } from 'lucide-react';
+import { Clock, Flag, ListChecks, Pencil, Target, Trash2 } from 'lucide-react';
 
 interface TemplateCardProps {
   template: Template;
   onEdit: () => void;
   onDelete: () => void;
+  onUseTemplate: () => void;
 }
 
-const priorityMap = {
-  HIGH: { text: '높음', className: 'text-red-500' },
-  MEDIUM: { text: '중간', className: 'text-yellow-500' },
-  LOW: { text: '낮음', className: 'text-green-500' },
+const priorityMeta: Record<Template['priority'], { label: string; className: string; accent: string }> = {
+  HIGH: {
+    label: '높음',
+    className: 'bg-[#5D6E72] text-white',
+    accent: 'text-[#5D6E72]',
+  },
+  MEDIUM: {
+    label: '보통',
+    className: 'bg-[#BBDCE5] text-[#0F1C21]',
+    accent: 'text-[#3E6B79]',
+  },
+  LOW: {
+    label: '낮음',
+    className: 'bg-[#DDEDF2] text-[#0F1C21]',
+    accent: 'text-[#3E6B79]',
+  },
 };
 
-export function TemplateCard({ template, onEdit, onDelete }: TemplateCardProps) {
+export function TemplateCard({ template, onEdit, onDelete, onUseTemplate }: TemplateCardProps) {
   const { title, priority, duration, subTemplates } = template;
-  const priorityInfo = priorityMap[priority];
+  const badge = priorityMeta[priority];
 
   return (
-    <Card className="flex flex-col h-full bg-white dark:bg-slate-800 shadow-sm hover:shadow-lg transition-shadow duration-300">
-      <CardHeader className="flex flex-row items-start justify-between">
-        <div>
-          <CardTitle className="text-lg font-bold text-slate-900 dark:text-slate-100">{title}</CardTitle>
-          <CardDescription className="text-sm text-slate-500 dark:text-slate-400 pt-1">{subTemplates.length}개의 하위 템플릿</CardDescription>
+    <div className="rounded-3xl border border-[#D3E6ED] bg-white p-4 shadow-xs transition-all hover:shadow-sm sm:p-5">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-xs font-semibold uppercase tracking-wider text-black/40">Goal Template</p>
+          <h3 className="mt-1 text-lg font-bold text-[#0F1C21] line-clamp-2">{title}</h3>
         </div>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="h-8 w-8">
-              <MoreVertical className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={onEdit}>수정하기</DropdownMenuItem>
-            <DropdownMenuItem onClick={onDelete} className="text-red-500 focus:text-red-500">
-              삭제하기
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </CardHeader>
-      <CardContent className="flex-grow">
-        <div className="flex items-center space-x-4 text-sm text-slate-700 dark:text-slate-300 mb-4">
-            <div className="flex items-center gap-1.5">
-                <Zap className={`h-4 w-4 ${priorityInfo.className}`} />
-                <span className={priorityInfo.className}>{priorityInfo.text}</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-                <Clock className="h-4 w-4" />
-                <span>{duration}일</span>
-            </div>
+        <span className={`rounded-full px-3 py-1 text-xs font-semibold ${badge.className}`}>{badge.label}</span>
+      </div>
+
+      <div className="mt-4 flex flex-wrap gap-4 text-sm text-[#0F1C21]">
+        <div className="flex items-center gap-2">
+          <Clock className="h-4 w-4 text-[#5D6E72]" />
+          <span className="font-medium">{duration}일 루틴</span>
         </div>
-        <div className="border-t border-slate-200 dark:border-slate-700 pt-4">
-            <h4 className="mb-2 text-sm font-semibold flex items-center gap-2 text-slate-800 dark:text-slate-200">
-                <ListChecks className="h-4 w-4" />
-                하위 템플릿 목록
-            </h4>
-            <ul className="space-y-1 text-sm text-slate-600 dark:text-slate-400 list-disc list-inside">
-                {subTemplates.slice(0, 4).map(sub => (
-                    <li key={sub.sub_template_id} className="truncate">{sub.title}</li>
-                ))}
-                {subTemplates.length > 4 && (
-                    <li className="text-xs text-slate-500">...외 {subTemplates.length - 4}개</li>
-                )}
-            </ul>
+        <div className="flex items-center gap-2">
+          <ListChecks className="h-4 w-4 text-[#5D6E72]" />
+          <span className="font-medium">{subTemplates.length}단계</span>
         </div>
-      </CardContent>
-    </Card>
+        <div className="flex items-center gap-2">
+          <Flag className="h-4 w-4 text-[#5D6E72]" />
+          <span className={`font-semibold ${badge.accent}`}>{badge.label} 우선</span>
+        </div>
+      </div>
+
+      <div className="mt-4 rounded-2xl bg-[#EEF5F7] p-3 text-sm text-[#0F1C21] shadow-inner">
+        {subTemplates.length === 0 ? (
+          <p className="text-black/50">하위 템플릿이 아직 없어요.</p>
+        ) : (
+          <ul className="space-y-1">
+            {subTemplates.slice(0, 5).map((sub) => (
+              <li key={sub.sub_template_id} className="flex items-center gap-2">
+                <span className="h-1.5 w-1.5 rounded-full bg-[#99C6D6]" />
+                <span className="truncate">{sub.title}</span>
+              </li>
+            ))}
+            {subTemplates.length > 5 && (
+              <li className="text-xs text-black/50">외 {subTemplates.length - 5}개 항목</li>
+            )}
+          </ul>
+        )}
+      </div>
+
+      <div className="mt-4 flex items-center gap-2 sm:mt-5">
+        <Button
+          className="flex-1 rounded-2xl bg-[#ff8b6b] px-4 py-4 text-sm font-semibold text-white shadow-sm hover:bg-[#ff7a56] sm:py-5"
+          onClick={onUseTemplate}
+        >
+          <Target className="h-4 w-4" />
+          <span>목표 생성</span>
+        </Button>
+        <Button
+          variant="secondary"
+          size="icon"
+          className="rounded-2xl bg-[#EEF5F7] text-[#0F1C21]"
+          onClick={onEdit}
+          aria-label="템플릿 수정"
+        >
+          <Pencil className="h-4 w-4" />
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="rounded-2xl text-red-500 hover:bg-red-50"
+          onClick={onDelete}
+          aria-label="템플릿 삭제"
+        >
+          <Trash2 className="h-4 w-4" />
+        </Button>
+      </div>
+    </div>
   );
 }
