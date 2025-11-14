@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { X, Calendar, Flag, Palette, Sparkles } from "lucide-react"
+import { toKoreanDateString } from "@/lib/korean-time"
 
 interface Goal {
   goalId: number
@@ -30,8 +31,8 @@ interface GoalFormProps {
 }
 
 export function GoalForm({ goal, onSubmit, onCancel }: GoalFormProps) {
-  const initialStartDate = goal?.startDate || new Date().toISOString().split("T")[0]
-  const initialEndDate = goal?.endDate || new Date().toISOString().split("T")[0]
+  const initialStartDate = goal?.startDate || toKoreanDateString()
+  const initialEndDate = goal?.endDate || toKoreanDateString()
   
   const calculateInitialDuration = () => {
     if (goal?.duration) return goal.duration

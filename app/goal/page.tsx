@@ -14,6 +14,7 @@ import { ScheduleCalendar } from "@/components/schedule-calendar"
 import { GoalForm } from "@/components/goal-form"
 import { SubGoalModal, type SubGoalModalData } from "@/components/subgoal-modal"
 import { RetrospectiveFlow } from "@/components/retrospective/retrospective-flow"
+import { toKoreanISOString } from "@/lib/korean-time"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardTitle } from "@/components/ui/card"
@@ -64,7 +65,7 @@ export default function GoalPage() {
   const handleDateSelect = (date: Date) => {
     setSelectedDate(date)
     if (typeof window !== 'undefined') {
-      localStorage.setItem('goalPageSelectedDate', date.toISOString())
+      localStorage.setItem('goalPageSelectedDate', toKoreanISOString(date))
     }
   }
 

@@ -31,6 +31,7 @@ import {
 } from "@/api/subplan"
 
 import krocsLogo from "@/assets/krocslogo.png"
+import { toKoreanISOString } from "@/lib/korean-time"
 
 export interface SubTask {
   id: string
@@ -221,8 +222,8 @@ export default function SchedulePage() {
                   color: goalColor,
                   type: "subgoal",
                   subTasks: [],
-                  createdAt: new Date().toISOString(),
-                  updatedAt: new Date().toISOString(),
+                  createdAt: toKoreanISOString(),
+                  updatedAt: toKoreanISOString(),
                   isTimeSelected: true,
                 })
               }
@@ -248,8 +249,8 @@ export default function SchedulePage() {
                 color: goalColor,
                 type: "subgoal",
                 subTasks: [],
-                createdAt: new Date().toISOString(),
-                updatedAt: new Date().toISOString(),
+                createdAt: toKoreanISOString(),
+                updatedAt: toKoreanISOString(),
                 isTimeSelected: false,
               })
             }

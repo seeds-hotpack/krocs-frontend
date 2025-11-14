@@ -9,6 +9,7 @@ import { X, Plus, Pencil, Trash2 } from 'lucide-react';
 import type { Template } from '@/api/templates';
 import { updateSubTemplate, deleteSubTemplate } from '@/api/templates';
 import { ConfirmationModal } from '@/components/ui/confirmation-modal';
+import { toKoreanISOString } from '@/lib/korean-time';
 
 type EditableSubTemplate = Template['subTemplates'][number];
 
@@ -82,8 +83,8 @@ export function TemplateForm({ template, onSubmit, onCancel }: TemplateFormProps
       sub_template_id: Date.now(), // 임시 ID
       template_id: template?.templateId || 0,
       title: newSubTemplateTitle.trim(),
-      created_at: new Date().toISOString(), // 임시 값
-      updated_at: new Date().toISOString(), // 임시 값
+      created_at: toKoreanISOString(), // 임시 값
+      updated_at: toKoreanISOString(), // 임시 값
     };
     setSubTemplates([...subTemplates, newSub]);
     setNewSubTemplateTitle('');

@@ -22,6 +22,7 @@ import {
   type Template as ApiTemplate,
 } from '@/api/templates';
 import { ArrowLeft, Plus, Search, Sparkles, Target, ChevronDown } from 'lucide-react';
+import { toKoreanDateString, toKoreanISOString } from '@/lib/korean-time';
 
 type Template = ApiTemplate;
 
@@ -37,7 +38,7 @@ const priorityLabelMap: Record<Template['priority'], string> = {
   LOW: '낮음',
 };
 
-const formatDate = (date: Date) => date.toISOString().split('T')[0];
+const formatDate = (date: Date) => toKoreanDateString(date);
 
 function useDebounce<T>(value: T, delay: number): T {
   const [debouncedValue, setDebouncedValue] = useState<T>(value);
@@ -108,8 +109,8 @@ export default function TemplatesPage() {
       title: templateForGoal.title,
       priority: templateForGoal.priority,
       color: priorityColorMap[templateForGoal.priority],
-      startDate: formatDate(today),
-      endDate: formatDate(end),
+    startDate: toKoreanDateString(today),
+    endDate: toKoreanDateString(end),
       duration: durationDays,
       completed: false,
       subGoals: templateForGoal.subTemplates.map((sub) => ({
@@ -118,8 +119,8 @@ export default function TemplatesPage() {
         completed: false,
       })),
       completionPercentage: 0,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
+      createdAt: toKoreanISOString(),
+      updatedAt: toKoreanISOString(),
     };
   }, [templateForGoal]);
 

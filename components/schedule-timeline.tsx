@@ -26,6 +26,7 @@ import {
 import { updateSubPlan } from "@/api/subplan";
 import { updateSubGoal } from "@/api/subgoals";
 import { Checkbox } from "@/components/ui/checkbox"
+import { toKoreanISOString } from "@/lib/korean-time";
 
 interface SubTask {
   id: string
@@ -155,7 +156,7 @@ export const ScheduleTimeline = forwardRef<{
     } else {
       onUpdateSchedule(schedule.planId, {
         isCompleted: !schedule.isCompleted,
-        completedAt: !schedule.isCompleted ? new Date().toISOString() : undefined,
+        completedAt: !schedule.isCompleted ? toKoreanISOString() : undefined,
       })
     }
   }

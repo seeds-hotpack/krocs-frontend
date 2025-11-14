@@ -13,6 +13,7 @@ import {
   updateSubGoal,
 } from "@/api/subgoals"
 import { ConfirmationModal } from "@/components/ui/confirmation-modal"
+import { toKoreanDateString } from "@/lib/korean-time"
 
 export interface SubGoalModalData {
   sub_goal_id: number
@@ -62,14 +63,14 @@ export function SubGoalModal({
         const startDateTime = new Date(editingSubGoal.start_date_time)
         const endDateTime = new Date(editingSubGoal.end_date_time)
 
-        setStartDate(startDateTime.toISOString().split('T')[0])
-        setEndDate(endDateTime.toISOString().split('T')[0])
+        setStartDate(toKoreanDateString(startDateTime))
+        setEndDate(toKoreanDateString(endDateTime))
         setStartTime(startDateTime.toTimeString().slice(0, 5))
         setEndTime(endDateTime.toTimeString().slice(0, 5))
       }
     } else {
       // 새로운 소목표 추가 시 오늘 날짜로 초기화
-      const today = new Date().toISOString().split("T")[0]
+      const today = toKoreanDateString()
       setStartDate(today)
       setEndDate(today)
     }

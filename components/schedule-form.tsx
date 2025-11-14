@@ -33,6 +33,7 @@ import {
 } from "lucide-react"
 import type { Goal } from "@/api/goals"
 import { ConfirmationModal } from "@/components/ui/confirmation-modal";
+import { toKoreanDateString } from "@/lib/korean-time";
 
 interface SubTask {
   id: string
@@ -115,11 +116,11 @@ export function ScheduleForm({ schedule, onSubmit, onCancel, onDelete, defaultDa
     return {
       title: schedule?.title || "",
       startDate: schedule?.startDateTime
-        ? new Date(schedule.startDateTime).toISOString().split("T")[0]
-        : defaultDate.toISOString().split("T")[0],
+        ? toKoreanDateString(schedule.startDateTime)
+        : toKoreanDateString(defaultDate),
       endDate: schedule?.endDateTime
-        ? new Date(schedule.endDateTime).toISOString().split("T")[0]
-        : defaultDate.toISOString().split("T")[0],
+        ? toKoreanDateString(schedule.endDateTime)
+        : toKoreanDateString(defaultDate),
       startDateTime: formatLocalDatetime(initialStartDateTime),
       endDateTime: formatLocalDatetime(initialEndDateTime),
       allDay: schedule?.allDay || false,
@@ -144,8 +145,8 @@ export function ScheduleForm({ schedule, onSubmit, onCancel, onDelete, defaultDa
       return {
         ...prev,
         title: schedule?.title || "",
-        startDate: schedule?.startDateTime ? new Date(schedule.startDateTime).toISOString().split("T")[0] : defaultDate.toISOString().split("T")[0],
-        endDate: schedule?.endDateTime ? new Date(schedule.endDateTime).toISOString().split("T")[0] : defaultDate.toISOString().split("T")[0],
+        startDate: schedule?.startDateTime ? toKoreanDateString(schedule.startDateTime) : toKoreanDateString(defaultDate),
+        endDate: schedule?.endDateTime ? toKoreanDateString(schedule.endDateTime) : toKoreanDateString(defaultDate),
         startDateTime: formatLocalDatetime(updatedStartDateTime),
         endDateTime: formatLocalDatetime(updatedEndDateTime),
         allDay: schedule?.allDay || false,
