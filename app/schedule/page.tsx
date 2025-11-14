@@ -2,19 +2,23 @@
 
 import { useState, useEffect, useRef, useMemo } from "react"
 import Link from "next/link"
+import Image from "next/image"
+import { useRouter } from "next/navigation"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 
-import { Calendar, CheckCircle2, ChevronDown, Clock, Plus, Target } from "lucide-react"
+import { Calendar, Plus, Menu } from "lucide-react"
 
 import { ScheduleTimeline } from "@/components/schedule-timeline"
 import { ScheduleCalendar } from "@/components/schedule-calendar"
 import { ScheduleForm } from "@/components/schedule-form"
+import { SubGoalModal } from "@/components/subgoal-modal"
 
 import { getGoals, type Goal } from "@/api/goals"
 import { getSubGoals, updateSubGoal } from "@/api/subgoals"
+import { logout } from "@/api/auth"
 import {
   getPlans,
   createPlan,
@@ -25,6 +29,8 @@ import {
   type CreatePlanRequest,
   type UpdatePlanRequest,
 } from "@/api/subplan"
+
+import krocsLogo from "@/assets/krocslogo.png"
 
 export interface SubTask {
   id: string
@@ -60,12 +66,13 @@ const formatDateToYYYYMMDD = (date: Date): string => {
 }
 
 const FILTER_LABELS: Record<"all" | "schedules" | "subgoals", string> = {
-  all: "전체 보기",
-  schedules: "일정만",
-  subgoals: "소목표만",
+  all: "전체",
+  schedules: "일정",
+  subgoals: "세부목표",
 }
 
 export default function SchedulePage() {
+  const router = useRouter()
   const [schedules, setSchedules] = useState<Schedule[]>([])
   const [subGoalSchedules, setSubGoalSchedules] = useState<Schedule[]>([])
   const [goalList, setGoalList] = useState<Goal[]>([])
@@ -77,11 +84,33 @@ export default function SchedulePage() {
   const [error, setError] = useState<string | null>(null)
   const [refreshTrigger, setRefreshTrigger] = useState(0)
   const [filterType, setFilterType] = useState<"all" | "schedules" | "subgoals">("all")
+  const [showSubGoalModal, setShowSubGoalModal] = useState(false)
+  const [editingSubGoal, setEditingSubGoal] = useState<{
+    goalId: number
+    subGoal: {
+      sub_goal_id: number
+      title: string
+      completed: boolean
+      is_time_selected: boolean
+      start_date_time?: string | null
+      end_date_time?: string | null
+    }
+  } | null>(null)
 
   const timelineRef = useRef<{
     scrollToCurrentTime: () => void
     scrollToSchedule: (planId: number) => void
   }>(null)
+
+  const handleLogout = async () => {
+    try {
+      await logout()
+      alert("로그아웃 되었습니다.")
+      router.push("/login")
+    } catch {
+      alert("로그아웃에 실패했습니다.")
+    }
+  }
 
   useEffect(() => {
     const fetchSchedules = async () => {
@@ -141,7 +170,7 @@ export default function SchedulePage() {
 
         setSchedules(adaptedSchedules)
       } catch (err) {
-        setError("일정을 불러오는 데 실패했습니다. 다시 시도해 주세요.")
+        setError("일정을 불러오는 데 실패했습니다.")
         setSchedules([])
         console.error(err)
       } finally {
@@ -158,40 +187,77 @@ export default function SchedulePage() {
         const goals = await getGoals({ searchDate: formatDateToYYYYMMDD(selectedDate) })
         setGoalList(goals)
 
+        console.log("🎯 Goals for selected date:", goals)
+
         const subGoalResponses = await Promise.all(goals.map((goal) => getSubGoals(goal.goalId)))
 
-        const timeSelectedSubGoals: Schedule[] = []
-        const selectedDay = formatDateToYYYYMMDD(selectedDate)
+        const allSubGoals: Schedule[] = []
 
         subGoalResponses.forEach((res, index) => {
-          const goalId = goals[index].goalId
+          const goal = goals[index]
+          const goalId = goal.goalId
+          const goalColor = goal.color
+          
+          console.log(`🔍 Processing goal ${goalId}: ${goal.title}`, res.result.subGoals)
+          
           res.result.subGoals.forEach((sg) => {
-            if (!sg.is_time_selected) {
-              return
-            }
-            const startDate = sg.start_date_time?.split("T")[0]
-            if (startDate === selectedDay) {
-              timeSelectedSubGoals.push({
+            // 시간이 선택된 소목표
+            if (sg.is_time_selected && sg.start_date_time) {
+              const startDate = sg.start_date_time.split("T")[0]
+              const selectedDay = formatDateToYYYYMMDD(selectedDate)
+              
+              // 시간이 선택된 소목표는 해당 날짜에만 표시
+              if (startDate === selectedDay) {
+                console.log(`  ✅ Adding timed subgoal: ${sg.title}`)
+                allSubGoals.push({
+                  planId: sg.sub_goal_id,
+                  goalId,
+                  subGoalId: sg.sub_goal_id,
+                  title: sg.title,
+                  startDateTime: sg.start_date_time,
+                  endDateTime: sg.end_date_time,
+                  isCompleted: sg.is_completed,
+                  allDay: false,
+                  color: goalColor,
+                  type: "subgoal",
+                  subTasks: [],
+                  createdAt: new Date().toISOString(),
+                  updatedAt: new Date().toISOString(),
+                  isTimeSelected: true,
+                })
+              }
+            } 
+            // 하루 종일 소목표 (시간이 선택되지 않은 경우)
+            // 목표의 날짜에 따라 표시됨
+            else if (!sg.is_time_selected) {
+              console.log(`  ✅ Adding all-day subgoal: ${sg.title} (from goal: ${goal.title})`)
+              
+              // 하루 종일 소목표는 목표의 날짜를 사용
+              const goalStartDate = new Date(goal.startDate)
+              const goalStartDateString = formatDateToYYYYMMDD(goalStartDate)
+              
+              allSubGoals.push({
                 planId: sg.sub_goal_id,
                 goalId,
                 subGoalId: sg.sub_goal_id,
                 title: sg.title,
-                startDateTime: sg.start_date_time,
-                endDateTime: sg.end_date_time,
+                startDateTime: `${goalStartDateString}T00:00:00`,
+                endDateTime: `${goalStartDateString}T23:59:59`,
                 isCompleted: sg.is_completed,
                 allDay: true,
-                color: "red",
+                color: goalColor,
                 type: "subgoal",
                 subTasks: [],
                 createdAt: new Date().toISOString(),
                 updatedAt: new Date().toISOString(),
-                isTimeSelected: true,
+                isTimeSelected: false,
               })
             }
           })
         })
 
-        setSubGoalSchedules(timeSelectedSubGoals)
+        console.log("📦 Final allSubGoals:", allSubGoals)
+        setSubGoalSchedules(allSubGoals)
       } catch (err) {
         console.error("Failed to fetch goals or sub-goals:", err)
       }
@@ -271,7 +337,7 @@ export default function SchedulePage() {
       setRefreshTrigger((prev) => prev + 1)
     } catch (err) {
       console.error("Failed to create schedule:", err)
-      setError("일정 생성에 실패했습니다. 다시 시도해 주세요.")
+      setError("일정 생성에 실패했습니다.")
     }
   }
 
@@ -325,7 +391,7 @@ export default function SchedulePage() {
       setEditingSchedule(null)
     } catch (err) {
       console.error("Failed to update schedule:", err)
-      setError("일정 수정에 실패했습니다. 다시 시도해 주세요.")
+      setError("일정 수정에 실패했습니다.")
     }
   }
 
@@ -337,13 +403,30 @@ export default function SchedulePage() {
       setEditingSchedule(null)
     } catch (err) {
       console.error("Failed to delete schedule:", err)
-      setError("일정 삭제에 실패했습니다. 다시 시도해 주세요.")
+      setError("일정 삭제에 실패했습니다.")
     }
   }
 
   const handleEditSchedule = (schedule: Schedule) => {
-    setEditingSchedule(schedule)
-    setShowForm(true)
+    if (schedule.type === 'subgoal' && schedule.goalId) {
+      // 소목표인 경우 소목표 모달 열기
+      setEditingSubGoal({
+        goalId: schedule.goalId,
+        subGoal: {
+          sub_goal_id: schedule.subGoalId || schedule.planId,
+          title: schedule.title,
+          completed: schedule.isCompleted,
+          is_time_selected: schedule.isTimeSelected || false,
+          start_date_time: schedule.startDateTime,
+          end_date_time: schedule.endDateTime,
+        }
+      })
+      setShowSubGoalModal(true)
+    } else {
+      // 일정인 경우 일정 모달 열기
+      setEditingSchedule(schedule)
+      setShowForm(true)
+    }
   }
 
   const handleUpdateSchedule = (
@@ -371,147 +454,122 @@ export default function SchedulePage() {
   const selectedDayLabel = selectedDate.toLocaleDateString("ko-KR", {
     month: "long",
     day: "numeric",
-    weekday: "long",
+    weekday: "short",
   })
-  const selectedMonthLabel = `${selectedDate.getFullYear()}.${String(selectedDate.getMonth() + 1).padStart(2, "0")}`
 
   const totalSchedules = schedules.length
   const completedSchedules = schedules.filter((s) => s.isCompleted).length
-  const pendingSchedules = totalSchedules - completedSchedules
-  const subgoalCount = subGoalSchedules.length
 
   return (
     <div className="min-h-screen bg-[#EEF5F7] text-[#0F1C21]">
-      <div className="mx-auto w-full max-w-5xl px-4 py-6 sm:px-6 lg:px-8">
-        <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="space-y-2">
-            <Link href="/" className="text-sm font-semibold text-[#5D6E72] hover:text-[#0F1C21]">
-              ← 목표 보드로 돌아가기
-            </Link>
-            <h1 className="text-2xl font-bold text-[#0F1C21] sm:text-3xl">하루 일정 타임라인</h1>
-            <p className="text-sm text-[#5D6E72]">{selectedDayLabel}</p>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-2">
-            <Button
-              variant="ghost"
-              className="flex items-center gap-2 rounded-full border border-[#99C6D6] bg-white px-4 py-2 text-sm font-semibold text-[#0F1C21] shadow-sm hover:bg-white/80"
-              onClick={() => setShowCalendar((prev) => !prev)}
-            >
-              <Calendar className="h-4 w-4" />
-              {selectedMonthLabel}
-            </Button>
-
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button className="flex items-center gap-2 rounded-full bg-[#BBDCE5] px-4 py-2 text-sm font-semibold text-[#0F1C21] shadow-sm hover:bg-[#BBDCE5]/80">
-                  {FILTER_LABELS[filterType]}
-                  <ChevronDown className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-36 rounded-2xl border border-[#D3E6ED] bg-white p-2 text-sm">
-                {(
-                  [
-                    { value: "all", label: FILTER_LABELS["all"] },
-                    { value: "schedules", label: FILTER_LABELS["schedules"] },
-                    { value: "subgoals", label: FILTER_LABELS["subgoals"] },
-                  ] as const
-                ).map((option) => (
-                  <DropdownMenuItem
-                    key={option.value}
-                    onClick={() => setFilterType(option.value)}
-                    className={`rounded-xl px-3 py-2 ${
-                      filterType === option.value ? "bg-[#BBDCE5]/40 font-semibold text-[#0F1C21]" : ""
-                    }`}
-                  >
-                    {option.label}
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-
-            <Button
-              className="flex items-center gap-2 rounded-full bg-[#BBDCE5] px-4 py-2 text-sm font-semibold text-[#0F1C21] shadow-sm hover:bg-[#BBDCE5]/80"
-              onClick={() => {
-                setEditingSchedule(null)
-                setShowForm(true)
-              }}
-            >
-              <Plus className="h-4 w-4" />
-              새 일정
-            </Button>
-          </div>
-        </header>
-
-        {showCalendar && (
-          <div className="mt-6 overflow-hidden rounded-3xl border border-[#D3E6ED] bg-white shadow-md">
-            <ScheduleCalendar
-              selectedDate={selectedDate}
-              onDateSelect={(date) => {
-                setSelectedDate(date)
-                setShowCalendar(false)
-              }}
-              schedules={schedules}
-              onClose={() => setShowCalendar(false)}
-            />
-          </div>
-        )}
-
-        <section className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4"></section>
-
-        <section className="mt-8 space-y-4">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <div>
-              <h2 className="text-lg font-semibold text-[#0F1C21]">타임라인</h2>
-              <p className="text-xs text-[#5D6E72]">
-                {FILTER_LABELS[filterType]} · {timelineItems.length}개 일정
-              </p>
-            </div>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="ghost"
-                className="rounded-full border border-[#99C6D6] bg-white px-4 py-2 text-sm font-semibold text-[#0F1C21] shadow-sm hover:bg-white/80"
-                onClick={() => {
-                  setSelectedDate(new Date())
-                  timelineRef.current?.scrollToCurrentTime?.()
-                }}
-              >
-                오늘로 이동
-              </Button>
-              <Button
-                variant="ghost"
-                className="rounded-full border border-[#99C6D6] bg-white px-4 py-2 text-sm font-semibold text-[#0F1C21] shadow-sm hover:bg-white/80"
-                onClick={() => timelineRef.current?.scrollToCurrentTime?.()}
-              >
-                현재 시간 보기
-              </Button>
-            </div>
-          </div>
-
-        <div className="overflow-hidden rounded-3xl border border-[#D3E6ED] bg-white shadow-lg">
-          <ScheduleTimeline
-            ref={timelineRef}
-            schedules={timelineItems}
-            selectedDate={selectedDate}
-            onUpdateSchedule={updateSchedule}
-            onDeleteSchedule={deleteSchedule}
-            onEditSchedule={handleEditSchedule}
-            loading={loading}
-            onFilterTypeChange={setFilterType}
-            filterType={filterType}
-            onUpdateSubGoal={onUpdateSubGoal}
-            scrollToPlanId={null}
-            onScrollToPlanIdProcessed={() => {}}
+      {/* Header - Goal 페이지 스타일 */}
+      <header className="sticky top-0 z-20 border-b border-[#D3E6ED] bg-[#EEF5F7]/95 px-6 py-3 backdrop-blur">
+        <div className="mx-auto flex max-w-7xl items-center justify-between">
+          <Image 
+            src={krocsLogo}
+            alt="Krocs Logo" 
+            width={120}
+            height={120}
+            className="object-contain"
           />
         </div>
-        </section>
-      </div>
+      </header>
 
-      {error && (
-        <div className="fixed bottom-6 left-1/2 z-50 w-[90%] max-w-lg -translate-x-1/2 rounded-full border border-[#5D6E72] bg-white px-4 py-3 text-center text-sm text-[#5D6E72] shadow-lg">
-          {error}
+      <main className="mx-auto max-w-7xl px-6 py-6">
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
+          {/* Left Sidebar - Calendar */}
+          <div className="lg:col-span-1">
+            <Card className="sticky top-24 rounded-3xl border border-[#D3E6ED] bg-white p-4 shadow-md">
+              <CardContent className="p-0">
+                <ScheduleCalendar
+                  selectedDate={selectedDate}
+                  onDateSelect={(date) => setSelectedDate(date)}
+                  schedules={schedules}
+                />
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Main Content - Timeline */}
+          <div className="space-y-6 lg:col-span-2">
+            {error && (
+              <div className="rounded-2xl border border-[#5D6E72] bg-white/90 px-4 py-3 text-xs text-[#5D6E72]">
+                {error}
+              </div>
+            )}
+
+            <section className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-xl font-bold text-[#0F1C21]">일정 타임라인</h2>
+                  <p className="mt-1 text-sm text-black/60">
+                    {selectedDayLabel} • {timelineItems.length}개
+                  </p>
+                </div>
+                <div className="flex items-center gap-3">
+                  <Button
+                    className="h-10 rounded-full bg-[#ff8b6b] px-4 text-sm font-semibold text-white shadow-sm hover:bg-[#ff7a56] transition-colors"
+                    onClick={() => {
+                      setEditingSchedule(null)
+                      setShowForm(true)
+                    }}
+                  >
+                    <Plus className="h-4 w-4" />
+                    <span className="ml-2">새 일정</span>
+                  </Button>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-10 w-10 rounded-full border border-[#99C6D6] bg-white text-[#0F1C21] shadow-sm hover:bg-white/80"
+                      >
+                        <Menu className="h-5 w-5" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent
+                      align="end"
+                      className="w-40 rounded-2xl border border-[#D3E6ED] bg-white p-2 text-sm text-[#0F1C21] shadow-md"
+                    >
+                      <DropdownMenuItem asChild className="rounded-xl px-3 py-2">
+                        <Link href="/">홈</Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild className="rounded-xl px-3 py-2">
+                        <Link href="/goal">목표관리</Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild className="rounded-xl px-3 py-2">
+                        <Link href="/templates">템플릿</Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem className="rounded-xl px-3 py-2" onClick={handleLogout}>
+                        로그아웃
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              </div>
+            </section>
+
+            <section className="space-y-4">
+              <div className="overflow-hidden rounded-3xl border border-[#D3E6ED] bg-white shadow-lg">
+                <ScheduleTimeline
+                  ref={timelineRef}
+                  schedules={timelineItems}
+                  selectedDate={selectedDate}
+                  onUpdateSchedule={updateSchedule}
+                  onDeleteSchedule={deleteSchedule}
+                  onEditSchedule={handleEditSchedule}
+                  loading={loading}
+                  onFilterTypeChange={setFilterType}
+                  filterType={filterType}
+                  onUpdateSubGoal={onUpdateSubGoal}
+                  scrollToPlanId={null}
+                  onScrollToPlanIdProcessed={() => {}}
+                />
+              </div>
+            </section>
+          </div>
         </div>
-      )}
+      </main>
 
       {showForm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4 backdrop-blur-sm">
@@ -551,6 +609,33 @@ export default function SchedulePage() {
             />
           </div>
         </div>
+      )}
+
+      {showSubGoalModal && editingSubGoal && (
+        <SubGoalModal
+          isOpen={showSubGoalModal}
+          onClose={() => {
+            setShowSubGoalModal(false)
+            setEditingSubGoal(null)
+          }}
+          onSubGoalCreated={() => {
+            setRefreshTrigger((prev) => prev + 1)
+          }}
+          goalId={editingSubGoal.goalId}
+          editingSubGoal={editingSubGoal.subGoal}
+          onDelete={async (subGoalId) => {
+            try {
+              const { deleteSubGoal } = await import("@/api/subgoals")
+              await deleteSubGoal(editingSubGoal.goalId, subGoalId)
+              setRefreshTrigger((prev) => prev + 1)
+              setShowSubGoalModal(false)
+              setEditingSubGoal(null)
+            } catch (err) {
+              console.error("Failed to delete sub-goal:", err)
+              setError("세부목표 삭제에 실패했습니다.")
+            }
+          }}
+        />
       )}
     </div>
   )

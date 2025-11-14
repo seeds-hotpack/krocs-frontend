@@ -9,29 +9,37 @@ import { getGoals, Goal } from "@/api/goals"
 import { update_Goal as updateGoalApi, type UpdateGoalRequest } from "@/api/updateGoal"
 import { createGoal as createGoalApi } from "@/api/createGoal"
 import { logout } from "@/api/auth"
+import { getSubGoals, deleteSubGoal, updateSubGoal } from "@/api/subgoals"
 import { ScheduleCalendar } from "@/components/schedule-calendar"
 import { GoalForm } from "@/components/goal-form"
+import { SubGoalModal } from "@/components/subgoal-modal"
+import { RetrospectiveFlow } from "@/components/retrospective/retrospective-flow"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardTitle } from "@/components/ui/card"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { Checkbox } from "@/components/ui/checkbox"
 
-import { Plus, Calendar, Target, CheckCircle2, Menu, ChevronDown } from "lucide-react"
+import { Plus, Calendar, Target, CheckCircle2, Menu, ChevronDown, ChevronRight, Pencil, Trash2 } from "lucide-react"
 import krocsLogo from "@/assets/krocslogo.png"
 
-const FILTER_LABELS: Record<string, string> = {
-  All: "전체",
-  "In Progress": "진행 중",
-  Completed: "완료",
-  Overdue: "기한 초과",
+interface SubGoal {
+  sub_goal_id: number
+  title: string
+  completed: boolean
+  is_time_selected?: boolean
+  start_date_time?: string | null
+  end_date_time?: string | null
 }
 
-const FILTER_OPTIONS = [
-  { value: "All", label: FILTER_LABELS["All"] },
-  { value: "In Progress", label: FILTER_LABELS["In Progress"] },
-  { value: "Completed", label: FILTER_LABELS["Completed"] },
-  { value: "Overdue", label: FILTER_LABELS["Overdue"] },
-]
+interface EditableSubGoal {
+  sub_goal_id: number
+  title: string
+  completed: boolean
+  is_time_selected: boolean
+  start_date_time?: string | null
+  end_date_time?: string | null
+}
 
 export default function GoalPage() {
   const router = useRouter()
@@ -40,8 +48,34 @@ export default function GoalPage() {
   const [editingGoal, setEditingGoal] = useState<Goal | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [selectedDate, setSelectedDate] = useState(new Date())
-  const [filterStatus, setFilterStatus] = useState("All")
+  const [selectedDate, setSelectedDate] = useState(() => {
+    // 페이지 로드 시 localStorage에서 날짜 복원
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('goalPageSelectedDate')
+      if (saved) {
+        const date = new Date(saved)
+        if (!isNaN(date.getTime())) {
+          return date
+        }
+      }
+    }
+    return new Date()
+  })
+  const [expandedGoals, setExpandedGoals] = useState<Set<number>>(new Set())
+  const [subGoalsMap, setSubGoalsMap] = useState<Record<number, SubGoal[]>>({})
+  const [loadingSubGoals, setLoadingSubGoals] = useState<Set<number>>(new Set())
+  const [editingSubGoal, setEditingSubGoal] = useState<EditableSubGoal | null>(null)
+  const [isSubGoalModalOpen, setIsSubGoalModalOpen] = useState(false)
+  const [currentGoalId, setCurrentGoalId] = useState<number | null>(null)
+  const [retrospectiveGoal, setRetrospectiveGoal] = useState<Goal | null>(null)
+
+  // 날짜 변경 시 localStorage에 저장
+  const handleDateSelect = (date: Date) => {
+    setSelectedDate(date)
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('goalPageSelectedDate', date.toISOString())
+    }
+  }
 
   const handleLogout = async () => {
     try {
@@ -54,7 +88,7 @@ export default function GoalPage() {
   }
 
   const fetchGoals = useCallback(
-    async (date: Date, status: string) => {
+    async (date: Date) => {
       setLoading(true)
       setError(null)
       try {
@@ -63,17 +97,8 @@ export default function GoalPage() {
         const day = String(date.getDate()).padStart(2, "0")
         const formattedDate = `${year}-${month}-${day}`
 
-        const apiStatusMap: { [key: string]: "IN_PROGRESS" | "COMPLETED" | "EXPIRED" } = {
-          "In Progress": "IN_PROGRESS",
-          Completed: "COMPLETED",
-          Overdue: "EXPIRED",
-        }
-
-        const apiStatus = apiStatusMap[status]
-
         const data = await getGoals({
           searchDate: formattedDate,
-          status: apiStatus,
         })
         setGoals(data)
       } catch (err: any) {
@@ -90,6 +115,10 @@ export default function GoalPage() {
     [router]
   )
 
+  const refreshGoals = useCallback(async () => {
+    await fetchGoals(selectedDate)
+  }, [fetchGoals, selectedDate])
+
   const createGoal = async (
     goalData: Omit<Goal, "goalId" | "completed" | "subGoals" | "createdAt" | "updatedAt"> & { color: string }
   ) => {
@@ -103,7 +132,7 @@ export default function GoalPage() {
         color: goalData.color,
       }
       await createGoalApi(1, apiData)
-      await fetchGoals(selectedDate, filterStatus)
+      await refreshGoals()
       setIsFormOpen(false)
     } catch (err: any) {
       setError(err?.response?.data?.message || "목표 생성에 실패했습니다.")
@@ -180,9 +209,174 @@ export default function GoalPage() {
     await updateGoal(goalId, { ...goal, completed: !goal.completed })
   }
 
+  const toggleGoalExpansion = async (goalId: number) => {
+    const newExpanded = new Set(expandedGoals)
+    
+    if (newExpanded.has(goalId)) {
+      newExpanded.delete(goalId)
+    } else {
+      newExpanded.add(goalId)
+      // 세부목표를 아직 불러오지 않았다면 불러오기
+      if (!subGoalsMap[goalId]) {
+        setLoadingSubGoals(prev => new Set(prev).add(goalId))
+        try {
+          const response = await getSubGoals(goalId)
+          setSubGoalsMap(prev => ({
+            ...prev,
+            [goalId]: response.result.subGoals.map(sg => ({
+              sub_goal_id: sg.sub_goal_id,
+              title: sg.title,
+              completed: sg.is_completed,
+              is_time_selected: sg.is_time_selected,
+              start_date_time: sg.start_date_time,
+              end_date_time: sg.end_date_time,
+            }))
+          }))
+        } catch (err) {
+          console.error("세부목표 불러오기 실패:", err)
+        } finally {
+          setLoadingSubGoals(prev => {
+            const newSet = new Set(prev)
+            newSet.delete(goalId)
+            return newSet
+          })
+        }
+      }
+    }
+    
+    setExpandedGoals(newExpanded)
+  }
+
+  const toggleSubGoal = async (goalId: number, sub_goal_id: number) => {
+    const originalSubGoals = subGoalsMap[goalId] || []
+    const subGoalToUpdate = originalSubGoals.find((sg) => sg.sub_goal_id === sub_goal_id)
+    if (!subGoalToUpdate) return
+
+    const newCompletedStatus = !subGoalToUpdate.completed
+    
+    // 낙관적 업데이트
+    setSubGoalsMap((prev) => ({
+      ...prev,
+      [goalId]: prev[goalId].map((sg) =>
+        sg.sub_goal_id === sub_goal_id ? { ...sg, completed: newCompletedStatus } : sg
+      )
+    }))
+
+    try {
+      await updateSubGoal(goalId, sub_goal_id, {
+        title: subGoalToUpdate.title,
+        is_completed: newCompletedStatus,
+        is_time_selected: Boolean(subGoalToUpdate.is_time_selected),
+        start_date_time: subGoalToUpdate.is_time_selected
+          ? subGoalToUpdate.start_date_time ?? undefined
+          : undefined,
+        end_date_time: subGoalToUpdate.is_time_selected
+          ? subGoalToUpdate.end_date_time ?? undefined
+          : undefined,
+      })
+      
+      // 목표의 진행률을 업데이트하기 위해 목표 목록 새로고침
+      await fetchGoals(selectedDate)
+    } catch (e: any) {
+      // 실패 시 원래 상태로 복원
+      setSubGoalsMap((prev) => ({
+        ...prev,
+        [goalId]: originalSubGoals
+      }))
+      setError(e.message || "세부목표 업데이트에 실패했습니다.")
+    }
+  }
+
+  const handleDeleteSubGoal = async (goalId: number, sub_goal_id: number) => {
+    const originalSubGoals = subGoalsMap[goalId] || []
+    
+    // 낙관적 업데이트
+    setSubGoalsMap((prev) => ({
+      ...prev,
+      [goalId]: prev[goalId].filter((sg) => sg.sub_goal_id !== sub_goal_id)
+    }))
+
+    try {
+      await deleteSubGoal(goalId, sub_goal_id)
+      
+      // 목표의 진행률을 업데이트하기 위해 목표 목록 새로고침
+      await fetchGoals(selectedDate)
+    } catch (e: any) {
+      // 실패 시 원래 상태로 복원
+      setSubGoalsMap((prev) => ({
+        ...prev,
+        [goalId]: originalSubGoals
+      }))
+      setError(e.message || "세부목표 삭제에 실패했습니다.")
+    }
+  }
+
+  const openSubGoalModal = (goalId: number, subGoal?: SubGoal) => {
+    setCurrentGoalId(goalId)
+    if (subGoal) {
+      setEditingSubGoal({
+        sub_goal_id: subGoal.sub_goal_id,
+        title: subGoal.title,
+        completed: subGoal.completed,
+        is_time_selected: Boolean(subGoal.is_time_selected),
+        start_date_time: subGoal.start_date_time ?? null,
+        end_date_time: subGoal.end_date_time ?? null,
+      })
+    } else {
+      setEditingSubGoal(null)
+    }
+    setIsSubGoalModalOpen(true)
+  }
+
+  const handleSubGoalModalClose = () => {
+    setIsSubGoalModalOpen(false)
+    setEditingSubGoal(null)
+    setCurrentGoalId(null)
+  }
+
+  const handleSubGoalUpdated = async () => {
+    if (currentGoalId) {
+      // 세부목표 목록 새로고침
+      setLoadingSubGoals(prev => new Set(prev).add(currentGoalId))
+      try {
+        const response = await getSubGoals(currentGoalId)
+        setSubGoalsMap(prev => ({
+          ...prev,
+          [currentGoalId]: response.result.subGoals.map(sg => ({
+            sub_goal_id: sg.sub_goal_id,
+            title: sg.title,
+            completed: sg.is_completed,
+            is_time_selected: sg.is_time_selected,
+            start_date_time: sg.start_date_time,
+            end_date_time: sg.end_date_time,
+          }))
+        }))
+      } catch (err) {
+        console.error("세부목표 불러오기 실패:", err)
+      } finally {
+        setLoadingSubGoals(prev => {
+          const newSet = new Set(prev)
+          newSet.delete(currentGoalId)
+          return newSet
+        })
+      }
+      
+      // 목표 목록도 새로고침
+      await fetchGoals(selectedDate)
+    }
+  }
+
+  const handleGoalCompletionClick = (goal: Goal) => {
+    if (goal.completed) {
+      toggleGoalCompletion(goal.goalId)
+    } else {
+      setRetrospectiveGoal(goal)
+    }
+  }
+
   useEffect(() => {
-    fetchGoals(selectedDate, filterStatus)
-  }, [selectedDate, filterStatus, fetchGoals])
+    fetchGoals(selectedDate)
+  }, [selectedDate, fetchGoals])
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
@@ -210,7 +404,13 @@ export default function GoalPage() {
     }
   }
 
-  const getProgressPercentage = (goal: Goal) => {
+  const getProgressPercentage = (goal: Goal, subGoalsFromMap?: SubGoal[]) => {
+    // subGoalsMap에서 가져온 데이터가 있으면 우선 사용
+    if (subGoalsFromMap && subGoalsFromMap.length > 0) {
+      const completed = subGoalsFromMap.filter((sg) => sg.completed).length
+      return (completed / subGoalsFromMap.length) * 100
+    }
+    
     // API에서 받은 completionPercentage가 있으면 사용
     if (goal.completionPercentage !== undefined && goal.completionPercentage !== null) {
       return goal.completionPercentage
@@ -219,6 +419,17 @@ export default function GoalPage() {
     if (goal.subGoals.length === 0) return 0
     const completed = goal.subGoals.filter((sg) => sg.completed).length
     return (completed / goal.subGoals.length) * 100
+  }
+
+  const formatDateTime = (dateTimeStr: string | null | undefined) => {
+    if (!dateTimeStr) return null
+    const date = new Date(dateTimeStr)
+    return date.toLocaleString("ko-KR", {
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    })
   }
 
   const today = new Date()
@@ -246,28 +457,11 @@ export default function GoalPage() {
   const completedCount = completedList.length
   const overdueCount = overdueList.length
 
-  const filterCounts: Record<string, number> = {
-    All: totalGoals,
-    "In Progress": inProgressCount,
-    Completed: completedCount,
-    Overdue: overdueCount,
-  }
-
-  const sections = (() => {
-    switch (filterStatus) {
-      case "In Progress":
-        return [{ title: "진행 중", goals: sortByPriority(inProgressList) }]
-      case "Completed":
-        return [{ title: "완료된 목표", goals: sortByPriority(completedList) }]
-      case "Overdue":
-        return [{ title: "기한 초과", goals: sortByPriority(overdueList) }]
-      default:
-        return [
-          { title: "진행 중", goals: sortByPriority(inProgressList) },
-          { title: "완료된 목표", goals: sortByPriority(completedList) },
-        ]
-    }
-  })()
+  const sections = [
+    { title: "진행 중", goals: sortByPriority(inProgressList) },
+    { title: "완료된 목표", goals: sortByPriority(completedList) },
+    { title: "기한 초과", goals: sortByPriority(overdueList) },
+  ]
 
   const sectionsToRender = sections.filter((section) => section.goals.length > 0)
   const hasVisibleGoals = sectionsToRender.length > 0
@@ -289,46 +483,6 @@ export default function GoalPage() {
             height={120}
             className="object-contain"
           />
-          <div className="flex items-center gap-3">
-            <Button
-              className="h-10 rounded-full bg-[#ff8b6b] px-4 text-sm font-semibold text-white shadow-sm hover:bg-[#ff7a56] transition-colors"
-              onClick={() => {
-                setEditingGoal(null)
-                setIsFormOpen(true)
-              }}
-            >
-              <Plus className="h-4 w-4" />
-              <span className="ml-2">새 목표</span>
-            </Button>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-10 w-10 rounded-full border border-[#99C6D6] bg-white text-[#0F1C21] shadow-sm hover:bg-white/80"
-                >
-                  <Menu className="h-5 w-5" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent
-                align="end"
-                className="w-40 rounded-2xl border border-[#D3E6ED] bg-white p-2 text-sm text-[#0F1C21] shadow-md"
-              >
-                <DropdownMenuItem asChild className="rounded-xl px-3 py-2">
-                  <Link href="/">홈</Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild className="rounded-xl px-3 py-2">
-                  <Link href="/schedule">일정보기</Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild className="rounded-xl px-3 py-2">
-                  <Link href="/templates">템플릿</Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem className="rounded-xl px-3 py-2" onClick={handleLogout}>
-                  로그아웃
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
         </div>
       </header>
 
@@ -339,8 +493,9 @@ export default function GoalPage() {
               <CardContent className="p-0">
                 <ScheduleCalendar
                   selectedDate={selectedDate}
-                  onDateSelect={(date) => setSelectedDate(date)}
+                  onDateSelect={handleDateSelect}
                   schedules={[]}
+                  goals={goals}
                 />
               </CardContent>
             </Card>
@@ -358,40 +513,49 @@ export default function GoalPage() {
                 <div>
                   <h2 className="text-xl font-bold text-[#0F1C21]">목표 현황</h2>
                   <p className="mt-1 text-sm text-black/60">
-                    {selectedDayLabel} • {FILTER_LABELS[filterStatus]} {filterCounts[filterStatus]}개
+                    {selectedDayLabel} • 전체 {totalGoals}개
                   </p>
                 </div>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      className="flex items-center gap-2 rounded-full border border-[#99C6D6] bg-white px-4 py-2 text-sm font-semibold text-[#0F1C21] shadow-sm hover:bg-white/80"
-                    >
-                      {FILTER_LABELS[filterStatus]}
-                      <ChevronDown className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent
-                    align="end"
-                    className="w-44 rounded-2xl border border-[#D3E6ED] bg-white p-2 text-sm text-[#0F1C21] shadow-md"
+                <div className="flex items-center gap-3">
+                  <Button
+                    className="h-10 rounded-full bg-[#ff8b6b] px-4 text-sm font-semibold text-white shadow-sm hover:bg-[#ff7a56] transition-colors"
+                    onClick={() => {
+                      setEditingGoal(null)
+                      setIsFormOpen(true)
+                    }}
                   >
-                    {FILTER_OPTIONS.map((option) => {
-                      const isActive = option.value === filterStatus
-                      return (
-                        <DropdownMenuItem
-                          key={option.value}
-                          onClick={() => setFilterStatus(option.value)}
-                          className={`flex items-center justify-between rounded-xl px-3 py-2 ${
-                            isActive ? "bg-[#BBDCE5]/40 font-semibold text-[#0F1C21]" : ""
-                          }`}
-                        >
-                          <span>{option.label}</span>
-                          <span className="text-xs text-black/50">{filterCounts[option.value]}</span>
-                        </DropdownMenuItem>
-                      )
-                    })}
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                    <Plus className="h-4 w-4" />
+                    <span className="ml-2">새 목표</span>
+                  </Button>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-10 w-10 rounded-full border border-[#99C6D6] bg-white text-[#0F1C21] shadow-sm hover:bg-white/80"
+                      >
+                        <Menu className="h-5 w-5" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent
+                      align="end"
+                      className="w-40 rounded-2xl border border-[#D3E6ED] bg-white p-2 text-sm text-[#0F1C21] shadow-md"
+                    >
+                      <DropdownMenuItem asChild className="rounded-xl px-3 py-2">
+                        <Link href="/">홈</Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild className="rounded-xl px-3 py-2">
+                        <Link href="/schedule">일정보기</Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild className="rounded-xl px-3 py-2">
+                        <Link href="/templates">템플릿</Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem className="rounded-xl px-3 py-2" onClick={handleLogout}>
+                        로그아웃
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
               </div>
             </section>
 
@@ -414,13 +578,9 @@ export default function GoalPage() {
                   <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[#BBDCE5]/30">
                     <Target className="h-7 w-7 text-[#0F1C21]" />
                   </div>
-                  <p className="text-base font-semibold">
-                    {filterStatus === "All" ? "등록된 목표가 없습니다" : "조건에 맞는 목표가 없어요"}
-                  </p>
+                  <p className="text-base font-semibold">등록된 목표가 없습니다</p>
                   <p className="mt-2 text-sm text-black/60">
-                    {filterStatus === "All"
-                      ? "첫 목표를 만들어 하루 루틴을 시작해보세요."
-                      : "다른 필터를 선택하거나 새로운 목표를 추가해보세요."}
+                    첫 목표를 만들어 하루 루틴을 시작해보세요.
                   </p>
                   <Button
                     className="mt-5 rounded-full bg-[#ff8b6b] px-5 py-2 text-sm font-semibold text-white shadow-md hover:bg-[#ff7a56] hover:shadow-lg transition-all"
@@ -438,10 +598,20 @@ export default function GoalPage() {
                     </h3>
                     <div className="space-y-3">
                       {section.goals.map((goal) => {
-                        const rawProgress = getProgressPercentage(goal)
-                        const progress = Math.max(0, Math.min(100, Math.round(rawProgress)))
                         const isCompleted = goal.completed
                         const priorityClass = getPriorityColor(goal.priority)
+                        const isExpanded = expandedGoals.has(goal.goalId)
+                        const subGoals = subGoalsMap[goal.goalId] || []
+                        const isLoadingSubGoals = loadingSubGoals.has(goal.goalId)
+
+                        // subGoalsMap에 데이터가 있으면 그것을 사용, 없으면 goal.subGoals 사용
+                        const displaySubGoals = subGoalsMap[goal.goalId] || goal.subGoals
+                        const completedSubGoalsCount = displaySubGoals.filter((sg) => sg.completed).length
+                        const totalSubGoalsCount = displaySubGoals.length
+
+                        // 진행률 계산 - displaySubGoals 사용
+                        const rawProgress = getProgressPercentage(goal, displaySubGoals)
+                        const progress = Math.max(0, Math.min(100, Math.round(rawProgress)))
 
                         const startDate = new Date(goal.startDate)
                         const endDate = new Date(goal.endDate)
@@ -457,31 +627,28 @@ export default function GoalPage() {
                         const isOverdue = daysRemaining < 0 && !isCompleted
                         
                         return (
-                          <Link href={`/goal/${goal.goalId}`} key={goal.goalId} className="block">
-                            <Card 
-                              className="group rounded-3xl border-2 bg-white shadow-sm transition-all hover:shadow-md hover:scale-[1.005]"
-                              style={{ 
+                          <div key={goal.goalId}>
+                            <Card
+                              className="group rounded-3xl border-2 bg-white shadow-sm transition-all hover:shadow-md"
+                              style={{
                                 borderLeftWidth: '5px',
                                 borderLeftColor: goal.color || '#BBDCE5',
                                 borderTopColor: '#D3E6ED',
                                 borderRightColor: '#D3E6ED',
-                                borderBottomColor: '#D3E6ED'
+                                borderBottomColor: '#D3E6ED',
                               }}
                             >
                               <CardContent className="p-5">
                                 <div className="flex items-center justify-between gap-4">
-                                  {/* Checkbox + Content */}
                                   <div className="flex items-start gap-4 flex-1 min-w-0">
                                     <button
                                       onClick={(e) => {
                                         e.preventDefault()
                                         e.stopPropagation()
-                                        toggleGoalCompletion(goal.goalId)
+                                        handleGoalCompletionClick(goal)
                                       }}
                                       className={`mt-1 flex-shrink-0 h-6 w-6 rounded-full border-2 flex items-center justify-center transition-all hover:scale-110 ${
-                                        isCompleted
-                                          ? 'bg-gradient-to-br shadow-sm'
-                                          : 'hover:border-opacity-80'
+                                        isCompleted ? 'bg-gradient-to-br shadow-sm' : 'hover:border-opacity-80'
                                       }`}
                                       style={isCompleted ? {
                                         backgroundColor: goal.color || '#5D6E72',
@@ -492,21 +659,30 @@ export default function GoalPage() {
                                     >
                                       {isCompleted && <CheckCircle2 className="h-4 w-4 text-white" strokeWidth={3} />}
                                     </button>
-
                                     <div className="flex-1 min-w-0 space-y-3">
                                       <div className="space-y-2">
-                                        <span
-                                          className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-bold ${priorityClass}`}
-                                        >
-                                          {getPriorityText(goal.priority)}
-                                        </span>
+                                        <div className="flex items-center justify-between">
+                                          <span
+                                            className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-bold ${priorityClass}`}
+                                          >
+                                            {getPriorityText(goal.priority)}
+                                          </span>
+                                          <button
+                                            onClick={() => toggleGoalExpansion(goal.goalId)}
+                                            className="flex items-center gap-1 text-xs text-[#5D6E72] hover:text-[#0F1C21] transition-colors"
+                                          >
+                                            <span className="font-medium">세부목표</span>
+                                            <ChevronRight
+                                              className={`h-4 w-4 transition-transform ${isExpanded ? 'rotate-90' : ''}`}
+                                            />
+                                          </button>
+                                        </div>
                                         <CardTitle className={`text-lg font-bold leading-tight transition-all ${
-                                          isCompleted ? 'text-[#5D6E72]/70 line-through' : 'text-[#0F1C21] group-hover:text-[#5D6E72]'
+                                          isCompleted ? 'text-[#5D6E72]/70 line-through' : 'text-[#0F1C21]'
                                         }`}>
                                           {goal.title}
                                         </CardTitle>
                                       </div>
-
                                       <div className="flex items-center gap-4 flex-wrap text-xs text-[#5D6E72]">
                                         <div className="flex items-center gap-1.5">
                                           <Calendar className="h-3.5 w-3.5 flex-shrink-0" />
@@ -521,33 +697,31 @@ export default function GoalPage() {
                                           </span>
                                         </div>
                                       </div>
-
-                                      <div className="space-y-1.5">
+                                      <div className="space-y-1.5 max-w-[700px]">
                                         <div className="flex items-center justify-between text-[10px]">
                                           <span className="text-[#5D6E72] font-medium">
-                                            {goal.subGoals.length > 0 ? `소목표 ${goal.subGoals.filter((sg) => sg.completed).length}/${goal.subGoals.length}` : '목표 진행률'}
+                                            {totalSubGoalsCount > 0 ? `세부목표 ${completedSubGoalsCount}/${totalSubGoalsCount}` : '목표 진행률'}
                                           </span>
                                           <span className="font-bold" style={{ color: goal.color || '#5D6E72' }}>
                                             {progress}%
                                           </span>
                                         </div>
                                         <div className="h-2 w-full rounded-full bg-[#EEF5F7] overflow-hidden">
-                                          <div 
+                                          <div
                                             className="h-full transition-all duration-500 ease-out rounded-full"
-                                            style={{ 
+                                            style={{
                                               width: `${progress}%`,
-                                              backgroundColor: goal.color || '#BBDCE5'
+                                              backgroundColor: goal.color || '#BBDCE5',
                                             }}
                                           />
                                         </div>
                                       </div>
                                     </div>
                                   </div>
-
                                   <div
                                     className="relative flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-full shadow-sm"
                                     style={{
-                                      background: `conic-gradient(${goal.color || '#BBDCE5'} ${progress}%, #EEF5F7 ${progress}% 100%)`
+                                      background: `conic-gradient(${goal.color || '#BBDCE5'} ${progress}%, #EEF5F7 ${progress}% 100%)`,
                                     }}
                                   >
                                     <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white">
@@ -555,9 +729,97 @@ export default function GoalPage() {
                                     </div>
                                   </div>
                                 </div>
+                                {isExpanded && (
+                                  <div className="mt-4 pt-4 border-t border-[#D3E6ED]">
+                                    {isLoadingSubGoals ? (
+                                      <div className="text-center py-4 text-sm text-[#5D6E72]">
+                                        세부목표를 불러오는 중...
+                                      </div>
+                                    ) : (
+                                      <div className="space-y-3">
+                                        <div className="flex items-center justify-between">
+                                          <h4 className="text-sm font-semibold text-[#0F1C21]">
+                                            세부목표 ({subGoals.filter((sg) => sg.completed).length}/{subGoals.length})
+                                          </h4>
+                                          <Button
+                                            className="h-8 w-8 rounded-full bg-[#ff8b6b] p-0 text-white shadow-sm hover:bg-[#ff7a56] transition-colors flex items-center justify-center"
+                                            onClick={() => openSubGoalModal(goal.goalId)}
+                                          >
+                                            <Plus className="h-4 w-4" />
+                                          </Button>
+                                        </div>
+                                        {subGoals.length === 0 ? (
+                                          <div className="text-center py-6 text-sm text-[#5D6E72]">
+                                            <p className="mb-3">아직 등록된 세부목표가 없습니다.</p>
+                                          </div>
+                                        ) : (
+                                          <div className="space-y-2">
+                                            {subGoals.map((subGoal) => (
+                                              <div
+                                                key={subGoal.sub_goal_id}
+                                                className="flex items-start gap-3 rounded-xl bg-[#EEF5F7] px-3 py-2.5"
+                                              >
+                                                <Checkbox
+                                                  checked={subGoal.completed}
+                                                  onCheckedChange={() => toggleSubGoal(goal.goalId, subGoal.sub_goal_id)}
+                                                  className="mt-0.5 h-4 w-4 border-[#99C6D6] data-[state=checked]:border-[#ff8b6b]"
+                                                  style={{
+                                                    backgroundColor: subGoal.completed ? goal.color || '#ff8b6b' : 'transparent',
+                                                    borderColor: subGoal.completed ? goal.color || '#ff8b6b' : '#99C6D6',
+                                                  }}
+                                                />
+                                                <div className="flex-1 min-w-0">
+                                                  <span
+                                                    className={`text-sm ${
+                                                      subGoal.completed
+                                                        ? 'text-[#5D6E72] line-through'
+                                                        : 'text-[#0F1C21] font-medium'
+                                                    }`}
+                                                  >
+                                                    {subGoal.title}
+                                                  </span>
+                                                  {subGoal.is_time_selected && (subGoal.start_date_time || subGoal.end_date_time) && (
+                                                    <div className="mt-1 flex items-center gap-2 text-xs text-[#5D6E72]">
+                                                      <Calendar className="h-3 w-3" />
+                                                      <span>
+                                                        {subGoal.start_date_time && formatDateTime(subGoal.start_date_time)}
+                                                        {subGoal.start_date_time && subGoal.end_date_time && ' - '}
+                                                        {subGoal.end_date_time && formatDateTime(subGoal.end_date_time)}
+                                                      </span>
+                                                    </div>
+                                                  )}
+                                                </div>
+                                                <div className="flex items-center gap-1">
+                                                  <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="h-7 w-7 rounded-full text-[#5D6E72] hover:bg-white/70"
+                                                    onClick={() => openSubGoalModal(goal.goalId, subGoal)}
+                                                  >
+                                                    <Pencil className="h-3.5 w-3.5" />
+                                                    <span className="sr-only">수정</span>
+                                                  </Button>
+                                                  <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="h-7 w-7 rounded-full text-[#5D6E72] hover:bg-white/70"
+                                                    onClick={() => handleDeleteSubGoal(goal.goalId, subGoal.sub_goal_id)}
+                                                  >
+                                                    <Trash2 className="h-3.5 w-3.5" />
+                                                    <span className="sr-only">삭제</span>
+                                                  </Button>
+                                                </div>
+                                              </div>
+                                            ))}
+                                          </div>
+                                        )}
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
                               </CardContent>
                             </Card>
-                          </Link>
+                          </div>
                         )
                       })}
                     </div>
@@ -583,6 +845,24 @@ export default function GoalPage() {
           </div>
         </div>
       )}
+
+      {isSubGoalModalOpen && currentGoalId && (
+        <SubGoalModal
+          isOpen={isSubGoalModalOpen}
+          onClose={handleSubGoalModalClose}
+          onSubGoalCreated={handleSubGoalUpdated}
+          goalId={currentGoalId}
+          editingSubGoal={editingSubGoal}
+          onDelete={(subGoalId) => handleDeleteSubGoal(currentGoalId, subGoalId)}
+        />
+      )}
+
+      <RetrospectiveFlow
+        goal={retrospectiveGoal}
+        isOpen={Boolean(retrospectiveGoal)}
+        onClose={() => setRetrospectiveGoal(null)}
+        onCompleted={refreshGoals}
+      />
     </div>
   )
 }

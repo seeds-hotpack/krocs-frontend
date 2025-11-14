@@ -26,6 +26,7 @@ interface UpdateGoalResponse {
     startDate: string;
     endDate: string;
     isCompleted: boolean;
+    color: string;
     subGoals: SubGoal[];
     completionPercentage: number;
     createdAt: string;

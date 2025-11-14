@@ -10,6 +10,7 @@ import { createGoal as createGoalApi } from "../api/createGoal"
 import { logout } from "../api/auth"
 import { ScheduleCalendar } from "@/components/schedule-calendar"
 import { GoalForm } from "@/components/goal-form"
+import { RetrospectiveFlow } from "@/components/retrospective/retrospective-flow"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardTitle } from "@/components/ui/card"
@@ -46,6 +47,7 @@ export default function GoalManagementApp() {
   const [selectedDate, setSelectedDate] = useState(new Date())
   const [isCalendarOpen, setIsCalendarOpen] = useState(false)
   const [filterStatus, setFilterStatus] = useState("In Progress")
+  const [retrospectiveGoal, setRetrospectiveGoal] = useState<Goal | null>(null)
 
   const handleLogout = async () => {
     try {
@@ -94,6 +96,10 @@ export default function GoalManagementApp() {
     [router]
   )
 
+  const refreshGoals = useCallback(async () => {
+    await fetchGoals(selectedDate, filterStatus)
+  }, [fetchGoals, selectedDate, filterStatus])
+
   const createGoal = async (
     goalData: Omit<Goal, "goalId" | "completed" | "subGoals" | "createdAt" | "updatedAt"> & { color: string }
   ) => {
@@ -107,7 +113,7 @@ export default function GoalManagementApp() {
         color: goalData.color,
       }
       await createGoalApi(1, apiData)
-      await fetchGoals(selectedDate, filterStatus)
+      await refreshGoals()
       setIsFormOpen(false)
     } catch (err: any) {
       setError(err?.response?.data?.message || "목표 생성에 실패했습니다.")
@@ -181,6 +187,14 @@ export default function GoalManagementApp() {
 
     // 기존 updateGoal 함수를 호출해 API 처리와 상태 갱신 수행
     await updateGoal(goalId, { ...goal, completed: !goal.completed })
+  }
+
+  const handleGoalCompletionClick = (goal: Goal) => {
+    if (goal.completed) {
+      toggleGoalCompletion(goal.goalId)
+    } else {
+      setRetrospectiveGoal(goal)
+    }
   }
 
   useEffect(() => {
@@ -282,8 +296,9 @@ export default function GoalManagementApp() {
   const activeFilterLabel = FILTER_LABELS[filterStatus] ?? filterStatus
 
   return (
-    <div className="min-h-screen bg-[#EEF5F7] text-[#0F1C21]">
-      <div className="mx-auto flex min-h-screen w-full max-w-md flex-col">
+    <>
+      <div className="min-h-screen bg-[#EEF5F7] text-[#0F1C21]">
+        <div className="mx-auto flex min-h-screen w-full max-w-md flex-col">
         <header className="sticky top-0 z-20 border-b border-[#D3E6ED] bg-[#EEF5F7]/95 px-5 py-4 backdrop-blur">
           <div className="flex items-center justify-between">
             <button
@@ -475,7 +490,7 @@ export default function GoalManagementApp() {
                                   onClick={(e) => {
                                     e.preventDefault()
                                     e.stopPropagation()
-                                    toggleGoalCompletion(goal.goalId)
+                                    handleGoalCompletionClick(goal)
                                   }}
                                 >
                                   <CheckCircle2 className="h-3.5 w-3.5" />
@@ -510,5 +525,13 @@ export default function GoalManagementApp() {
         )}
       </div>
     </div>
+
+      <RetrospectiveFlow
+        goal={retrospectiveGoal}
+        isOpen={Boolean(retrospectiveGoal)}
+        onClose={() => setRetrospectiveGoal(null)}
+        onCompleted={refreshGoals}
+      />
+    </>
   )
 }

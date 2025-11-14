@@ -48,6 +48,11 @@ export function GoalForm({ goal, onSubmit, onCancel }: GoalFormProps) {
     duration: calculateInitialDuration(),
     color: goal?.color || "#bbdefb",
   })
+  const [errors, setErrors] = useState({
+    title: "",
+    dates: "",
+    color: "",
+  })
 
   const goalColors = [
     { name: "블루", color: "#bbdefb" },
@@ -60,8 +65,34 @@ export function GoalForm({ goal, onSubmit, onCancel }: GoalFormProps) {
     { name: "그레이", color: "#BDBDBD" },
   ]
 
+  const validateForm = () => {
+    const nextErrors = { title: "", dates: "", color: "" }
+    if (!formData.title.trim()) {
+      nextErrors.title = "목표 이름을 입력해 주세요."
+    }
+    if (!formData.startDate || !formData.endDate) {
+      nextErrors.dates = "시작일과 종료일을 모두 선택해 주세요."
+    } else {
+      const start = new Date(formData.startDate)
+      const end = new Date(formData.endDate)
+      if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+        nextErrors.dates = "유효한 날짜를 입력해 주세요."
+      } else if (start > end) {
+        nextErrors.dates = "종료일은 시작일 이후여야 합니다."
+      }
+    }
+    if (!formData.color || !formData.color.trim()) {
+      nextErrors.color = "목표 색상을 선택해 주세요."
+    }
+    setErrors(nextErrors)
+    return !Object.values(nextErrors).some(Boolean)
+  }
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
+    if (!validateForm()) {
+      return
+    }
 
     const start = new Date(formData.startDate)
     const end = new Date(formData.endDate)
@@ -84,6 +115,7 @@ export function GoalForm({ goal, onSubmit, onCancel }: GoalFormProps) {
     }
 
     setFormData(newFormData)
+    setErrors((prev) => ({ ...prev, dates: "" }))
   }
 
   const getPriorityLabel = (priority: string) => {
@@ -133,13 +165,17 @@ export function GoalForm({ goal, onSubmit, onCancel }: GoalFormProps) {
           <Input
             id="title"
             value={formData.title}
-            onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+            onChange={(e) => {
+              setFormData({ ...formData, title: e.target.value })
+              setErrors((prev) => ({ ...prev, title: "" }))
+            }}
             placeholder="예: 매일 아침 명상하기"
             className="h-12 rounded-2xl border-2 border-[#D3E6ED] bg-white text-base text-[#0F1C21] placeholder:text-[#5D6E72]/50 focus:border-[#ff8b6b] focus:ring-2 focus:ring-[#ff8b6b]/20 transition-all"
             required
             onInvalid={(e) => (e.target as HTMLInputElement).setCustomValidity("목표 이름을 입력해 주세요.")}
             onInput={(e) => (e.target as HTMLInputElement).setCustomValidity("")}
           />
+          {errors.title && <p className="text-xs text-red-500">{errors.title}</p>}
         </div>
 
         {/* Priority Selection */}
@@ -191,7 +227,10 @@ export function GoalForm({ goal, onSubmit, onCancel }: GoalFormProps) {
                     isSelected ? "border-[#0F1C21] shadow-lg scale-110" : "border-white shadow-sm"
                   }`}
                   style={{ backgroundColor: color }}
-                  onClick={() => setFormData({ ...formData, color })}
+                  onClick={() => {
+                    setFormData({ ...formData, color })
+                    setErrors((prev) => ({ ...prev, color: "" }))
+                  }}
                   aria-label={`${name} 선택`}
                   title={name}
                 >
@@ -204,6 +243,7 @@ export function GoalForm({ goal, onSubmit, onCancel }: GoalFormProps) {
               )
             })}
           </div>
+          {errors.color && <p className="text-xs text-red-500">{errors.color}</p>}
         </div>
 
         {/* Date Selection */}
@@ -224,6 +264,7 @@ export function GoalForm({ goal, onSubmit, onCancel }: GoalFormProps) {
                 onChange={(e) => handleDateChange("startDate", e.target.value)}
                 className="h-12 rounded-2xl border-2 border-[#D3E6ED] bg-white text-sm text-[#0F1C21] focus:border-[#ff8b6b] focus:ring-2 focus:ring-[#ff8b6b]/20"
                 required
+                aria-invalid={Boolean(errors.dates)}
               />
             </div>
 
@@ -239,13 +280,15 @@ export function GoalForm({ goal, onSubmit, onCancel }: GoalFormProps) {
                 min={formData.startDate}
                 className="h-12 rounded-2xl border-2 border-[#D3E6ED] bg-white text-sm text-[#0F1C21] focus:border-[#ff8b6b] focus:ring-2 focus:ring-[#ff8b6b]/20"
                 required
+                aria-invalid={Boolean(errors.dates)}
               />
             </div>
           </div>
+          {errors.dates && <p className="text-xs text-red-500">{errors.dates}</p>}
         </div>
 
         {/* Duration Display */}
-        <div className="rounded-2xl bg-gradient-to-r from-[#EEF5F7] to-[#E0EEF3] px-5 py-4 border-l-4 border-[#ff8b6b]">
+        <div className="rounded-2xl bg-gradient-to-r from-[#EEF5F7] to-[#E0EEF3] px-5 py-4">
           <div className="flex items-center justify-between">
             <span className="text-sm text-[#5D6E72]">선택한 기간</span>
             <div className="flex items-baseline gap-1">

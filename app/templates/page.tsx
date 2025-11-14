@@ -1,16 +1,16 @@
 'use client'
 
-import { useState, useEffect } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import axios from 'axios';
+import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { PlusCircle, ArrowLeft, Search, Sun, Moon, Monitor } from 'lucide-react';
 import { TemplateCard } from '@/components/template-card';
 import { TemplateForm } from '@/components/template-form';
-import Link from 'next/link';
-import { useTheme } from 'next-themes';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { ConfirmationModal } from '@/components/ui/confirmation-modal';
+import { GoalForm } from '@/components/goal-form';
+import { createGoal as createGoalApi } from '@/api/createGoal';
+import type { Goal } from '@/api/goals';
 import {
   createTemplate,
   updateTemplate,
@@ -18,20 +18,27 @@ import {
   getTemplates,
   deleteTemplate,
   deleteSubTemplate,
-  Template as ApiTemplate, // Import the new Template interface
+  type PaginatedTemplatesResponse,
+  type Template as ApiTemplate,
 } from '@/api/templates';
+import { ArrowLeft, Plus, Search, Sparkles, Target, ChevronDown } from 'lucide-react';
 
-// Use the Template type from the API file directly
-export type Template = ApiTemplate;
-export interface SubTemplate {
-  sub_template_id: number;
-  template_id: number;
-  title: string;
-  created_at: string;
-  updated_at: string;
-}
+type Template = ApiTemplate;
 
-// Debounce custom hook
+const priorityColorMap: Record<Template['priority'], string> = {
+  HIGH: '#5D6E72',
+  MEDIUM: '#BBDCE5',
+  LOW: '#DDEDF2',
+};
+
+const priorityLabelMap: Record<Template['priority'], string> = {
+  HIGH: '높음',
+  MEDIUM: '보통',
+  LOW: '낮음',
+};
+
+const formatDate = (date: Date) => date.toISOString().split('T')[0];
+
 function useDebounce<T>(value: T, delay: number): T {
   const [debouncedValue, setDebouncedValue] = useState<T>(value);
 
@@ -50,13 +57,13 @@ function useDebounce<T>(value: T, delay: number): T {
 
 export default function TemplatesPage() {
   const [templates, setTemplates] = useState<Template[]>([]);
+  const [totalTemplates, setTotalTemplates] = useState(0);
   const [showForm, setShowForm] = useState(false);
-  const { theme, setTheme } = useTheme();
   const [editingTemplate, setEditingTemplate] = useState<Template | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const debouncedSearchTerm = useDebounce(searchTerm, 500);
+  const debouncedSearchTerm = useDebounce(searchTerm, 400);
 
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
@@ -65,28 +72,104 @@ export default function TemplatesPage() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [templateToDelete, setTemplateToDelete] = useState<number | null>(null);
 
-  useEffect(() => {
-    const fetchTemplates = async () => {
-      try {
-        setIsLoading(true);
-        const response = await getTemplates(debouncedSearchTerm, { page: currentPage - 1, size: itemsPerPage, sort: 'createdAt,desc' });
-        setTemplates(response.content);
-        setTotalPages(response.totalPages);
-        setError(null);
-      } catch (err) {
-        setError("템플릿을 불러오는데 실패했습니다.");
-        console.error(err);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    fetchTemplates();
-  }, [debouncedSearchTerm, currentPage]);
+  const [showGoalForm, setShowGoalForm] = useState(false);
+  const [templateForGoal, setTemplateForGoal] = useState<Template | null>(null);
+  const [isCreatingGoal, setIsCreatingGoal] = useState(false);
+  const [mobileStatsOpen, setMobileStatsOpen] = useState(false);
+  const listSectionRef = useRef<HTMLDivElement | null>(null);
 
-  // 검색어가 변경될 때 현재 페이지를 1로 초기화
+  const priorityCounts = useMemo(
+    () =>
+      templates.reduce(
+        (acc, template) => {
+          acc[template.priority] = (acc[template.priority] || 0) + 1;
+          return acc;
+        },
+        { HIGH: 0, MEDIUM: 0, LOW: 0 } as Record<Template['priority'], number>,
+      ),
+    [templates],
+  );
+
+  const averageDuration = useMemo(() => {
+    if (templates.length === 0) return 0;
+    const totalDuration = templates.reduce((sum, template) => sum + (template.duration || 0), 0);
+    return Math.round(totalDuration / templates.length);
+  }, [templates]);
+
+  const goalPrefill = useMemo<Goal | null>(() => {
+    if (!templateForGoal) return null;
+    const today = new Date();
+    const durationDays = Math.max(templateForGoal.duration || 1, 1);
+    const end = new Date(today);
+    end.setDate(end.getDate() + durationDays - 1);
+
+    return {
+      goalId: templateForGoal.templateId,
+      title: templateForGoal.title,
+      priority: templateForGoal.priority,
+      color: priorityColorMap[templateForGoal.priority],
+      startDate: formatDate(today),
+      endDate: formatDate(end),
+      duration: durationDays,
+      completed: false,
+      subGoals: templateForGoal.subTemplates.map((sub) => ({
+        sub_goal_id: sub.sub_template_id,
+        title: sub.title,
+        completed: false,
+      })),
+      completionPercentage: 0,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+  }, [templateForGoal]);
+
   useEffect(() => {
     setCurrentPage(1);
   }, [debouncedSearchTerm]);
+
+  const fetchTemplatesData = useCallback(
+    async (
+      searchValue: string = debouncedSearchTerm,
+      pageValue: number = currentPage,
+    ): Promise<PaginatedTemplatesResponse> => {
+      return getTemplates(searchValue, { page: pageValue - 1, size: itemsPerPage, sort: 'createdAt,desc' });
+    },
+    [debouncedSearchTerm, currentPage, itemsPerPage],
+  );
+
+  const applyTemplateResponse = (response: PaginatedTemplatesResponse) => {
+    setTemplates(response.content);
+    setTotalPages(response.totalPages);
+    setTotalTemplates(response.totalElements);
+  };
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadTemplates = async () => {
+      try {
+        setIsLoading(true);
+        const response = await fetchTemplatesData();
+        if (!isMounted) return;
+        applyTemplateResponse(response);
+        setError(null);
+      } catch (err) {
+        if (!isMounted) return;
+        setError('템플릿을 불러오는데 실패했습니다.');
+        console.error(err);
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    loadTemplates();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [fetchTemplatesData]);
 
   const handleAddNew = () => {
     setEditingTemplate(null);
@@ -103,208 +186,419 @@ export default function TemplatesPage() {
     setShowDeleteModal(true);
   };
 
+  const handleUseTemplate = (template: Template) => {
+    setTemplateForGoal(template);
+    setShowGoalForm(true);
+  };
+
+  const handleScrollToList = () => {
+    setSearchTerm('');
+    listSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
+  const closeGoalForm = () => {
+    setShowGoalForm(false);
+    setTemplateForGoal(null);
+  };
+
   const confirmDeleteTemplate = async () => {
     if (templateToDelete === null) return;
 
     try {
       await deleteTemplate(templateToDelete);
-      const response = await getTemplates(debouncedSearchTerm, { page: currentPage - 1, size: itemsPerPage, sort: 'createdAt,desc' });
-      setTemplates(response.content);
-      setTotalPages(response.totalPages);
+      const response = await fetchTemplatesData();
+      applyTemplateResponse(response);
       if (response.content.length === 0 && currentPage > 1) {
-        setCurrentPage(currentPage - 1);
+        setCurrentPage((prev) => Math.max(1, prev - 1));
       }
-      setShowDeleteModal(false);
-      setTemplateToDelete(null);
     } catch (err) {
-      console.error("Failed to delete template:", err);
-      alert("템플릿 삭제에 실패했습니다. 다시 시도해 주세요.");
+      console.error('Failed to delete template:', err);
+      alert('템플릿 삭제에 실패했습니다. 다시 시도해 주세요.');
+    } finally {
       setShowDeleteModal(false);
       setTemplateToDelete(null);
     }
   };
 
- const handleFormSubmit = async (formData: Omit<Template, 'templateId'>) => {
+  const handleFormSubmit = async (formData: Omit<Template, 'templateId'>) => {
     try {
       if (editingTemplate) {
-        // 1. Update main template properties
-        const templateData = { title: formData.title, priority: formData.priority, duration: formData.duration };
+        const templateData = {
+          title: formData.title,
+          priority: formData.priority,
+          duration: formData.duration,
+        };
         await updateTemplate(editingTemplate.templateId, templateData);
 
         const originalSubTemplates = editingTemplate.subTemplates || [];
         const finalSubTemplates = formData.subTemplates || [];
 
-        const originalIds = new Set(originalSubTemplates.map(st => st.sub_template_id));
-        const finalIds = new Set(finalSubTemplates.map(st => st.sub_template_id));
+        const originalIds = new Set(originalSubTemplates.map((st) => st.sub_template_id));
+        const finalIds = new Set(finalSubTemplates.map((st) => st.sub_template_id));
 
-        // 2. Find and DELETE removed sub-templates
         const deletedIds = originalSubTemplates
-          .filter(st => !finalIds.has(st.sub_template_id))
-          .map(st => st.sub_template_id);
-        
+          .filter((st) => !finalIds.has(st.sub_template_id))
+          .map((st) => st.sub_template_id);
+
         if (deletedIds.length > 0) {
-          // Concurrently delete all removed sub-templates
-          await Promise.all(deletedIds.map(id => deleteSubTemplate(editingTemplate.templateId, id)));
+          await Promise.all(deletedIds.map((id) => deleteSubTemplate(editingTemplate.templateId, id)));
         }
 
-        // 3. Find and CREATE new sub-templates
         const newSubTemplates = finalSubTemplates
-          .filter(st => !originalIds.has(st.sub_template_id))
-          .map(st => ({ title: st.title }));
+          .filter((st) => !originalIds.has(st.sub_template_id))
+          .map((st) => ({ title: st.title }));
 
         if (newSubTemplates.length > 0) {
           await createSubTemplates(editingTemplate.templateId, newSubTemplates);
         }
-
       } else {
-        const templateData = { title: formData.title, priority: formData.priority, duration: formData.duration };
+        const templateData = {
+          title: formData.title,
+          priority: formData.priority,
+          duration: formData.duration,
+        };
         const newTemplateResult = await createTemplate(templateData);
-        const subTemplatesToCreate = formData.subTemplates.map(st => ({ title: st.title }));
+        const subTemplatesToCreate = (formData.subTemplates || []).map((st) => ({ title: st.title }));
         if (subTemplatesToCreate.length > 0) {
           await createSubTemplates(newTemplateResult.templateId, subTemplatesToCreate);
         }
       }
-      
-      // SUCCESS: Re-fetch and close form
-      const response = await getTemplates(debouncedSearchTerm, { page: currentPage - 1, size: itemsPerPage, sort: 'createdAt,desc' });
-      setTemplates(response.content);
-      setTotalPages(response.totalPages);
+
+      const response = await fetchTemplatesData();
+      applyTemplateResponse(response);
       setShowForm(false);
       setEditingTemplate(null);
-
     } catch (error) {
-      console.error("Failed to save template:", error);
+      console.error('Failed to save template:', error);
       if (axios.isAxiosError(error) && error.response?.status === 409) {
-        alert("이미 사용 중인 템플릿 제목입니다. 다른 제목을 사용해주세요.");
-        // 409 에러 시에는 폼을 닫지 않음
+        alert('이미 사용 중인 템플릿 제목입니다. 다른 제목을 사용해주세요.');
       } else {
-        alert("템플릿 저장에 실패했습니다.");
+        alert('템플릿 저장에 실패했습니다.');
         setShowForm(false);
         setEditingTemplate(null);
       }
     }
   };
 
+  const isValidGoalPayload = (payload: {
+    title?: string;
+    priority?: string;
+    startDate?: string;
+    endDate?: string;
+    color?: string;
+  }) => {
+    if (!payload.title || !payload.title.trim()) {
+      alert('목표 이름을 입력해 주세요.');
+      return false;
+    }
+    if (!payload.priority || !['HIGH', 'MEDIUM', 'LOW'].includes(payload.priority)) {
+      alert('중요도를 선택해 주세요.');
+      return false;
+    }
+    if (!payload.startDate || !payload.endDate) {
+      alert('시작일과 종료일을 모두 입력해 주세요.');
+      return false;
+    }
+    const start = new Date(payload.startDate);
+    const end = new Date(payload.endDate);
+    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+      alert('유효한 날짜를 입력해 주세요.');
+      return false;
+    }
+    if (start > end) {
+      alert('시작일은 종료일보다 늦을 수 없습니다.');
+      return false;
+    }
+    if (!payload.color || !payload.color.trim()) {
+      alert('목표 색상을 선택해 주세요.');
+      return false;
+    }
+    return true;
+  };
+
+  const handleGoalCreate = async (goalPayload: {
+    title: string;
+    priority: 'HIGH' | 'MEDIUM' | 'LOW';
+    startDate: string;
+    endDate: string;
+    color: string;
+  }) => {
+    if (!isValidGoalPayload(goalPayload)) {
+      return;
+    }
+
+    setIsCreatingGoal(true);
+    try {
+      await createGoalApi(1, goalPayload);
+      alert('템플릿을 기반으로 목표를 생성했습니다.');
+      closeGoalForm();
+    } catch (err) {
+      console.error('Failed to create goal from template:', err);
+      alert('목표 생성에 실패했습니다. 다시 시도해 주세요.');
+    } finally {
+      setIsCreatingGoal(false);
+    }
+  };
+
+  const skeletonCards = Array.from({ length: 3 }).map((_, index) => (
+    <div
+      key={index}
+      className="h-32 rounded-3xl border border-[#D3E6ED] bg-white p-4 shadow-xs animate-pulse"
+    >
+      <div className="h-4 w-3/4 rounded-full bg-[#BBDCE5]/40" />
+      <div className="mt-4 h-3 w-1/2 rounded-full bg-[#BBDCE5]/30" />
+      <div className="mt-6 h-2 w-full rounded-full bg-[#BBDCE5]/20" />
+    </div>
+  ));
+
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 p-4 sm:p-6 lg:p-8">
-      <div className="max-w-7xl mx-auto">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center sm:justify-between mb-8 gap-4">
-          <div className="flex flex-col items-start">
-            <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-slate-100 mb-2">템플릿 관리</h1>
-            <Link href="/">
-              <Button variant="ghost" size="sm" className="h-8 -ml-2">
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                <span>목표로 돌아가기</span>
+    <div className="min-h-screen bg-[#EEF5F7] text-[#0F1C21]">
+      <header className="sticky top-0 z-20 border-b border-[#D3E6ED] bg-[#EEF5F7]/95 px-5 py-3 backdrop-blur">
+        <div className="mx-auto flex max-w-4xl items-center justify-between">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wider text-[#5D6E72]">Templates</p>
+            <h1 className="text-xl font-bold">목표 템플릿</h1>
+          </div>
+          <div className="flex items-center gap-2">
+            <Link href="/goal" className="hidden sm:block">
+              <Button className="rounded-full border border-[#99C6D6] bg-white px-4 text-sm font-semibold text-[#0F1C21]">
+                <ArrowLeft className="h-4 w-4" />
+                <span className="ml-2">목표 보기</span>
+              </Button>
+            </Link>
+            <Link href="/goal" className="sm:hidden">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="rounded-full border border-[#99C6D6] bg-white text-[#0F1C21]"
+                aria-label="목표 페이지로 이동"
+              >
+                <ArrowLeft className="h-4 w-4" />
               </Button>
             </Link>
           </div>
-          <div className="flex items-center gap-2 w-full sm:w-auto">
-             <div className="relative w-full sm:w-64">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
-                <Input
-                    placeholder="템플릿 제목으로 검색..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-9 w-full"
-                />
+        </div>
+      </header>
+
+      <main className="mx-auto flex max-w-4xl flex-col gap-6 px-5 py-6">
+        <section className="rounded-3xl bg-gradient-to-br from-[#ff8b6b] to-[#ff6b47] p-5 text-white shadow-md sm:p-6">
+          <div className="flex flex-col gap-4 sm:gap-5">
+            <div>
+              <div className="flex items-center gap-2 text-xs font-semibold uppercase sm:text-sm">
+                <Sparkles className="h-4 w-4" />
+                <span>Template Library</span>
+              </div>
+              <h2 className="mt-1 text-xl font-bold leading-tight sm:text-2xl">반복 목표를 위한 청사진</h2>
+              <p className="mt-1 text-xs text-white/80 sm:mt-2 sm:text-sm">
+                자주 만드는 목표를 템플릿으로 저장하고, 언제든지 한 번의 터치로 불러와 보세요.
+              </p>
             </div>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="outline"
-                  className="border-slate-300 hover:bg-slate-50 dark:border-slate-600 dark:hover:bg-slate-800 bg-transparent"
-                >
-                  {theme === "light" ? (
-                    <Sun className="h-4 w-4" />
-                  ) : theme === "dark" ? (
-                    <Moon className="h-4 w-4" />
-                  ) : (
-                    <Monitor className="h-4 w-4" />
-                  )}
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => setTheme("light")}>
-                  <Sun className="h-4 w-4 mr-2" />
-                  라이트 모드
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setTheme("dark")}>
-                  <Moon className="h-4 w-4 mr-2" />
-                  다크 모드
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setTheme("system")}>
-                  <Monitor className="h-4 w-4 mr-2" />
-                  시스템 설정
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-            <Button onClick={handleAddNew} className="flex-shrink-0">
-                <PlusCircle className="h-4 w-4 sm:mr-2" />
-                <span className="hidden sm:inline">새 템플릿 추가</span>
+            <div className="sm:hidden">
+              <button
+                type="button"
+                className="flex w-full items-center justify-between rounded-2xl bg-white/15 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-white/90 backdrop-blur-sm"
+                onClick={() => setMobileStatsOpen((prev) => !prev)}
+              >
+                <span>요약 보기</span>
+                <div className="flex items-center gap-2 text-white">
+                  <span className="text-base font-extrabold">{totalTemplates}</span>
+                  <ChevronDown
+                    className={`h-4 w-4 transition-transform ${mobileStatsOpen ? 'rotate-180' : ''}`}
+                  />
+                </div>
+              </button>
+              {mobileStatsOpen && (
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <div className="flex-1 min-w-[140px] rounded-2xl bg-white/15 px-4 py-3 text-sm backdrop-blur-sm">
+                    <p className="text-[11px] uppercase tracking-wide text-white/70">전체</p>
+                    <p className="mt-1 text-2xl font-extrabold">{totalTemplates}</p>
+                  </div>
+                  <div className="flex-1 min-w-[140px] rounded-2xl bg-white/15 px-4 py-3 text-sm backdrop-blur-sm">
+                    <p className="text-[11px] uppercase tracking-wide text-white/70">평균 기간</p>
+                    <p className="mt-1 text-2xl font-extrabold">
+                      {averageDuration > 0 ? `${averageDuration}일` : '없음'}
+                    </p>
+                  </div>
+                  <div className="flex-1 min-w-[140px] rounded-2xl bg-white/15 px-4 py-3 text-sm backdrop-blur-sm">
+                    <p className="text-[11px] uppercase tracking-wide text-white/70">높은 우선순위</p>
+                    <p className="mt-1 text-2xl font-extrabold">{priorityCounts.HIGH}</p>
+                  </div>
+                </div>
+              )}
+            </div>
+            <div className="hidden gap-3 sm:grid sm:grid-cols-3">
+              <div className="rounded-2xl bg-white/15 p-4 backdrop-blur-sm">
+                <p className="text-sm text-white/70">전체 템플릿</p>
+                <p className="mt-1 text-3xl font-extrabold">{totalTemplates}</p>
+              </div>
+              <div className="rounded-2xl bg-white/15 p-4 backdrop-blur-sm">
+                <p className="text-sm text-white/70">평균 소요 기간</p>
+                <p className="mt-1 text-3xl font-extrabold">
+                  {averageDuration > 0 ? `${averageDuration}일` : '데이터 없음'}
+                </p>
+              </div>
+              <div className="rounded-2xl bg-white/15 p-4 backdrop-blur-sm">
+                <p className="text-sm text-white/70">높은 우선순위</p>
+                <p className="mt-1 text-3xl font-extrabold">{priorityCounts.HIGH}</p>
+              </div>
+            </div>
+            <div className="flex flex-col gap-3 sm:flex-row">
+              <Button
+                className="flex-1 rounded-2xl bg-white/90 py-4 text-sm font-semibold text-[#ff6b47] shadow-sm hover:bg-white sm:py-6 sm:text-base"
+                onClick={handleAddNew}
+              >
+                <Plus className="h-4 w-4" />
+                <span className="ml-2">새 템플릿 만들기</span>
+              </Button>
+              <Button
+                variant="ghost"
+                className="flex-1 rounded-2xl border border-white/40 bg-white/10 py-4 text-sm font-semibold text-white hover:bg-white/20 sm:py-6 sm:text-base"
+                onClick={handleScrollToList}
+              >
+                저장된 템플릿 살펴보기
+              </Button>
+            </div>
+          </div>
+        </section>
+
+        <section className="rounded-3xl border border-[#D3E6ED] bg-white p-4 shadow-xs space-y-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+            <div className="relative flex-1">
+              <div className="pointer-events-none absolute inset-y-0 left-4 flex items-center">
+                <Search className="h-4 w-4 text-[#5D6E72]" />
+              </div>
+              <Input
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="템플릿 제목으로 검색해 보세요"
+                className="h-12 rounded-2xl border-2 border-[#D3E6ED] bg-[#EEF5F7] pl-12 text-sm placeholder:text-[#5D6E72]/60"
+              />
+            </div>
+            <Button
+              variant="ghost"
+              className="rounded-2xl border border-[#D3E6ED] bg-[#EEF5F7] text-sm font-semibold text-[#0F1C21]"
+              onClick={handleAddNew}
+            >
+              <Plus className="h-4 w-4" />
+              <span className="ml-1">추가</span>
             </Button>
           </div>
-        </div>
-
-        {isLoading && <p className="text-center py-10">템플릿을 불러오는 중...</p>}
-        {error && <p className="text-red-500 text-center py-10">{error}</p>}
-
-        {!isLoading && !error && templates.length > 0 && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {templates.map((template) => (
-              <TemplateCard
-                key={template.templateId}
-                template={template}
-                onEdit={() => handleEdit(template)}
-                onDelete={() => handleDelete(template.templateId)}
-              />
+          <div className="grid grid-cols-3 gap-2 text-center text-xs font-semibold text-[#0F1C21]">
+            {(Object.keys(priorityLabelMap) as Array<Template['priority']>).map((priority) => (
+              <div
+                key={priority}
+                className="rounded-2xl border border-[#D3E6ED] bg-[#EEF5F7] px-3 py-2"
+              >
+                <p>{priorityLabelMap[priority]}</p>
+                <p className="mt-0.5 text-black/60">{priorityCounts[priority]}개</p>
+              </div>
             ))}
           </div>
-        )}
+        </section>
 
-        {!isLoading && !error && templates.length === 0 && (
-            <div className="text-center py-20 bg-white dark:bg-slate-800/50 rounded-lg">
-                <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-200">{searchTerm ? "검색 결과가 없습니다." : "템플릿이 없습니다."}</h3>
-                <p className="text-sm text-slate-500 mt-2">{searchTerm ? "다른 검색어를 입력하시거나 새 템플릿을 추가해보세요." : "새 템플릿을 추가해보세요."}</p>
-            </div>
-        )}
-
-        {totalPages > 1 && (
-          <div className="flex justify-center items-center gap-2 mt-8">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-              disabled={currentPage === 1}
-            >
-              이전
-            </Button>
-            <div className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                Page {currentPage} of {totalPages}
-              </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-              disabled={currentPage === totalPages}
-            >
-              다음
-            </Button>
+        <section className="space-y-4" ref={listSectionRef}>
+          <div className="flex items-center justify-between px-1">
+            <h3 className="text-base font-bold">나의 템플릿</h3>
+            <span className="text-xs font-semibold text-black/50">
+              총 {totalTemplates}개 · {currentPage}/{Math.max(totalPages, 1)}
+            </span>
           </div>
-        )}
-      </div>
+
+          {isLoading ? (
+            <div className="space-y-3">{skeletonCards}</div>
+          ) : error ? (
+            <div className="rounded-3xl border border-red-200 bg-red-50 px-4 py-4 text-sm text-red-700">
+              {error}
+            </div>
+          ) : templates.length === 0 ? (
+            <div className="rounded-3xl border border-[#D3E6ED] bg-white p-10 text-center shadow-xs">
+              <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[#BBDCE5]/40">
+                <Target className="h-7 w-7 text-[#0F1C21]" />
+              </div>
+              <p className="text-base font-semibold">
+                {searchTerm ? '검색 결과가 없습니다.' : '저장된 템플릿이 없어요.'}
+              </p>
+              <p className="mt-2 text-sm text-black/60">
+                {searchTerm ? '검색어를 바꾸거나 새로운 템플릿을 만들어보세요.' : '첫 템플릿을 만들어 목표를 빠르게 생성해보세요.'}
+              </p>
+              <Button
+                className="mt-5 rounded-full bg-[#ff8b6b] px-5 py-2 text-sm font-semibold text-white shadow-md hover:bg-[#ff7a56]"
+                onClick={handleAddNew}
+              >
+                <Plus className="h-4 w-4" />
+                <span className="ml-2">새 템플릿 만들기</span>
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {templates.map((template) => (
+                <TemplateCard
+                  key={template.templateId}
+                  template={template}
+                  onEdit={() => handleEdit(template)}
+                  onDelete={() => handleDelete(template.templateId)}
+                  onUseTemplate={() => handleUseTemplate(template)}
+                />
+              ))}
+            </div>
+          )}
+
+          {totalPages > 1 && (
+            <div className="flex items-center justify-center gap-3 pt-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="rounded-full border-[#99C6D6] px-4 text-sm font-semibold text-[#0F1C21]"
+                onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+                disabled={currentPage === 1}
+              >
+                이전
+              </Button>
+              <span className="text-xs font-semibold text-black/60">
+                {currentPage}/{totalPages}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                className="rounded-full border-[#99C6D6] px-4 text-sm font-semibold text-[#0F1C21]"
+                onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+                disabled={currentPage === totalPages}
+              >
+                다음
+              </Button>
+            </div>
+          )}
+        </section>
+      </main>
 
       {showForm && (
-         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white dark:bg-slate-800 rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
-                <TemplateForm
-                    template={editingTemplate}
-                    onSubmit={handleFormSubmit}
-                    onCancel={() => {
-                        setShowForm(false);
-                        setEditingTemplate(null);
-                    }}
-                />
-            </div>
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm">
+          <div className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-3xl border border-[#D3E6ED] bg-white shadow-2xl">
+            <TemplateForm
+              template={editingTemplate}
+              onSubmit={handleFormSubmit}
+              onCancel={() => {
+                setShowForm(false);
+                setEditingTemplate(null);
+              }}
+            />
+          </div>
+        </div>
+      )}
+
+      {showGoalForm && goalPrefill && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
+          <div className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-3xl border border-[#D3E6ED] bg-white p-4 shadow-2xl">
+            <GoalForm goal={goalPrefill} onSubmit={handleGoalCreate} onCancel={closeGoalForm} />
+          </div>
+        </div>
+      )}
+
+      {isCreatingGoal && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/30">
+          <div className="rounded-2xl bg-white px-6 py-3 text-sm font-semibold text-[#0F1C21] shadow-lg">
+            목표를 생성하는 중입니다...
+          </div>
         </div>
       )}
 
