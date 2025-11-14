@@ -9,7 +9,7 @@ import { getGoals, Goal } from "@/api/goals"
 import { update_Goal as updateGoalApi, type UpdateGoalRequest } from "@/api/updateGoal"
 import { createGoal as createGoalApi } from "@/api/createGoal"
 import { logout } from "@/api/auth"
-import { getSubGoals } from "@/api/subgoals"
+import { getSubGoals, deleteSubGoal, updateSubGoal } from "@/api/subgoals"
 import { ScheduleCalendar } from "@/components/schedule-calendar"
 import { GoalForm } from "@/components/goal-form"
 
@@ -17,8 +17,9 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardTitle } from "@/components/ui/card"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Checkbox } from "@/components/ui/checkbox"
+import { Input } from "@/components/ui/input"
 
-import { Plus, Calendar, Target, CheckCircle2, Menu, ChevronDown, ChevronRight } from "lucide-react"
+import { Plus, Calendar, Target, CheckCircle2, Menu, ChevronDown, ChevronRight, Pencil, Trash2 } from "lucide-react"
 import krocsLogo from "@/assets/krocslogo.png"
 
 interface SubGoal {
@@ -53,6 +54,8 @@ export default function GoalPage() {
   const [expandedGoals, setExpandedGoals] = useState<Set<number>>(new Set())
   const [subGoalsMap, setSubGoalsMap] = useState<Record<number, SubGoal[]>>({})
   const [loadingSubGoals, setLoadingSubGoals] = useState<Set<number>>(new Set())
+  const [editingSubGoalId, setEditingSubGoalId] = useState<number | null>(null)
+  const [editingSubGoalTitle, setEditingSubGoalTitle] = useState("")
 
   // 날짜 변경 시 localStorage에 저장
   const handleDateSelect = (date: Date) => {
@@ -226,6 +229,121 @@ export default function GoalPage() {
     }
     
     setExpandedGoals(newExpanded)
+  }
+
+  const toggleSubGoal = async (goalId: number, sub_goal_id: number) => {
+    const originalSubGoals = subGoalsMap[goalId] || []
+    const subGoalToUpdate = originalSubGoals.find((sg) => sg.sub_goal_id === sub_goal_id)
+    if (!subGoalToUpdate) return
+
+    const newCompletedStatus = !subGoalToUpdate.completed
+    
+    // 낙관적 업데이트
+    setSubGoalsMap((prev) => ({
+      ...prev,
+      [goalId]: prev[goalId].map((sg) =>
+        sg.sub_goal_id === sub_goal_id ? { ...sg, completed: newCompletedStatus } : sg
+      )
+    }))
+
+    try {
+      await updateSubGoal(goalId, sub_goal_id, {
+        title: subGoalToUpdate.title,
+        is_completed: newCompletedStatus,
+        is_time_selected: Boolean(subGoalToUpdate.is_time_selected),
+        start_date_time: subGoalToUpdate.is_time_selected
+          ? subGoalToUpdate.start_date_time ?? undefined
+          : undefined,
+        end_date_time: subGoalToUpdate.is_time_selected
+          ? subGoalToUpdate.end_date_time ?? undefined
+          : undefined,
+      })
+      
+      // 목표의 진행률을 업데이트하기 위해 목표 목록 새로고침
+      await fetchGoals(selectedDate)
+    } catch (e: any) {
+      // 실패 시 원래 상태로 복원
+      setSubGoalsMap((prev) => ({
+        ...prev,
+        [goalId]: originalSubGoals
+      }))
+      setError(e.message || "세부목표 업데이트에 실패했습니다.")
+    }
+  }
+
+  const handleDeleteSubGoal = async (goalId: number, sub_goal_id: number) => {
+    if (!window.confirm("이 세부목표를 삭제하시겠습니까?")) {
+      return
+    }
+
+    const originalSubGoals = subGoalsMap[goalId] || []
+    
+    // 낙관적 업데이트
+    setSubGoalsMap((prev) => ({
+      ...prev,
+      [goalId]: prev[goalId].filter((sg) => sg.sub_goal_id !== sub_goal_id)
+    }))
+
+    try {
+      await deleteSubGoal(goalId, sub_goal_id)
+      
+      // 목표의 진행률을 업데이트하기 위해 목표 목록 새로고침
+      await fetchGoals(selectedDate)
+    } catch (e: any) {
+      // 실패 시 원래 상태로 복원
+      setSubGoalsMap((prev) => ({
+        ...prev,
+        [goalId]: originalSubGoals
+      }))
+      setError(e.message || "세부목표 삭제에 실패했습니다.")
+    }
+  }
+
+  const startInlineEdit = (subGoal: SubGoal) => {
+    setEditingSubGoalId(subGoal.sub_goal_id)
+    setEditingSubGoalTitle(subGoal.title)
+  }
+
+  const cancelInlineEdit = () => {
+    setEditingSubGoalId(null)
+    setEditingSubGoalTitle("")
+  }
+
+  const saveInlineEdit = async (goalId: number, subGoal: SubGoal) => {
+    if (!editingSubGoalTitle.trim()) return
+
+    const originalSubGoals = subGoalsMap[goalId] || []
+    
+    // 낙관적 업데이트
+    setSubGoalsMap((prev) => ({
+      ...prev,
+      [goalId]: prev[goalId].map((sg) =>
+        sg.sub_goal_id === subGoal.sub_goal_id
+          ? { ...sg, title: editingSubGoalTitle.trim() }
+          : sg
+      )
+    }))
+    cancelInlineEdit()
+
+    try {
+      await updateSubGoal(goalId, subGoal.sub_goal_id, {
+        title: editingSubGoalTitle.trim(),
+        is_completed: subGoal.completed,
+        is_time_selected: Boolean(subGoal.is_time_selected),
+        start_date_time: subGoal.is_time_selected ? subGoal.start_date_time ?? undefined : undefined,
+        end_date_time: subGoal.is_time_selected ? subGoal.end_date_time ?? undefined : undefined,
+      })
+      
+      // 목표 목록 새로고침
+      await fetchGoals(selectedDate)
+    } catch (e: any) {
+      // 실패 시 원래 상태로 복원
+      setSubGoalsMap((prev) => ({
+        ...prev,
+        [goalId]: originalSubGoals
+      }))
+      setError(e.message || "세부목표 수정에 실패했습니다.")
+    }
   }
 
   useEffect(() => {
@@ -585,39 +703,101 @@ export default function GoalPage() {
                                           </h4>
                                         </div>
                                         <div className="space-y-2">
-                                          {subGoals.map((subGoal) => (
-                                            <div
-                                              key={subGoal.sub_goal_id}
-                                              className="flex items-start gap-3 rounded-xl bg-[#EEF5F7] px-3 py-2.5"
-                                            >
-                                              <Checkbox
-                                                checked={subGoal.completed}
-                                                disabled
-                                                className="mt-0.5 h-4 w-4 border-[#99C6D6] data-[state=checked]:bg-[#ff8b6b] data-[state=checked]:border-[#ff8b6b]"
-                                              />
-                                              <div className="flex-1 min-w-0">
-                                                <span
-                                                  className={`text-sm ${
-                                                    subGoal.completed
-                                                      ? "text-[#5D6E72] line-through"
-                                                      : "text-[#0F1C21] font-medium"
-                                                  }`}
-                                                >
-                                                  {subGoal.title}
-                                                </span>
-                                                {subGoal.is_time_selected && (subGoal.start_date_time || subGoal.end_date_time) && (
-                                                  <div className="mt-1 flex items-center gap-2 text-xs text-[#5D6E72]">
-                                                    <Calendar className="h-3 w-3" />
-                                                    <span>
-                                                      {subGoal.start_date_time && formatDateTime(subGoal.start_date_time)}
-                                                      {subGoal.start_date_time && subGoal.end_date_time && " - "}
-                                                      {subGoal.end_date_time && formatDateTime(subGoal.end_date_time)}
-                                                    </span>
-                                                  </div>
-                                                )}
+                                          {subGoals.map((subGoal) => {
+                                            const isEditing = editingSubGoalId === subGoal.sub_goal_id
+                                            
+                                            return (
+                                              <div
+                                                key={subGoal.sub_goal_id}
+                                                className="flex items-start gap-3 rounded-xl bg-[#EEF5F7] px-3 py-2.5"
+                                              >
+                                                <Checkbox
+                                                  checked={subGoal.completed}
+                                                  onCheckedChange={() => toggleSubGoal(goal.goalId, subGoal.sub_goal_id)}
+                                                  className="mt-0.5 h-4 w-4 border-[#99C6D6] data-[state=checked]:bg-[#ff8b6b] data-[state=checked]:border-[#ff8b6b]"
+                                                />
+                                                <div className="flex-1 min-w-0">
+                                                  {isEditing ? (
+                                                    <Input
+                                                      value={editingSubGoalTitle}
+                                                      onChange={(e) => setEditingSubGoalTitle(e.target.value)}
+                                                      onKeyDown={(e) => {
+                                                        if (e.key === "Enter") saveInlineEdit(goal.goalId, subGoal)
+                                                        if (e.key === "Escape") cancelInlineEdit()
+                                                      }}
+                                                      className="h-8 bg-white text-sm text-[#0F1C21]"
+                                                      autoFocus
+                                                    />
+                                                  ) : (
+                                                    <>
+                                                      <span
+                                                        className={`text-sm ${
+                                                          subGoal.completed
+                                                            ? "text-[#5D6E72] line-through"
+                                                            : "text-[#0F1C21] font-medium"
+                                                        }`}
+                                                      >
+                                                        {subGoal.title}
+                                                      </span>
+                                                      {subGoal.is_time_selected && (subGoal.start_date_time || subGoal.end_date_time) && (
+                                                        <div className="mt-1 flex items-center gap-2 text-xs text-[#5D6E72]">
+                                                          <Calendar className="h-3 w-3" />
+                                                          <span>
+                                                            {subGoal.start_date_time && formatDateTime(subGoal.start_date_time)}
+                                                            {subGoal.start_date_time && subGoal.end_date_time && " - "}
+                                                            {subGoal.end_date_time && formatDateTime(subGoal.end_date_time)}
+                                                          </span>
+                                                        </div>
+                                                      )}
+                                                    </>
+                                                  )}
+                                                </div>
+                                                <div className="flex items-center gap-1">
+                                                  {isEditing ? (
+                                                    <>
+                                                      <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        onClick={() => saveInlineEdit(goal.goalId, subGoal)}
+                                                        className="h-7 rounded-full px-2 text-xs font-semibold text-[#0F1C21] hover:bg-white/70"
+                                                      >
+                                                        저장
+                                                      </Button>
+                                                      <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        onClick={cancelInlineEdit}
+                                                        className="h-7 rounded-full px-2 text-xs font-semibold text-[#5D6E72] hover:bg-white/70"
+                                                      >
+                                                        취소
+                                                      </Button>
+                                                    </>
+                                                  ) : (
+                                                    <>
+                                                      <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="h-7 w-7 rounded-full text-[#5D6E72] hover:bg-white/70"
+                                                        onClick={() => startInlineEdit(subGoal)}
+                                                      >
+                                                        <Pencil className="h-3.5 w-3.5" />
+                                                        <span className="sr-only">수정</span>
+                                                      </Button>
+                                                      <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="h-7 w-7 rounded-full text-[#5D6E72] hover:bg-white/70"
+                                                        onClick={() => handleDeleteSubGoal(goal.goalId, subGoal.sub_goal_id)}
+                                                      >
+                                                        <Trash2 className="h-3.5 w-3.5" />
+                                                        <span className="sr-only">삭제</span>
+                                                      </Button>
+                                                    </>
+                                                  )}
+                                                </div>
                                               </div>
-                                            </div>
-                                          ))}
+                                            )
+                                          })}
                                         </div>
                                       </div>
                                     )}
