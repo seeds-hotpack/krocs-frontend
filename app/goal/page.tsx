@@ -645,13 +645,11 @@ export default function GoalPage() {
                                           />
                                         </button>
                                       </div>
-                                      <Link href={`/goal/${goal.goalId}`}>
-                                        <CardTitle className={`text-lg font-bold leading-tight transition-all cursor-pointer ${
-                                          isCompleted ? 'text-[#5D6E72]/70 line-through' : 'text-[#0F1C21] group-hover:text-[#5D6E72]'
-                                        }`}>
-                                          {goal.title}
-                                        </CardTitle>
-                                      </Link>
+                                      <CardTitle className={`text-lg font-bold leading-tight transition-all ${
+                                        isCompleted ? 'text-[#5D6E72]/70 line-through' : 'text-[#0F1C21]'
+                                      }`}>
+                                        {goal.title}
+                                      </CardTitle>
                                     </div>
 
                                     <div className="flex items-center gap-4 flex-wrap text-xs text-[#5D6E72]">
