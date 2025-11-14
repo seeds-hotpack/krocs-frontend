@@ -21,6 +21,7 @@ import {
   ChevronDown,
   ChevronUp,
   Target,
+  AlertTriangle,
 } from "lucide-react"
 import { updateSubPlan } from "@/api/subplan";
 import { updateSubGoal } from "@/api/subgoals";
@@ -235,6 +236,27 @@ export const ScheduleTimeline = forwardRef<{
     return Math.min(baseHeight + additionalHeight, 200) // 최대 200px
   }
 
+  // 일정 겹침 감지 함수
+  const checkOverlap = (schedule1: Schedule, schedule2: Schedule): boolean => {
+    // 하루 종일 일정은 겹침 체크에서 제외
+    if (schedule1.allDay || schedule2.allDay) return false
+    
+    const start1 = new Date(schedule1.startDateTime).getTime()
+    const end1 = new Date(schedule1.endDateTime).getTime()
+    const start2 = new Date(schedule2.startDateTime).getTime()
+    const end2 = new Date(schedule2.endDateTime).getTime()
+    
+    // 겹침 조건: schedule1의 시작이 schedule2의 끝보다 이전이고, schedule1의 끝이 schedule2의 시작보다 이후
+    return start1 < end2 && end1 > start2
+  }
+
+  // 각 일정에 대해 겹치는 일정들을 찾는 함수
+  const getOverlappingSchedules = (schedule: Schedule, allSchedules: Schedule[]): Schedule[] => {
+    return allSchedules.filter(s => 
+      s.planId !== schedule.planId && checkOverlap(schedule, s)
+    )
+  }
+
   // 하루 종일 일정과 시간 지정 일정 분리
   const allDaySchedules = schedules.filter(s => s.allDay && s.type !== 'subgoal')
   const timedSchedules = schedules
@@ -378,6 +400,8 @@ export const ScheduleTimeline = forwardRef<{
             const isLast = index === timedSchedules.length - 1
             const scheduleColor = getScheduleColor(schedule.color)
             const IconComponent = getScheduleIcon(schedule)
+            const overlappingSchedules = getOverlappingSchedules(schedule, timedSchedules)
+            const hasOverlap = overlappingSchedules.length > 0
 
             return (
               <div
@@ -430,6 +454,16 @@ export const ScheduleTimeline = forwardRef<{
                         <Circle className="w-4 h-4 text-gray-400" />
                       )}
                     </button>
+
+                    {/* 겹침 경고 아이콘 */}
+                    {hasOverlap && (
+                      <div 
+                        className="absolute -bottom-1 -left-1 w-6 h-6 bg-amber-500 rounded-full flex items-center justify-center shadow-md z-10"
+                        title={`${overlappingSchedules.length}개의 일정과 겹침`}
+                      >
+                        <AlertTriangle className="w-4 h-4 text-white" />
+                      </div>
+                    )}
                   </div>
 
                   {/* 연결선 */}
@@ -444,9 +478,22 @@ export const ScheduleTimeline = forwardRef<{
                 {/* 일정 내용 */}
                 <div className="flex-1 pb-8">
                   <div
-                    className="bg-white rounded-2xl p-4 shadow-sm border border-gray-200 cursor-pointer hover:shadow-md transition-shadow"
+                    className={`bg-white rounded-2xl p-4 shadow-sm border transition-shadow ${
+                      hasOverlap ? 'border-amber-300 bg-amber-50/30' : 'border-gray-200'
+                    } cursor-pointer hover:shadow-md`}
                     onClick={() => handleScheduleClick(schedule)}
                   >
+                    {/* 겹침 경고 메시지 */}
+                    {hasOverlap && (
+                      <div className="mb-3 flex items-center gap-2 text-xs text-amber-700 bg-amber-100 rounded-lg px-3 py-2">
+                        <AlertTriangle className="h-3.5 w-3.5 flex-shrink-0" />
+                        <span className="font-medium">
+                          {overlappingSchedules.length}개의 일정과 시간이 겹칩니다
+                          {overlappingSchedules.length <= 2 && `: ${overlappingSchedules.map(s => s.title).join(', ')}`}
+                        </span>
+                      </div>
+                    )}
+
                     <div className="flex items-start justify-between mb-2">
                       <div className="flex-1">
                         <div className="flex items-center gap-2 text-xs text-gray-500 mb-1">
