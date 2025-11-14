@@ -108,7 +108,7 @@ export default function GoalPage() {
   )
 
   const refreshGoals = useCallback(async () => {
-    await fetchGoals(selectedDate, filterStatus)
+    await fetchGoals(selectedDate)
   }, [fetchGoals, selectedDate, filterStatus])
 
   const createGoal = async (
