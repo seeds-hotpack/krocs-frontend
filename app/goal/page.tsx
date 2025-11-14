@@ -698,71 +698,94 @@ export default function GoalPage() {
                                       <div className="text-center py-4 text-sm text-[#5D6E72]">
                                         세부목표를 불러오는 중...
                                       </div>
-                                    ) : subGoals.length === 0 ? (
-                                      <div className="text-center py-4 text-sm text-[#5D6E72]">
-                                        아직 등록된 세부목표가 없습니다.
-                                      </div>
                                     ) : (
-                                      <div className="space-y-2">
-                                        <div className="space-y-2">
-                                          {subGoals.map((subGoal) => (
-                                            <div
-                                              key={subGoal.sub_goal_id}
-                                              className="flex items-start gap-3 rounded-xl bg-[#EEF5F7] px-3 py-2.5"
-                                            >
-                                              <Checkbox
-                                                checked={subGoal.completed}
-                                                onCheckedChange={() => toggleSubGoal(goal.goalId, subGoal.sub_goal_id)}
-                                                className="mt-0.5 h-4 w-4 border-[#99C6D6] data-[state=checked]:border-[#ff8b6b]"
-                                                style={{
-                                                  backgroundColor: subGoal.completed ? goal.color || '#ff8b6b' : 'transparent',
-                                                  borderColor: subGoal.completed ? goal.color || '#ff8b6b' : '#99C6D6'
-                                                }}
-                                              />
-                                              <div className="flex-1 min-w-0">
-                                                <span
-                                                  className={`text-sm ${
-                                                    subGoal.completed
-                                                      ? "text-[#5D6E72] line-through"
-                                                      : "text-[#0F1C21] font-medium"
-                                                  }`}
-                                                >
-                                                  {subGoal.title}
-                                                </span>
-                                                {subGoal.is_time_selected && (subGoal.start_date_time || subGoal.end_date_time) && (
-                                                  <div className="mt-1 flex items-center gap-2 text-xs text-[#5D6E72]">
-                                                    <Calendar className="h-3 w-3" />
-                                                    <span>
-                                                      {subGoal.start_date_time && formatDateTime(subGoal.start_date_time)}
-                                                      {subGoal.start_date_time && subGoal.end_date_time && " - "}
-                                                      {subGoal.end_date_time && formatDateTime(subGoal.end_date_time)}
-                                                    </span>
-                                                  </div>
-                                                )}
-                                              </div>
-                                              <div className="flex items-center gap-1">
-                                                <Button
-                                                  variant="ghost"
-                                                  size="icon"
-                                                  className="h-7 w-7 rounded-full text-[#5D6E72] hover:bg-white/70"
-                                                  onClick={() => openSubGoalModal(goal.goalId, subGoal)}
-                                                >
-                                                  <Pencil className="h-3.5 w-3.5" />
-                                                  <span className="sr-only">수정</span>
-                                                </Button>
-                                                <Button
-                                                  variant="ghost"
-                                                  size="icon"
-                                                  className="h-7 w-7 rounded-full text-[#5D6E72] hover:bg-white/70"
-                                                  onClick={() => handleDeleteSubGoal(goal.goalId, subGoal.sub_goal_id)}
-                                                >
-                                                  <Trash2 className="h-3.5 w-3.5" />
-                                                  <span className="sr-only">삭제</span>
-                                                </Button>
-                                              </div>
-                                            </div>
-                                          ))}
+                                      <div className="space-y-3">
+                                        {/* 헤더와 추가 버튼 */}
+                                        <div className="flex items-center justify-between">
+                                          <h4 className="text-sm font-semibold text-[#0F1C21]">
+                                            세부목표 ({subGoals.filter(sg => sg.completed).length}/{subGoals.length})
+                                          </h4>
+                                          <Button
+                                            className="h-8 rounded-full bg-[#ff8b6b] px-3 text-xs font-semibold text-white shadow-sm hover:bg-[#ff7a56] transition-colors"
+                                            onClick={() => openSubGoalModal(goal.goalId)}
+                                          >
+                                            <Plus className="h-3.5 w-3.5" />
+                                            <span className="ml-1.5">추가</span>
+                                          </Button>
                                         </div>
+
+                                        {subGoals.length === 0 ? (
+                                          <div className="text-center py-6 text-sm text-[#5D6E72]">
+                                            <p className="mb-3">아직 등록된 세부목표가 없습니다.</p>
+                                            <Button
+                                              className="rounded-full bg-[#ff8b6b] px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-[#ff7a56]"
+                                              onClick={() => openSubGoalModal(goal.goalId)}
+                                            >
+                                              <Plus className="h-3.5 w-3.5" />
+                                              <span className="ml-1.5">첫 세부목표 추가하기</span>
+                                            </Button>
+                                          </div>
+                                        ) : (
+                                          <div className="space-y-2">
+                                            {subGoals.map((subGoal) => (
+                                              <div
+                                                key={subGoal.sub_goal_id}
+                                                className="flex items-start gap-3 rounded-xl bg-[#EEF5F7] px-3 py-2.5"
+                                              >
+                                                <Checkbox
+                                                  checked={subGoal.completed}
+                                                  onCheckedChange={() => toggleSubGoal(goal.goalId, subGoal.sub_goal_id)}
+                                                  className="mt-0.5 h-4 w-4 border-[#99C6D6] data-[state=checked]:border-[#ff8b6b]"
+                                                  style={{
+                                                    backgroundColor: subGoal.completed ? goal.color || '#ff8b6b' : 'transparent',
+                                                    borderColor: subGoal.completed ? goal.color || '#ff8b6b' : '#99C6D6'
+                                                  }}
+                                                />
+                                                <div className="flex-1 min-w-0">
+                                                  <span
+                                                    className={`text-sm ${
+                                                      subGoal.completed
+                                                        ? "text-[#5D6E72] line-through"
+                                                        : "text-[#0F1C21] font-medium"
+                                                    }`}
+                                                  >
+                                                    {subGoal.title}
+                                                  </span>
+                                                  {subGoal.is_time_selected && (subGoal.start_date_time || subGoal.end_date_time) && (
+                                                    <div className="mt-1 flex items-center gap-2 text-xs text-[#5D6E72]">
+                                                      <Calendar className="h-3 w-3" />
+                                                      <span>
+                                                        {subGoal.start_date_time && formatDateTime(subGoal.start_date_time)}
+                                                        {subGoal.start_date_time && subGoal.end_date_time && " - "}
+                                                        {subGoal.end_date_time && formatDateTime(subGoal.end_date_time)}
+                                                      </span>
+                                                    </div>
+                                                  )}
+                                                </div>
+                                                <div className="flex items-center gap-1">
+                                                  <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="h-7 w-7 rounded-full text-[#5D6E72] hover:bg-white/70"
+                                                    onClick={() => openSubGoalModal(goal.goalId, subGoal)}
+                                                  >
+                                                    <Pencil className="h-3.5 w-3.5" />
+                                                    <span className="sr-only">수정</span>
+                                                  </Button>
+                                                  <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="h-7 w-7 rounded-full text-[#5D6E72] hover:bg-white/70"
+                                                    onClick={() => handleDeleteSubGoal(goal.goalId, subGoal.sub_goal_id)}
+                                                  >
+                                                    <Trash2 className="h-3.5 w-3.5" />
+                                                    <span className="sr-only">삭제</span>
+                                                  </Button>
+                                                </div>
+                                              </div>
+                                            ))}
+                                          </div>
+                                        )}
                                       </div>
                                     )}
                                   </div>
