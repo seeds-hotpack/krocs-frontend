@@ -12,12 +12,12 @@ import { logout } from "@/api/auth"
 import { getSubGoals, deleteSubGoal, updateSubGoal } from "@/api/subgoals"
 import { ScheduleCalendar } from "@/components/schedule-calendar"
 import { GoalForm } from "@/components/goal-form"
+import { SubGoalModal } from "@/components/subgoal-modal"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardTitle } from "@/components/ui/card"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Input } from "@/components/ui/input"
 
 import { Plus, Calendar, Target, CheckCircle2, Menu, ChevronDown, ChevronRight, Pencil, Trash2 } from "lucide-react"
 import krocsLogo from "@/assets/krocslogo.png"
@@ -54,8 +54,9 @@ export default function GoalPage() {
   const [expandedGoals, setExpandedGoals] = useState<Set<number>>(new Set())
   const [subGoalsMap, setSubGoalsMap] = useState<Record<number, SubGoal[]>>({})
   const [loadingSubGoals, setLoadingSubGoals] = useState<Set<number>>(new Set())
-  const [editingSubGoalId, setEditingSubGoalId] = useState<number | null>(null)
-  const [editingSubGoalTitle, setEditingSubGoalTitle] = useState("")
+  const [editingSubGoal, setEditingSubGoal] = useState<SubGoal | null>(null)
+  const [isSubGoalModalOpen, setIsSubGoalModalOpen] = useState(false)
+  const [currentGoalId, setCurrentGoalId] = useState<number | null>(null)
 
   // 날짜 변경 시 localStorage에 저장
   const handleDateSelect = (date: Date) => {
@@ -272,10 +273,6 @@ export default function GoalPage() {
   }
 
   const handleDeleteSubGoal = async (goalId: number, sub_goal_id: number) => {
-    if (!window.confirm("이 세부목표를 삭제하시겠습니까?")) {
-      return
-    }
-
     const originalSubGoals = subGoalsMap[goalId] || []
     
     // 낙관적 업데이트
@@ -299,50 +296,47 @@ export default function GoalPage() {
     }
   }
 
-  const startInlineEdit = (subGoal: SubGoal) => {
-    setEditingSubGoalId(subGoal.sub_goal_id)
-    setEditingSubGoalTitle(subGoal.title)
+  const openSubGoalModal = (goalId: number, subGoal?: SubGoal) => {
+    setCurrentGoalId(goalId)
+    setEditingSubGoal(subGoal || null)
+    setIsSubGoalModalOpen(true)
   }
 
-  const cancelInlineEdit = () => {
-    setEditingSubGoalId(null)
-    setEditingSubGoalTitle("")
+  const handleSubGoalModalClose = () => {
+    setIsSubGoalModalOpen(false)
+    setEditingSubGoal(null)
+    setCurrentGoalId(null)
   }
 
-  const saveInlineEdit = async (goalId: number, subGoal: SubGoal) => {
-    if (!editingSubGoalTitle.trim()) return
-
-    const originalSubGoals = subGoalsMap[goalId] || []
-    
-    // 낙관적 업데이트
-    setSubGoalsMap((prev) => ({
-      ...prev,
-      [goalId]: prev[goalId].map((sg) =>
-        sg.sub_goal_id === subGoal.sub_goal_id
-          ? { ...sg, title: editingSubGoalTitle.trim() }
-          : sg
-      )
-    }))
-    cancelInlineEdit()
-
-    try {
-      await updateSubGoal(goalId, subGoal.sub_goal_id, {
-        title: editingSubGoalTitle.trim(),
-        is_completed: subGoal.completed,
-        is_time_selected: Boolean(subGoal.is_time_selected),
-        start_date_time: subGoal.is_time_selected ? subGoal.start_date_time ?? undefined : undefined,
-        end_date_time: subGoal.is_time_selected ? subGoal.end_date_time ?? undefined : undefined,
-      })
+  const handleSubGoalUpdated = async () => {
+    if (currentGoalId) {
+      // 세부목표 목록 새로고침
+      setLoadingSubGoals(prev => new Set(prev).add(currentGoalId))
+      try {
+        const response = await getSubGoals(currentGoalId)
+        setSubGoalsMap(prev => ({
+          ...prev,
+          [currentGoalId]: response.result.subGoals.map(sg => ({
+            sub_goal_id: sg.sub_goal_id,
+            title: sg.title,
+            completed: sg.is_completed,
+            is_time_selected: sg.is_time_selected,
+            start_date_time: sg.start_date_time,
+            end_date_time: sg.end_date_time,
+          }))
+        }))
+      } catch (err) {
+        console.error("세부목표 불러오기 실패:", err)
+      } finally {
+        setLoadingSubGoals(prev => {
+          const newSet = new Set(prev)
+          newSet.delete(currentGoalId)
+          return newSet
+        })
+      }
       
-      // 목표 목록 새로고침
+      // 목표 목록도 새로고침
       await fetchGoals(selectedDate)
-    } catch (e: any) {
-      // 실패 시 원래 상태로 복원
-      setSubGoalsMap((prev) => ({
-        ...prev,
-        [goalId]: originalSubGoals
-      }))
-      setError(e.message || "세부목표 수정에 실패했습니다.")
     }
   }
 
@@ -703,101 +697,59 @@ export default function GoalPage() {
                                           </h4>
                                         </div>
                                         <div className="space-y-2">
-                                          {subGoals.map((subGoal) => {
-                                            const isEditing = editingSubGoalId === subGoal.sub_goal_id
-                                            
-                                            return (
-                                              <div
-                                                key={subGoal.sub_goal_id}
-                                                className="flex items-start gap-3 rounded-xl bg-[#EEF5F7] px-3 py-2.5"
-                                              >
-                                                <Checkbox
-                                                  checked={subGoal.completed}
-                                                  onCheckedChange={() => toggleSubGoal(goal.goalId, subGoal.sub_goal_id)}
-                                                  className="mt-0.5 h-4 w-4 border-[#99C6D6] data-[state=checked]:bg-[#ff8b6b] data-[state=checked]:border-[#ff8b6b]"
-                                                />
-                                                <div className="flex-1 min-w-0">
-                                                  {isEditing ? (
-                                                    <Input
-                                                      value={editingSubGoalTitle}
-                                                      onChange={(e) => setEditingSubGoalTitle(e.target.value)}
-                                                      onKeyDown={(e) => {
-                                                        if (e.key === "Enter") saveInlineEdit(goal.goalId, subGoal)
-                                                        if (e.key === "Escape") cancelInlineEdit()
-                                                      }}
-                                                      className="h-8 bg-white text-sm text-[#0F1C21]"
-                                                      autoFocus
-                                                    />
-                                                  ) : (
-                                                    <>
-                                                      <span
-                                                        className={`text-sm ${
-                                                          subGoal.completed
-                                                            ? "text-[#5D6E72] line-through"
-                                                            : "text-[#0F1C21] font-medium"
-                                                        }`}
-                                                      >
-                                                        {subGoal.title}
-                                                      </span>
-                                                      {subGoal.is_time_selected && (subGoal.start_date_time || subGoal.end_date_time) && (
-                                                        <div className="mt-1 flex items-center gap-2 text-xs text-[#5D6E72]">
-                                                          <Calendar className="h-3 w-3" />
-                                                          <span>
-                                                            {subGoal.start_date_time && formatDateTime(subGoal.start_date_time)}
-                                                            {subGoal.start_date_time && subGoal.end_date_time && " - "}
-                                                            {subGoal.end_date_time && formatDateTime(subGoal.end_date_time)}
-                                                          </span>
-                                                        </div>
-                                                      )}
-                                                    </>
-                                                  )}
-                                                </div>
-                                                <div className="flex items-center gap-1">
-                                                  {isEditing ? (
-                                                    <>
-                                                      <Button
-                                                        variant="ghost"
-                                                        size="sm"
-                                                        onClick={() => saveInlineEdit(goal.goalId, subGoal)}
-                                                        className="h-7 rounded-full px-2 text-xs font-semibold text-[#0F1C21] hover:bg-white/70"
-                                                      >
-                                                        저장
-                                                      </Button>
-                                                      <Button
-                                                        variant="ghost"
-                                                        size="sm"
-                                                        onClick={cancelInlineEdit}
-                                                        className="h-7 rounded-full px-2 text-xs font-semibold text-[#5D6E72] hover:bg-white/70"
-                                                      >
-                                                        취소
-                                                      </Button>
-                                                    </>
-                                                  ) : (
-                                                    <>
-                                                      <Button
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        className="h-7 w-7 rounded-full text-[#5D6E72] hover:bg-white/70"
-                                                        onClick={() => startInlineEdit(subGoal)}
-                                                      >
-                                                        <Pencil className="h-3.5 w-3.5" />
-                                                        <span className="sr-only">수정</span>
-                                                      </Button>
-                                                      <Button
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        className="h-7 w-7 rounded-full text-[#5D6E72] hover:bg-white/70"
-                                                        onClick={() => handleDeleteSubGoal(goal.goalId, subGoal.sub_goal_id)}
-                                                      >
-                                                        <Trash2 className="h-3.5 w-3.5" />
-                                                        <span className="sr-only">삭제</span>
-                                                      </Button>
-                                                    </>
-                                                  )}
-                                                </div>
+                                          {subGoals.map((subGoal) => (
+                                            <div
+                                              key={subGoal.sub_goal_id}
+                                              className="flex items-start gap-3 rounded-xl bg-[#EEF5F7] px-3 py-2.5"
+                                            >
+                                              <Checkbox
+                                                checked={subGoal.completed}
+                                                onCheckedChange={() => toggleSubGoal(goal.goalId, subGoal.sub_goal_id)}
+                                                className="mt-0.5 h-4 w-4 border-[#99C6D6] data-[state=checked]:bg-[#ff8b6b] data-[state=checked]:border-[#ff8b6b]"
+                                              />
+                                              <div className="flex-1 min-w-0">
+                                                <span
+                                                  className={`text-sm ${
+                                                    subGoal.completed
+                                                      ? "text-[#5D6E72] line-through"
+                                                      : "text-[#0F1C21] font-medium"
+                                                  }`}
+                                                >
+                                                  {subGoal.title}
+                                                </span>
+                                                {subGoal.is_time_selected && (subGoal.start_date_time || subGoal.end_date_time) && (
+                                                  <div className="mt-1 flex items-center gap-2 text-xs text-[#5D6E72]">
+                                                    <Calendar className="h-3 w-3" />
+                                                    <span>
+                                                      {subGoal.start_date_time && formatDateTime(subGoal.start_date_time)}
+                                                      {subGoal.start_date_time && subGoal.end_date_time && " - "}
+                                                      {subGoal.end_date_time && formatDateTime(subGoal.end_date_time)}
+                                                    </span>
+                                                  </div>
+                                                )}
                                               </div>
-                                            )
-                                          })}
+                                              <div className="flex items-center gap-1">
+                                                <Button
+                                                  variant="ghost"
+                                                  size="icon"
+                                                  className="h-7 w-7 rounded-full text-[#5D6E72] hover:bg-white/70"
+                                                  onClick={() => openSubGoalModal(goal.goalId, subGoal)}
+                                                >
+                                                  <Pencil className="h-3.5 w-3.5" />
+                                                  <span className="sr-only">수정</span>
+                                                </Button>
+                                                <Button
+                                                  variant="ghost"
+                                                  size="icon"
+                                                  className="h-7 w-7 rounded-full text-[#5D6E72] hover:bg-white/70"
+                                                  onClick={() => handleDeleteSubGoal(goal.goalId, subGoal.sub_goal_id)}
+                                                >
+                                                  <Trash2 className="h-3.5 w-3.5" />
+                                                  <span className="sr-only">삭제</span>
+                                                </Button>
+                                              </div>
+                                            </div>
+                                          ))}
                                         </div>
                                       </div>
                                     )}
@@ -830,6 +782,17 @@ export default function GoalPage() {
             />
           </div>
         </div>
+      )}
+
+      {isSubGoalModalOpen && currentGoalId && (
+        <SubGoalModal
+          isOpen={isSubGoalModalOpen}
+          onClose={handleSubGoalModalClose}
+          onSubGoalCreated={handleSubGoalUpdated}
+          goalId={currentGoalId}
+          editingSubGoal={editingSubGoal}
+          onDelete={(subGoalId) => handleDeleteSubGoal(currentGoalId, subGoalId)}
+        />
       )}
     </div>
   )
