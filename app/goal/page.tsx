@@ -13,6 +13,7 @@ import { getSubGoals, deleteSubGoal, updateSubGoal } from "@/api/subgoals"
 import { ScheduleCalendar } from "@/components/schedule-calendar"
 import { GoalForm } from "@/components/goal-form"
 import { SubGoalModal } from "@/components/subgoal-modal"
+import { RetrospectiveFlow } from "@/components/retrospective/retrospective-flow"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardTitle } from "@/components/ui/card"
@@ -57,6 +58,9 @@ export default function GoalPage() {
   const [editingSubGoal, setEditingSubGoal] = useState<SubGoal | null>(null)
   const [isSubGoalModalOpen, setIsSubGoalModalOpen] = useState(false)
   const [currentGoalId, setCurrentGoalId] = useState<number | null>(null)
+  const [selectedDate, setSelectedDate] = useState(new Date())
+  const [filterStatus, setFilterStatus] = useState("All")
+  const [retrospectiveGoal, setRetrospectiveGoal] = useState<Goal | null>(null)
 
   // 날짜 변경 시 localStorage에 저장
   const handleDateSelect = (date: Date) => {
@@ -104,6 +108,10 @@ export default function GoalPage() {
     [router]
   )
 
+  const refreshGoals = useCallback(async () => {
+    await fetchGoals(selectedDate, filterStatus)
+  }, [fetchGoals, selectedDate, filterStatus])
+
   const createGoal = async (
     goalData: Omit<Goal, "goalId" | "completed" | "subGoals" | "createdAt" | "updatedAt"> & { color: string }
   ) => {
@@ -118,6 +126,7 @@ export default function GoalPage() {
       }
       await createGoalApi(1, apiData)
       await fetchGoals(selectedDate)
+      await refreshGoals()
       setIsFormOpen(false)
     } catch (err: any) {
       setError(err?.response?.data?.message || "목표 생성에 실패했습니다.")
@@ -337,6 +346,14 @@ export default function GoalPage() {
       
       // 목표 목록도 새로고침
       await fetchGoals(selectedDate)
+    }
+  }
+
+  const handleGoalCompletionClick = (goal: Goal) => {
+    if (goal.completed) {
+      toggleGoalCompletion(goal.goalId)
+    } else {
+      setRetrospectiveGoal(goal)
     }
   }
 
@@ -626,6 +643,29 @@ export default function GoalPage() {
                                   >
                                     {isCompleted && <CheckCircle2 className="h-4 w-4 text-white" strokeWidth={3} />}
                                   </button>
+                                <div className="flex items-center justify-between gap-4">
+                                  {/* Checkbox + Content */}
+                                  <div className="flex items-start gap-4 flex-1 min-w-0">
+                                    <button
+                                      onClick={(e) => {
+                                        e.preventDefault()
+                                        e.stopPropagation()
+                                        handleGoalCompletionClick(goal)
+                                      }}
+                                      className={`mt-1 flex-shrink-0 h-6 w-6 rounded-full border-2 flex items-center justify-center transition-all hover:scale-110 ${
+                                        isCompleted
+                                          ? 'bg-gradient-to-br shadow-sm'
+                                          : 'hover:border-opacity-80'
+                                      }`}
+                                      style={isCompleted ? {
+                                        backgroundColor: goal.color || '#5D6E72',
+                                        borderColor: goal.color || '#5D6E72',
+                                      } : {
+                                        borderColor: goal.color || '#D3E6ED',
+                                      }}
+                                    >
+                                      {isCompleted && <CheckCircle2 className="h-4 w-4 text-white" strokeWidth={3} />}
+                                    </button>
 
                                   <div className="flex-1 min-w-0 space-y-3">
                                     <div className="space-y-2">
@@ -819,6 +859,13 @@ export default function GoalPage() {
           onDelete={(subGoalId) => handleDeleteSubGoal(currentGoalId, subGoalId)}
         />
       )}
+
+      <RetrospectiveFlow
+        goal={retrospectiveGoal}
+        isOpen={Boolean(retrospectiveGoal)}
+        onClose={() => setRetrospectiveGoal(null)}
+        onCompleted={refreshGoals}
+      />
     </div>
   )
 }
