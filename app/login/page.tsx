@@ -63,7 +63,13 @@ export default function LoginPage() {
                           
                   <Card className="border-0 shadow-2xl bg-white">
             <CardHeader className="space-y-1">
-              <CardTitle className="text-center text-2xl font-bold text-[#ff8b6b]">로그인</CardTitle>
+              <Image
+            src={krocsLogo}
+            alt="Krocs Logo"
+            width={100}
+            height={40}
+            className="object-contain block mx-auto"
+          />
               <CardDescription className="text-center text-sm text-muted-foreground">소셜 계정으로 간편하게 시작하세요</CardDescription>
 
             </CardHeader>
