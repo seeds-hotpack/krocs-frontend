@@ -34,7 +34,7 @@ export function CTASection() {
               size="lg"
               className="text-base sm:text-lg px-8 sm:px-10 py-6 sm:py-7 rounded-xl font-semibold bg-white text-[var(--landing-accent-dark)] hover:bg-white/90"
               onClick={() => {
-                window.location.href = "/"
+                window.location.href = "/login"
               }}
             >
               시작하기

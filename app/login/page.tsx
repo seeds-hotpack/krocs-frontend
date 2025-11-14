@@ -46,7 +46,7 @@ export default function LoginPage() {
 
       {/* 헤더 */}
       <header className="w-full p-6 relative z-10">
-        <Link href="/">
+        <Link href="/landing">
           <Image
             src={krocsLogo}
             alt="Krocs Logo"
