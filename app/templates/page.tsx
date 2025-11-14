@@ -2,13 +2,13 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import axios from 'axios';
-import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { TemplateCard } from '@/components/template-card';
 import { TemplateForm } from '@/components/template-form';
 import { ConfirmationModal } from '@/components/ui/confirmation-modal';
 import { GoalForm } from '@/components/goal-form';
+import { AppNavigationBar } from '@/components/app-navigation-bar';
 import { createGoal as createGoalApi } from '@/api/createGoal';
 import type { Goal } from '@/api/goals';
 import {
@@ -21,7 +21,7 @@ import {
   type PaginatedTemplatesResponse,
   type Template as ApiTemplate,
 } from '@/api/templates';
-import { ArrowLeft, Plus, Search, Sparkles, Target, ChevronDown } from 'lucide-react';
+import { Plus, Search, Target } from 'lucide-react';
 import { toKoreanDateString, toKoreanISOString } from '@/lib/korean-time';
 
 type Template = ApiTemplate;
@@ -76,7 +76,6 @@ export default function TemplatesPage() {
   const [showGoalForm, setShowGoalForm] = useState(false);
   const [templateForGoal, setTemplateForGoal] = useState<Template | null>(null);
   const [isCreatingGoal, setIsCreatingGoal] = useState(false);
-  const [mobileStatsOpen, setMobileStatsOpen] = useState(false);
   const listSectionRef = useRef<HTMLDivElement | null>(null);
 
   const priorityCounts = useMemo(
@@ -190,11 +189,6 @@ export default function TemplatesPage() {
   const handleUseTemplate = (template: Template) => {
     setTemplateForGoal(template);
     setShowGoalForm(true);
-  };
-
-  const handleScrollToList = () => {
-    setSearchTerm('');
-    listSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
   const closeGoalForm = () => {
@@ -354,113 +348,9 @@ export default function TemplatesPage() {
 
   return (
     <div className="min-h-screen bg-[#EEF5F7] text-[#0F1C21]">
-      <header className="sticky top-0 z-20 border-b border-[#D3E6ED] bg-[#EEF5F7]/95 px-5 py-3 backdrop-blur">
-        <div className="mx-auto flex max-w-4xl items-center justify-between">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-wider text-[#5D6E72]">Templates</p>
-            <h1 className="text-xl font-bold">목표 템플릿</h1>
-          </div>
-          <div className="flex items-center gap-2">
-            <Link href="/goal" className="hidden sm:block">
-              <Button className="rounded-full border border-[#99C6D6] bg-white px-4 text-sm font-semibold text-[#0F1C21]">
-                <ArrowLeft className="h-4 w-4" />
-                <span className="ml-2">목표 보기</span>
-              </Button>
-            </Link>
-            <Link href="/goal" className="sm:hidden">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="rounded-full border border-[#99C6D6] bg-white text-[#0F1C21]"
-                aria-label="목표 페이지로 이동"
-              >
-                <ArrowLeft className="h-4 w-4" />
-              </Button>
-            </Link>
-          </div>
-        </div>
-      </header>
+      <AppNavigationBar className="sticky top-0 z-30" contentClassName="w-full max-w-7xl px-6" />
 
       <main className="mx-auto flex max-w-4xl flex-col gap-6 px-5 py-6">
-        <section className="rounded-3xl bg-gradient-to-br from-[#ff8b6b] to-[#ff6b47] p-5 text-white shadow-md sm:p-6">
-          <div className="flex flex-col gap-4 sm:gap-5">
-            <div>
-              <div className="flex items-center gap-2 text-xs font-semibold uppercase sm:text-sm">
-                <Sparkles className="h-4 w-4" />
-                <span>Template Library</span>
-              </div>
-              <h2 className="mt-1 text-xl font-bold leading-tight sm:text-2xl">반복 목표를 위한 청사진</h2>
-              <p className="mt-1 text-xs text-white/80 sm:mt-2 sm:text-sm">
-                자주 만드는 목표를 템플릿으로 저장하고, 언제든지 한 번의 터치로 불러와 보세요.
-              </p>
-            </div>
-            <div className="sm:hidden">
-              <button
-                type="button"
-                className="flex w-full items-center justify-between rounded-2xl bg-white/15 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-white/90 backdrop-blur-sm"
-                onClick={() => setMobileStatsOpen((prev) => !prev)}
-              >
-                <span>요약 보기</span>
-                <div className="flex items-center gap-2 text-white">
-                  <span className="text-base font-extrabold">{totalTemplates}</span>
-                  <ChevronDown
-                    className={`h-4 w-4 transition-transform ${mobileStatsOpen ? 'rotate-180' : ''}`}
-                  />
-                </div>
-              </button>
-              {mobileStatsOpen && (
-                <div className="mt-3 flex flex-wrap gap-2">
-                  <div className="flex-1 min-w-[140px] rounded-2xl bg-white/15 px-4 py-3 text-sm backdrop-blur-sm">
-                    <p className="text-[11px] uppercase tracking-wide text-white/70">전체</p>
-                    <p className="mt-1 text-2xl font-extrabold">{totalTemplates}</p>
-                  </div>
-                  <div className="flex-1 min-w-[140px] rounded-2xl bg-white/15 px-4 py-3 text-sm backdrop-blur-sm">
-                    <p className="text-[11px] uppercase tracking-wide text-white/70">평균 기간</p>
-                    <p className="mt-1 text-2xl font-extrabold">
-                      {averageDuration > 0 ? `${averageDuration}일` : '없음'}
-                    </p>
-                  </div>
-                  <div className="flex-1 min-w-[140px] rounded-2xl bg-white/15 px-4 py-3 text-sm backdrop-blur-sm">
-                    <p className="text-[11px] uppercase tracking-wide text-white/70">높은 우선순위</p>
-                    <p className="mt-1 text-2xl font-extrabold">{priorityCounts.HIGH}</p>
-                  </div>
-                </div>
-              )}
-            </div>
-            <div className="hidden gap-3 sm:grid sm:grid-cols-3">
-              <div className="rounded-2xl bg-white/15 p-4 backdrop-blur-sm">
-                <p className="text-sm text-white/70">전체 템플릿</p>
-                <p className="mt-1 text-3xl font-extrabold">{totalTemplates}</p>
-              </div>
-              <div className="rounded-2xl bg-white/15 p-4 backdrop-blur-sm">
-                <p className="text-sm text-white/70">평균 소요 기간</p>
-                <p className="mt-1 text-3xl font-extrabold">
-                  {averageDuration > 0 ? `${averageDuration}일` : '데이터 없음'}
-                </p>
-              </div>
-              <div className="rounded-2xl bg-white/15 p-4 backdrop-blur-sm">
-                <p className="text-sm text-white/70">높은 우선순위</p>
-                <p className="mt-1 text-3xl font-extrabold">{priorityCounts.HIGH}</p>
-              </div>
-            </div>
-            <div className="flex flex-col gap-3 sm:flex-row">
-              <Button
-                className="flex-1 rounded-2xl bg-white/90 py-4 text-sm font-semibold text-[#ff6b47] shadow-sm hover:bg-white sm:py-6 sm:text-base"
-                onClick={handleAddNew}
-              >
-                <Plus className="h-4 w-4" />
-                <span className="ml-2">새 템플릿 만들기</span>
-              </Button>
-              <Button
-                variant="ghost"
-                className="flex-1 rounded-2xl border border-white/40 bg-white/10 py-4 text-sm font-semibold text-white hover:bg-white/20 sm:py-6 sm:text-base"
-                onClick={handleScrollToList}
-              >
-                저장된 템플릿 살펴보기
-              </Button>
-            </div>
-          </div>
-        </section>
 
         <section className="rounded-3xl border border-[#D3E6ED] bg-white p-4 shadow-xs space-y-4">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
