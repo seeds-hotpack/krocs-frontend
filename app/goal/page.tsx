@@ -9,15 +9,26 @@ import { getGoals, Goal } from "@/api/goals"
 import { update_Goal as updateGoalApi, type UpdateGoalRequest } from "@/api/updateGoal"
 import { createGoal as createGoalApi } from "@/api/createGoal"
 import { logout } from "@/api/auth"
+import { getSubGoals } from "@/api/subgoals"
 import { ScheduleCalendar } from "@/components/schedule-calendar"
 import { GoalForm } from "@/components/goal-form"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardTitle } from "@/components/ui/card"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { Checkbox } from "@/components/ui/checkbox"
 
-import { Plus, Calendar, Target, CheckCircle2, Menu } from "lucide-react"
+import { Plus, Calendar, Target, CheckCircle2, Menu, ChevronDown, ChevronRight } from "lucide-react"
 import krocsLogo from "@/assets/krocslogo.png"
+
+interface SubGoal {
+  sub_goal_id: number
+  title: string
+  completed: boolean
+  is_time_selected?: boolean
+  start_date_time?: string | null
+  end_date_time?: string | null
+}
 
 export default function GoalPage() {
   const router = useRouter()
@@ -39,6 +50,9 @@ export default function GoalPage() {
     }
     return new Date()
   })
+  const [expandedGoals, setExpandedGoals] = useState<Set<number>>(new Set())
+  const [subGoalsMap, setSubGoalsMap] = useState<Record<number, SubGoal[]>>({})
+  const [loadingSubGoals, setLoadingSubGoals] = useState<Set<number>>(new Set())
 
   // 날짜 변경 시 localStorage에 저장
   const handleDateSelect = (date: Date) => {
@@ -176,6 +190,44 @@ export default function GoalPage() {
     await updateGoal(goalId, { ...goal, completed: !goal.completed })
   }
 
+  const toggleGoalExpansion = async (goalId: number) => {
+    const newExpanded = new Set(expandedGoals)
+    
+    if (newExpanded.has(goalId)) {
+      newExpanded.delete(goalId)
+    } else {
+      newExpanded.add(goalId)
+      // 세부목표를 아직 불러오지 않았다면 불러오기
+      if (!subGoalsMap[goalId]) {
+        setLoadingSubGoals(prev => new Set(prev).add(goalId))
+        try {
+          const response = await getSubGoals(goalId)
+          setSubGoalsMap(prev => ({
+            ...prev,
+            [goalId]: response.result.subGoals.map(sg => ({
+              sub_goal_id: sg.sub_goal_id,
+              title: sg.title,
+              completed: sg.is_completed,
+              is_time_selected: sg.is_time_selected,
+              start_date_time: sg.start_date_time,
+              end_date_time: sg.end_date_time,
+            }))
+          }))
+        } catch (err) {
+          console.error("세부목표 불러오기 실패:", err)
+        } finally {
+          setLoadingSubGoals(prev => {
+            const newSet = new Set(prev)
+            newSet.delete(goalId)
+            return newSet
+          })
+        }
+      }
+    }
+    
+    setExpandedGoals(newExpanded)
+  }
+
   useEffect(() => {
     fetchGoals(selectedDate)
   }, [selectedDate, fetchGoals])
@@ -215,6 +267,17 @@ export default function GoalPage() {
     if (goal.subGoals.length === 0) return 0
     const completed = goal.subGoals.filter((sg) => sg.completed).length
     return (completed / goal.subGoals.length) * 100
+  }
+
+  const formatDateTime = (dateTimeStr: string | null | undefined) => {
+    if (!dateTimeStr) return null
+    const date = new Date(dateTimeStr)
+    return date.toLocaleString("ko-KR", {
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    })
   }
 
   const today = new Date()
@@ -387,6 +450,9 @@ export default function GoalPage() {
                         const progress = Math.max(0, Math.min(100, Math.round(rawProgress)))
                         const isCompleted = goal.completed
                         const priorityClass = getPriorityColor(goal.priority)
+                        const isExpanded = expandedGoals.has(goal.goalId)
+                        const subGoals = subGoalsMap[goal.goalId] || []
+                        const isLoadingSubGoals = loadingSubGoals.has(goal.goalId)
 
                         const startDate = new Date(goal.startDate)
                         const endDate = new Date(goal.endDate)
@@ -402,9 +468,9 @@ export default function GoalPage() {
                         const isOverdue = daysRemaining < 0 && !isCompleted
                         
                         return (
-                          <Link href={`/goal/${goal.goalId}`} key={goal.goalId} className="block">
+                          <div key={goal.goalId}>
                             <Card 
-                              className="group rounded-3xl border-2 bg-white shadow-sm transition-all hover:shadow-md hover:scale-[1.005]"
+                              className="group rounded-3xl border-2 bg-white shadow-sm transition-all hover:shadow-md"
                               style={{ 
                                 borderLeftWidth: '5px',
                                 borderLeftColor: goal.color || '#BBDCE5',
@@ -438,16 +504,29 @@ export default function GoalPage() {
 
                                   <div className="flex-1 min-w-0 space-y-3">
                                     <div className="space-y-2">
-                                      <span
-                                        className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-bold ${priorityClass}`}
-                                      >
-                                        {getPriorityText(goal.priority)}
-                                      </span>
-                                      <CardTitle className={`text-lg font-bold leading-tight transition-all ${
-                                        isCompleted ? 'text-[#5D6E72]/70 line-through' : 'text-[#0F1C21] group-hover:text-[#5D6E72]'
-                                      }`}>
-                                        {goal.title}
-                                      </CardTitle>
+                                      <div className="flex items-center justify-between">
+                                        <span
+                                          className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-bold ${priorityClass}`}
+                                        >
+                                          {getPriorityText(goal.priority)}
+                                        </span>
+                                        <button
+                                          onClick={() => toggleGoalExpansion(goal.goalId)}
+                                          className="flex items-center gap-1 text-xs text-[#5D6E72] hover:text-[#0F1C21] transition-colors"
+                                        >
+                                          <span className="font-medium">세부목표</span>
+                                          <ChevronRight 
+                                            className={`h-4 w-4 transition-transform ${isExpanded ? 'rotate-90' : ''}`}
+                                          />
+                                        </button>
+                                      </div>
+                                      <Link href={`/goal/${goal.goalId}`}>
+                                        <CardTitle className={`text-lg font-bold leading-tight transition-all cursor-pointer ${
+                                          isCompleted ? 'text-[#5D6E72]/70 line-through' : 'text-[#0F1C21] group-hover:text-[#5D6E72]'
+                                        }`}>
+                                          {goal.title}
+                                        </CardTitle>
+                                      </Link>
                                     </div>
 
                                     <div className="flex items-center gap-4 flex-wrap text-xs text-[#5D6E72]">
@@ -486,9 +565,67 @@ export default function GoalPage() {
                                     </div>
                                   </div>
                                 </div>
+
+                                {/* 세부목표 영역 */}
+                                {isExpanded && (
+                                  <div className="mt-4 pt-4 border-t border-[#D3E6ED]">
+                                    {isLoadingSubGoals ? (
+                                      <div className="text-center py-4 text-sm text-[#5D6E72]">
+                                        세부목표를 불러오는 중...
+                                      </div>
+                                    ) : subGoals.length === 0 ? (
+                                      <div className="text-center py-4 text-sm text-[#5D6E72]">
+                                        아직 등록된 세부목표가 없습니다.
+                                      </div>
+                                    ) : (
+                                      <div className="space-y-2">
+                                        <div className="flex items-center justify-between mb-3">
+                                          <h4 className="text-sm font-semibold text-[#0F1C21]">
+                                            세부목표 ({subGoals.filter(sg => sg.completed).length}/{subGoals.length})
+                                          </h4>
+                                        </div>
+                                        <div className="space-y-2">
+                                          {subGoals.map((subGoal) => (
+                                            <div
+                                              key={subGoal.sub_goal_id}
+                                              className="flex items-start gap-3 rounded-xl bg-[#EEF5F7] px-3 py-2.5"
+                                            >
+                                              <Checkbox
+                                                checked={subGoal.completed}
+                                                disabled
+                                                className="mt-0.5 h-4 w-4 border-[#99C6D6] data-[state=checked]:bg-[#ff8b6b] data-[state=checked]:border-[#ff8b6b]"
+                                              />
+                                              <div className="flex-1 min-w-0">
+                                                <span
+                                                  className={`text-sm ${
+                                                    subGoal.completed
+                                                      ? "text-[#5D6E72] line-through"
+                                                      : "text-[#0F1C21] font-medium"
+                                                  }`}
+                                                >
+                                                  {subGoal.title}
+                                                </span>
+                                                {subGoal.is_time_selected && (subGoal.start_date_time || subGoal.end_date_time) && (
+                                                  <div className="mt-1 flex items-center gap-2 text-xs text-[#5D6E72]">
+                                                    <Calendar className="h-3 w-3" />
+                                                    <span>
+                                                      {subGoal.start_date_time && formatDateTime(subGoal.start_date_time)}
+                                                      {subGoal.start_date_time && subGoal.end_date_time && " - "}
+                                                      {subGoal.end_date_time && formatDateTime(subGoal.end_date_time)}
+                                                    </span>
+                                                  </div>
+                                                )}
+                                              </div>
+                                            </div>
+                                          ))}
+                                        </div>
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
                               </CardContent>
                             </Card>
-                          </Link>
+                          </div>
                         )
                       })}
                     </div>
