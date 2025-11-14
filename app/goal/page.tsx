@@ -566,6 +566,11 @@ export default function GoalPage() {
                         const subGoals = subGoalsMap[goal.goalId] || []
                         const isLoadingSubGoals = loadingSubGoals.has(goal.goalId)
 
+                        // subGoalsMap에 데이터가 있으면 그것을 사용, 없으면 goal.subGoals 사용
+                        const displaySubGoals = subGoalsMap[goal.goalId] || goal.subGoals
+                        const completedSubGoalsCount = displaySubGoals.filter((sg) => sg.completed).length
+                        const totalSubGoalsCount = displaySubGoals.length
+
                         const startDate = new Date(goal.startDate)
                         const endDate = new Date(goal.endDate)
                         startDate.setHours(0, 0, 0, 0)
@@ -659,7 +664,7 @@ export default function GoalPage() {
                                     <div className="space-y-1.5 max-w-[700px]">
                                       <div className="flex items-center justify-between text-[10px]">
                                         <span className="text-[#5D6E72] font-medium">
-                                          {goal.subGoals.length > 0 ? `세부목표 ${goal.subGoals.filter((sg) => sg.completed).length}/${goal.subGoals.length}` : '목표 진행률'}
+                                          {totalSubGoalsCount > 0 ? `세부목표 ${completedSubGoalsCount}/${totalSubGoalsCount}` : '목표 진행률'}
                                         </span>
                                         <span className="font-bold" style={{ color: goal.color || '#5D6E72' }}>
                                           {progress}%
