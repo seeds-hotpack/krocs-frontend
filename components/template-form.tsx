@@ -102,7 +102,7 @@ export function TemplateForm({ template, onSubmit, onCancel }: TemplateFormProps
     setSubTemplateToDelete(null);
   };
 
-  const handleStartEditSubTemplate = (sub: SubTemplate) => {
+  const handleStartEditSubTemplate = (sub: EditableSubTemplate) => {
     setEditingSubTemplate(sub);
     setEditingSubTemplateTitle(sub.title);
   };
