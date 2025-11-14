@@ -83,7 +83,10 @@ export default function GoalPage() {
         setGoals(data)
       } catch (err: any) {
         if (err.response?.status === 401 || err.response?.status === 403) {
+          alert(err.response?.data?.message || "인증에 실패했습니다. 다시 로그인해주세요.")
           router.push("/login")
+        } else if (err.response?.data?.code === "GOAL500") {
+          alert(err.response?.data?.message)
         } else {
           setError(err?.response?.data?.message || "목표를 불러오는데 실패했습니다.")
           console.error(err)

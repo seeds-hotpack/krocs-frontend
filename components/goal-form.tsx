@@ -77,6 +77,8 @@ export function GoalForm({ goal, onSubmit, onCancel }: GoalFormProps) {
     const nextErrors = { title: "", dates: "", color: "" }
     if (!formData.title.trim()) {
       nextErrors.title = "목표 이름을 입력해 주세요."
+    } else if (formData.title.length > 200) {
+      nextErrors.title = "목표 제목은 200자를 초과할 수 없습니다."
     }
     if (!formData.startDate || !formData.endDate) {
       nextErrors.dates = "시작일과 종료일을 모두 선택해 주세요."
