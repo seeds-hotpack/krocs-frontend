@@ -704,11 +704,6 @@ export default function GoalPage() {
                                       </div>
                                     ) : (
                                       <div className="space-y-2">
-                                        <div className="flex items-center justify-between mb-3">
-                                          <h4 className="text-sm font-semibold text-[#0F1C21]">
-                                            세부목표 ({subGoals.filter(sg => sg.completed).length}/{subGoals.length})
-                                          </h4>
-                                        </div>
                                         <div className="space-y-2">
                                           {subGoals.map((subGoal) => (
                                             <div
@@ -718,7 +713,11 @@ export default function GoalPage() {
                                               <Checkbox
                                                 checked={subGoal.completed}
                                                 onCheckedChange={() => toggleSubGoal(goal.goalId, subGoal.sub_goal_id)}
-                                                className="mt-0.5 h-4 w-4 border-[#99C6D6] data-[state=checked]:bg-[#ff8b6b] data-[state=checked]:border-[#ff8b6b]"
+                                                className="mt-0.5 h-4 w-4 border-[#99C6D6] data-[state=checked]:border-[#ff8b6b]"
+                                                style={{
+                                                  backgroundColor: subGoal.completed ? goal.color || '#ff8b6b' : 'transparent',
+                                                  borderColor: subGoal.completed ? goal.color || '#ff8b6b' : '#99C6D6'
+                                                }}
                                               />
                                               <div className="flex-1 min-w-0">
                                                 <span
