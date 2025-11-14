@@ -105,12 +105,17 @@ export function SubGoalModal({
 
     try {
       if (isEditMode && editingSubGoal) {
+        const sanitizeDate = (value?: string | null) => value ?? undefined
         const updatePayload: UpdateSubGoalRequest = {
           title: subGoalCreateData.title,
           is_completed: editingSubGoal.completed,
           is_time_selected: subGoalCreateData.is_time_selected,
-          start_date_time: subGoalCreateData.is_time_selected ? subGoalCreateData.start_date_time : undefined,
-          end_date_time: subGoalCreateData.is_time_selected ? subGoalCreateData.end_date_time : undefined,
+          start_date_time: subGoalCreateData.is_time_selected
+            ? sanitizeDate(subGoalCreateData.start_date_time)
+            : undefined,
+          end_date_time: subGoalCreateData.is_time_selected
+            ? sanitizeDate(subGoalCreateData.end_date_time)
+            : undefined,
         }
         await updateSubGoal(goalId, editingSubGoal.sub_goal_id, updatePayload)
       } else {
