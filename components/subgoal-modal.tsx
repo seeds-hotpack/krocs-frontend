@@ -95,9 +95,10 @@ export function SubGoalModal({
         setLoading(false)
         return
       }
+      const buildDateTime = (date: string, time: string) => `${date}T${time}`
       subGoalData.is_time_selected = true
-      subGoalData.start_date_time = `${startDate}T${startTime}:00`
-      subGoalData.end_date_time = `${endDate}T${endTime}:00`
+      subGoalData.start_date_time = buildDateTime(startDate, startTime)
+      subGoalData.end_date_time = buildDateTime(endDate, endTime)
     }
 
     try {

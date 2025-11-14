@@ -32,6 +32,15 @@ interface SubGoal {
   end_date_time?: string | null
 }
 
+interface EditableSubGoal {
+  sub_goal_id: number
+  title: string
+  completed: boolean
+  is_time_selected: boolean
+  start_date_time?: string | null
+  end_date_time?: string | null
+}
+
 export default function GoalPage() {
   const router = useRouter()
   const [goals, setGoals] = useState<Goal[]>([])
@@ -55,10 +64,9 @@ export default function GoalPage() {
   const [expandedGoals, setExpandedGoals] = useState<Set<number>>(new Set())
   const [subGoalsMap, setSubGoalsMap] = useState<Record<number, SubGoal[]>>({})
   const [loadingSubGoals, setLoadingSubGoals] = useState<Set<number>>(new Set())
-  const [editingSubGoal, setEditingSubGoal] = useState<SubGoal | null>(null)
+  const [editingSubGoal, setEditingSubGoal] = useState<EditableSubGoal | null>(null)
   const [isSubGoalModalOpen, setIsSubGoalModalOpen] = useState(false)
   const [currentGoalId, setCurrentGoalId] = useState<number | null>(null)
-  const [filterStatus, setFilterStatus] = useState("All")
   const [retrospectiveGoal, setRetrospectiveGoal] = useState<Goal | null>(null)
 
   // 날짜 변경 시 localStorage에 저장
@@ -109,7 +117,7 @@ export default function GoalPage() {
 
   const refreshGoals = useCallback(async () => {
     await fetchGoals(selectedDate)
-  }, [fetchGoals, selectedDate, filterStatus])
+  }, [fetchGoals, selectedDate])
 
   const createGoal = async (
     goalData: Omit<Goal, "goalId" | "completed" | "subGoals" | "createdAt" | "updatedAt"> & { color: string }
@@ -124,7 +132,6 @@ export default function GoalPage() {
         color: goalData.color,
       }
       await createGoalApi(1, apiData)
-      await fetchGoals(selectedDate)
       await refreshGoals()
       setIsFormOpen(false)
     } catch (err: any) {
@@ -306,7 +313,18 @@ export default function GoalPage() {
 
   const openSubGoalModal = (goalId: number, subGoal?: SubGoal) => {
     setCurrentGoalId(goalId)
-    setEditingSubGoal(subGoal || null)
+    if (subGoal) {
+      setEditingSubGoal({
+        sub_goal_id: subGoal.sub_goal_id,
+        title: subGoal.title,
+        completed: subGoal.completed,
+        is_time_selected: Boolean(subGoal.is_time_selected),
+        start_date_time: subGoal.start_date_time ?? null,
+        end_date_time: subGoal.end_date_time ?? null,
+      })
+    } else {
+      setEditingSubGoal(null)
+    }
     setIsSubGoalModalOpen(true)
   }
 
