@@ -100,7 +100,7 @@ export function RetrospectiveModal({
         <div className="mb-4 flex items-start justify-between gap-3">
           <div className="min-w-0">
             <p className="text-[11px] font-semibold uppercase tracking-wide text-[#5D6E72]">대목표 완료</p>
-            <h2 className="mt-1 text-lg font-semibold text-[#0F1C21] leading-snug sm:text-xl break-keep text-balance ">이번 목표를 어떻게 마무리할까요?</h2>
+            <h2 className="mt-1 text-lg font-semibold text-[#0F1C21] leading-snug sm:text-xl break-keep text-balance">이번 목표를 어떻게 마무리할까요?</h2>
             <p className="mt-1 text-[11px] text-[#5D6E72] break-words" title={goal.title}>
               {truncatedGoalTitle} · {goalPeriodLabel}
             </p>
@@ -133,7 +133,7 @@ export function RetrospectiveModal({
                     }`}
                   >
                     <p className="text-sm font-semibold">{OUTCOME_LABELS[value]}</p>
-                    <p className="mt-1 text-[11px] leading-snug opacity-80 break-words">
+                    <p className="mt-1 text-[11px] leading-snug opacity-80 break-keep">
                       {OUTCOME_DESCRIPTIONS[value]}
                     </p>
                   </button>
