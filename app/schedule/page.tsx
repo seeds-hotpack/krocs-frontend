@@ -11,7 +11,7 @@ import { ScheduleTimeline } from "@/components/schedule-timeline"
 import { ScheduleCalendar } from "@/components/schedule-calendar"
 import { ScheduleForm } from "@/components/schedule-form"
 import { SubGoalModal } from "@/components/subgoal-modal"
-import { AppNavigationBar } from "@/components/app-navigation-bar"
+
 
 import { getGoals, type Goal } from "@/api/goals"
 import { getSubGoals, updateSubGoal } from "@/api/subgoals"
@@ -448,7 +448,7 @@ export default function SchedulePage() {
 
   return (
     <div className="min-h-screen bg-[#EEF5F7] text-[#0F1C21]">
-      <AppNavigationBar className="sticky top-0 z-30" contentClassName="w-full max-w-7xl px-6" />
+      
 
       <main className="mx-auto max-w-7xl px-6 py-6">
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">

@@ -12,7 +12,7 @@ import { GoalForm } from "@/components/goal-form"
 import { SubGoalModal, type SubGoalModalData } from "@/components/subgoal-modal"
 import { RetrospectiveFlow } from "@/components/retrospective/retrospective-flow"
 import { toKoreanISOString } from "@/lib/korean-time"
-import { AppNavigationBar } from "@/components/app-navigation-bar"
+
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardTitle } from "@/components/ui/card"
@@ -488,7 +488,7 @@ export default function GoalPage() {
 
   return (
     <div className="min-h-screen bg-[#EEF5F7] text-[#0F1C21]">
-      <AppNavigationBar className="sticky top-0 z-30" contentClassName="w-full max-w-7xl px-6" />
+      
 
       <main className="mx-auto max-w-7xl px-6 py-6">
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
@@ -873,3 +873,4 @@ export default function GoalPage() {
       />
     </div>
   )
+}

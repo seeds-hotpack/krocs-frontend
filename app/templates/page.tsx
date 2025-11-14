@@ -8,7 +8,7 @@ import { TemplateCard } from '@/components/template-card';
 import { TemplateForm } from '@/components/template-form';
 import { ConfirmationModal } from '@/components/ui/confirmation-modal';
 import { GoalForm } from '@/components/goal-form';
-import { AppNavigationBar } from '@/components/app-navigation-bar';
+
 import { createGoal as createGoalApi } from '@/api/createGoal';
 import type { Goal } from '@/api/goals';
 import {
@@ -348,7 +348,7 @@ export default function TemplatesPage() {
 
   return (
     <div className="min-h-screen bg-[#EEF5F7] text-[#0F1C21]">
-      <AppNavigationBar className="sticky top-0 z-30" contentClassName="w-full max-w-7xl px-6" />
+      
 
       <main className="mx-auto flex max-w-4xl flex-col gap-6 px-5 py-6">
 
