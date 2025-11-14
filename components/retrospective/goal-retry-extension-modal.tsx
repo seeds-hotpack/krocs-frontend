@@ -98,13 +98,15 @@ export function GoalRetryExtensionModal({
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/30 p-4 backdrop-blur-sm">
-      <div className="w-full max-w-md rounded-3xl border border-[#D3E6ED] bg-white p-6 shadow-2xl">
-        <div className="mb-5 flex items-start justify-between">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-wide text-[#5D6E72]">재시도 준비</p>
-            <h2 className="mt-1 text-xl font-semibold text-[#0F1C21]">기간을 얼마나 연장할까요?</h2>
-            <p className="mt-1 text-xs text-[#5D6E72]">기존 마감일을 기준으로 연장 일수를 선택하세요.</p>
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/30 p-3 sm:p-4 backdrop-blur-sm">
+      <div className="w-full max-w-md rounded-3xl border border-[#D3E6ED] bg-white p-5 sm:p-6 shadow-2xl max-h-[92vh] overflow-y-auto scrollbar-thin scrollbar-thumb-[#D3E6ED] scrollbar-track-transparent touch-pan-y">
+        <div className="mb-4 flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-[#5D6E72]">재시도 준비</p>
+            <h2 className="mt-1 text-lg font-semibold text-[#0F1C21] leading-snug sm:text-xl">기간을 얼마나 연장할까요?</h2>
+            <p className="mt-1 text-[11px] text-[#5D6E72] leading-relaxed break-words">
+              기존 마감일을 기준으로 연장 일수를 선택하세요.
+            </p>
           </div>
           <Button
             variant="ghost"
@@ -119,7 +121,7 @@ export function GoalRetryExtensionModal({
 
         <div className="space-y-5">
           <div>
-            <p className="text-sm font-semibold text-[#0F1C21]">연장 일수 선택</p>
+            <p className="text-[13px] font-semibold text-[#0F1C21] sm:text-sm">연장 일수 선택</p>
             <div className="mt-3 grid grid-cols-2 gap-2">
               {QUICK_OPTIONS.map((option) => {
                 const isSelected = !isCustom && selectedDays === option.days
@@ -128,7 +130,7 @@ export function GoalRetryExtensionModal({
                     key={option.days}
                     type="button"
                     onClick={() => handleQuickSelect(option.days)}
-                    className={`rounded-2xl border-2 px-4 py-3 text-sm font-semibold transition-all ${
+                    className={`rounded-2xl border-2 px-3 py-2 text-sm font-semibold transition-all sm:px-4 sm:py-3 ${
                       isSelected
                         ? "border-[#5D6E72] bg-[#5D6E72] text-white shadow-sm"
                         : "border-[#D3E6ED] bg-[#EEF5F7] text-[#0F1C21] hover:border-[#5D6E72]/50"
@@ -141,7 +143,7 @@ export function GoalRetryExtensionModal({
               <button
                 type="button"
                 onClick={handleCustomFocus}
-                className={`rounded-2xl border-2 px-4 py-3 text-sm font-semibold transition-all ${
+                className={`rounded-2xl border-2 px-3 py-2 text-sm font-semibold transition-all sm:px-4 sm:py-3 ${
                   isCustom
                     ? "border-[#5D6E72] bg-[#5D6E72] text-white shadow-sm"
                     : "border-[#D3E6ED] bg-[#EEF5F7] text-[#0F1C21] hover:border-[#5D6E72]/50"
@@ -165,7 +167,7 @@ export function GoalRetryExtensionModal({
             )}
           </div>
 
-          <div className="rounded-2xl border border-[#D3E6ED] bg-[#EEF5F7] px-4 py-3 text-sm text-[#0F1C21]">
+          <div className="rounded-2xl border border-[#D3E6ED] bg-[#EEF5F7] px-4 py-3 text-[13px] text-[#0F1C21] sm:text-sm">
             <div className="flex items-center justify-between">
               <span className="text-[#5D6E72]">기존 마감일</span>
               <span className="font-semibold">{formatDate(goal.endDate)}</span>

@@ -13,6 +13,8 @@ import { RetrospectiveModal } from "./retrospective-modal"
 import { GoalRetryExtensionModal } from "./goal-retry-extension-modal"
 import { ConfirmationModal } from "@/components/ui/confirmation-modal"
 
+const CONTEXT_MAX_LENGTH = 250
+
 interface RetrospectiveFlowProps {
   goal: Goal | null
   isOpen: boolean
@@ -115,6 +117,14 @@ export function RetrospectiveFlow({ goal, isOpen, onClose, onCompleted, userId =
       setContextError(null)
     }
   }, [etcSelected])
+
+  const handleContextChange = (rawValue: string) => {
+    const nextValue = rawValue.slice(0, CONTEXT_MAX_LENGTH)
+    setContextValue(nextValue)
+    if (nextValue.trim().length > 0) {
+      setContextError(null)
+    }
+  }
 
   const maxReached = selectedFactors.length >= 3
   const requiresFactors = outcome !== "RETRY_FAILURE"
@@ -261,12 +271,8 @@ export function RetrospectiveFlow({ goal, isOpen, onClose, onCompleted, userId =
         infoMessage={infoMessage}
         contextValue={contextValue}
         contextEnabled={etcSelected}
-        onContextChange={(value) => {
-          setContextValue(value)
-          if (value.trim().length > 0) {
-            setContextError(null)
-          }
-        }}
+        onContextChange={handleContextChange}
+        contextMaxLength={CONTEXT_MAX_LENGTH}
         contextError={contextError}
         onSubmit={handleSubmit}
         onCancel={() => setShowExitConfirm(true)}
