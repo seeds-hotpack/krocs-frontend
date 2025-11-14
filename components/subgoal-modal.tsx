@@ -8,12 +8,13 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { X, Clock, Calendar, Sparkles, Trash2 } from "lucide-react"
 import {
   CreateSubGoalRequest,
+  UpdateSubGoalRequest,
   createSubGoal,
   updateSubGoal,
 } from "@/api/subgoals"
 import { ConfirmationModal } from "@/components/ui/confirmation-modal"
 
-interface SubGoal {
+export interface SubGoalModalData {
   sub_goal_id: number
   title: string
   completed: boolean
@@ -27,7 +28,7 @@ interface SubGoalModalProps {
   onClose: () => void
   onSubGoalCreated: () => void
   goalId: number
-  editingSubGoal?: SubGoal | null
+  editingSubGoal?: SubGoalModalData | null
   onDelete?: (subGoalId: number) => void
 }
 
@@ -83,11 +84,12 @@ export function SubGoalModal({
     setLoading(true)
     setError(null)
 
-    const subGoalData: CreateSubGoalRequest = {
+    const buildBaseData = (): CreateSubGoalRequest => ({
       title: title.trim(),
-      is_completed: editingSubGoal?.completed ?? false,
       is_time_selected: false,
-    }
+    })
+
+    const subGoalCreateData = buildBaseData()
 
     if (isTimeSelected) {
       if (!startTime || !endTime || !startDate || !endDate) {
@@ -96,16 +98,28 @@ export function SubGoalModal({
         return
       }
       const buildDateTime = (date: string, time: string) => `${date}T${time}`
-      subGoalData.is_time_selected = true
-      subGoalData.start_date_time = buildDateTime(startDate, startTime)
-      subGoalData.end_date_time = buildDateTime(endDate, endTime)
+      subGoalCreateData.is_time_selected = true
+      subGoalCreateData.start_date_time = buildDateTime(startDate, startTime)
+      subGoalCreateData.end_date_time = buildDateTime(endDate, endTime)
     }
 
     try {
       if (isEditMode && editingSubGoal) {
-        await updateSubGoal(goalId, editingSubGoal.sub_goal_id, subGoalData)
+        const sanitizeDate = (value?: string | null) => value ?? undefined
+        const updatePayload: UpdateSubGoalRequest = {
+          title: subGoalCreateData.title,
+          is_completed: editingSubGoal.completed,
+          is_time_selected: subGoalCreateData.is_time_selected,
+          start_date_time: subGoalCreateData.is_time_selected
+            ? sanitizeDate(subGoalCreateData.start_date_time)
+            : undefined,
+          end_date_time: subGoalCreateData.is_time_selected
+            ? sanitizeDate(subGoalCreateData.end_date_time)
+            : undefined,
+        }
+        await updateSubGoal(goalId, editingSubGoal.sub_goal_id, updatePayload)
       } else {
-        await createSubGoal(goalId, subGoalData)
+        await createSubGoal(goalId, subGoalCreateData)
       }
       onSubGoalCreated()
       handleClose()
