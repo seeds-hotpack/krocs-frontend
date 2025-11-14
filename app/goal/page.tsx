@@ -370,7 +370,13 @@ export default function GoalPage() {
     }
   }
 
-  const getProgressPercentage = (goal: Goal) => {
+  const getProgressPercentage = (goal: Goal, subGoalsFromMap?: SubGoal[]) => {
+    // subGoalsMap에서 가져온 데이터가 있으면 우선 사용
+    if (subGoalsFromMap && subGoalsFromMap.length > 0) {
+      const completed = subGoalsFromMap.filter((sg) => sg.completed).length
+      return (completed / subGoalsFromMap.length) * 100
+    }
+    
     // API에서 받은 completionPercentage가 있으면 사용
     if (goal.completionPercentage !== undefined && goal.completionPercentage !== null) {
       return goal.completionPercentage
@@ -558,8 +564,6 @@ export default function GoalPage() {
                     </h3>
                     <div className="space-y-3">
                       {section.goals.map((goal) => {
-                        const rawProgress = getProgressPercentage(goal)
-                        const progress = Math.max(0, Math.min(100, Math.round(rawProgress)))
                         const isCompleted = goal.completed
                         const priorityClass = getPriorityColor(goal.priority)
                         const isExpanded = expandedGoals.has(goal.goalId)
@@ -570,6 +574,10 @@ export default function GoalPage() {
                         const displaySubGoals = subGoalsMap[goal.goalId] || goal.subGoals
                         const completedSubGoalsCount = displaySubGoals.filter((sg) => sg.completed).length
                         const totalSubGoalsCount = displaySubGoals.length
+
+                        // 진행률 계산 - displaySubGoals 사용
+                        const rawProgress = getProgressPercentage(goal, displaySubGoals)
+                        const progress = Math.max(0, Math.min(100, Math.round(rawProgress)))
 
                         const startDate = new Date(goal.startDate)
                         const endDate = new Date(goal.endDate)
