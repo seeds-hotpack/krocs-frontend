@@ -623,6 +623,18 @@ export default function SchedulePage() {
           }}
           goalId={editingSubGoal.goalId}
           editingSubGoal={editingSubGoal.subGoal}
+          onDelete={async (subGoalId) => {
+            try {
+              const { deleteSubGoal } = await import("@/api/subgoals")
+              await deleteSubGoal(editingSubGoal.goalId, subGoalId)
+              setRefreshTrigger((prev) => prev + 1)
+              setShowSubGoalModal(false)
+              setEditingSubGoal(null)
+            } catch (err) {
+              console.error("Failed to delete sub-goal:", err)
+              setError("세부목표 삭제에 실패했습니다.")
+            }
+          }}
         />
       )}
     </div>
