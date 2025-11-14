@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -39,6 +39,13 @@ export function GoalForm({ goal, onSubmit, onCancel }: GoalFormProps) {
     const start = new Date(initialStartDate)
     const end = new Date(initialEndDate)
     return Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1
+  }
+
+  const computeDurationFromDates = (start: string, end: string) => {
+    const startDate = new Date(start)
+    const endDate = new Date(end)
+    if (Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime())) return 1
+    return Math.max(1, Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1)
   }
 
   const [formData, setFormData] = useState({
@@ -104,6 +111,29 @@ export function GoalForm({ goal, onSubmit, onCancel }: GoalFormProps) {
       duration: calculatedDuration,
     })
   }
+
+  useEffect(() => {
+    if (goal) {
+      setFormData({
+        title: goal.title,
+        priority: goal.priority,
+        startDate: goal.startDate || toKoreanDateString(),
+        endDate: goal.endDate || toKoreanDateString(),
+        duration: goal.duration || computeDurationFromDates(goal.startDate, goal.endDate),
+        color: goal.color || "#bbdefb",
+      })
+    } else {
+      setFormData({
+        title: "",
+        priority: "MEDIUM",
+        startDate: toKoreanDateString(),
+        endDate: toKoreanDateString(),
+        duration: 1,
+        color: "#bbdefb",
+      })
+    }
+    setErrors({ title: "", dates: "", color: "" })
+  }, [goal])
 
   const handleDateChange = (field: "startDate" | "endDate", value: string) => {
     const newFormData = { ...formData, [field]: value }
