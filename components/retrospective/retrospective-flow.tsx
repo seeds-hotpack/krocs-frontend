@@ -11,7 +11,7 @@ import {
 import { update_Goal, type UpdateGoalRequest } from "@/api/updateGoal"
 import { RetrospectiveModal } from "./retrospective-modal"
 import { GoalRetryExtensionModal } from "./goal-retry-extension-modal"
-import { ConfirmationModal } from "@/components/ui/confirmation-modal"
+import { RetrospectiveExitModal } from "./retrospective-exit-modal"
 
 const CONTEXT_MAX_LENGTH = 250
 
@@ -47,6 +47,8 @@ export function RetrospectiveFlow({ goal, isOpen, onClose, onCompleted, userId =
   const [isRetrySubmitting, setIsRetrySubmitting] = useState(false)
   const [isRetryModalOpen, setIsRetryModalOpen] = useState(false)
   const [showExitConfirm, setShowExitConfirm] = useState(false)
+  const [isSkipSubmitting, setIsSkipSubmitting] = useState(false)
+  const [skipError, setSkipError] = useState<string | null>(null)
   const [factors, setFactors] = useState<{ successFactors: RetrospectiveFactor[]; failureFactors: RetrospectiveFactor[] }>({
     successFactors: [],
     failureFactors: [],
@@ -153,6 +155,8 @@ export function RetrospectiveFlow({ goal, isOpen, onClose, onCompleted, userId =
     setContextError(null)
     setSubmitError(null)
     setRetryError(null)
+    setIsSkipSubmitting(false)
+    setSkipError(null)
     onClose()
   }
 
@@ -226,6 +230,29 @@ export function RetrospectiveFlow({ goal, isOpen, onClose, onCompleted, userId =
     }
   }
 
+  const handleSkipRetrospective = async () => {
+    if (!goal) return
+    setSkipError(null)
+    setIsSkipSubmitting(true)
+    try {
+      await update_Goal(goal.goalId, userId, createGoalUpdatePayload({ isCompleted: true }))
+      if (onCompleted) {
+        await onCompleted()
+      }
+      closeFlow()
+    } catch (error: any) {
+      console.error("Failed to skip retrospective", error)
+      setSkipError(error?.response?.data?.message || "목표 완료 처리에 실패했습니다.")
+    } finally {
+      setIsSkipSubmitting(false)
+    }
+  }
+
+  const openExitConfirm = () => {
+    setSkipError(null)
+    setShowExitConfirm(true)
+  }
+
   const handleRetrySubmit = async (extensionDays: number, newEndDate: string) => {
     if (!goal) return
     setRetryError(null)
@@ -275,8 +302,8 @@ export function RetrospectiveFlow({ goal, isOpen, onClose, onCompleted, userId =
         contextMaxLength={CONTEXT_MAX_LENGTH}
         contextError={contextError}
         onSubmit={handleSubmit}
-        onCancel={() => setShowExitConfirm(true)}
-        onRequestClose={() => setShowExitConfirm(true)}
+        onCancel={openExitConfirm}
+        onRequestClose={openExitConfirm}
         primaryLabel={outcome === "RETRY_FAILURE" ? "다음" : "완료"}
         isSubmitting={isSubmitting}
         disablePrimary={disablePrimary}
@@ -293,14 +320,16 @@ export function RetrospectiveFlow({ goal, isOpen, onClose, onCompleted, userId =
         errorMessage={retryError}
       />
 
-      <ConfirmationModal
+      <RetrospectiveExitModal
         isOpen={showExitConfirm}
-        onClose={() => setShowExitConfirm(false)}
-        onConfirm={closeFlow}
-        title="회고를 종료하시겠습니까?"
-        message="회고를 작성하지 않고 목표 완료를 취소합니다."
-        confirmText="종료"
-        cancelText="계속 작성"
+        title="회고를 종료할까요?"
+        message="진행 방식을 선택해 주세요."
+        onRequestClose={() => setShowExitConfirm(false)}
+        onContinueWriting={() => setShowExitConfirm(false)}
+        onSkipRetrospective={handleSkipRetrospective}
+        onCancelCompletion={closeFlow}
+        isSkipSubmitting={isSkipSubmitting}
+        errorMessage={skipError}
       />
     </>
   )
