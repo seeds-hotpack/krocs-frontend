@@ -468,8 +468,9 @@ export default function GoalPage() {
   }
 
   const getProgressPercentage = (goal: Goal, subGoalsFromMap?: SubGoal[]) => {
-    // subGoalsMap에서 가져온 데이터가 있으면 우선 사용
-    if (subGoalsFromMap && subGoalsFromMap.length > 0) {
+    // subGoalsMap에서 가져온 데이터가 있으면 우선 사용 (빈 배열도 포함)
+    if (subGoalsFromMap !== undefined) {
+      if (subGoalsFromMap.length === 0) return 0
       const completed = subGoalsFromMap.filter((sg) => sg.completed).length
       return (completed / subGoalsFromMap.length) * 100
     }
