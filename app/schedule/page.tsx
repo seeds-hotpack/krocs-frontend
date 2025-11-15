@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 
-import { Calendar, Plus, ArrowLeft } from "lucide-react"
+import { Calendar, Plus } from "lucide-react"
 
 import { ScheduleTimeline } from "@/components/schedule-timeline"
 import { ScheduleCalendar } from "@/components/schedule-calendar"
@@ -27,8 +27,8 @@ import {
   type UpdatePlanRequest,
 } from "@/api/subplan"
 
-import krocsLogo from "@/assets/krocslogo.png"
 import { toKoreanISOString } from "@/lib/korean-time"
+import { GlobalNav } from "@/components/global-nav"
 
 export interface SubTask {
   id: string
@@ -496,17 +496,8 @@ export default function SchedulePage() {
 
   return (
     <div className="min-h-screen bg-[#EEF5F7] text-[#0F1C21]">
-      
-
+      <GlobalNav />
       <main className="mx-auto max-w-7xl px-6 py-6">
-        <Button
-          variant="outline"
-          className="self-start rounded-full border-[#99C6D6] px-4 text-sm font-semibold text-[#0F1C21]"
-          onClick={() => router.push('/goal')}
-        >
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          목표 현황으로 돌아가기
-        </Button>
 
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
           {/* Left Sidebar - Calendar */}
