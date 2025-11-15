@@ -2,15 +2,7 @@
 
 import { useRouter } from "next/navigation"
 import { useState, useEffect, useCallback } from "react"
-import { logout } from "@/api/auth"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { Plus, Calendar, Target, CheckCircle2, ChevronDown, ChevronRight, Pencil, Trash2, MoreHorizontal, Menu, LayoutTemplate, LogOut } from "lucide-react"
+import { Plus, Calendar, Target, CheckCircle2, ChevronDown, ChevronRight, Pencil, Trash2, MoreHorizontal } from "lucide-react"
 import { getGoals, Goal, deleteBigGoal } from "@/api/goals"
 import { update_Goal as updateGoalApi, type UpdateGoalRequest } from "@/api/updateGoal"
 import { createGoal as createGoalApi } from "@/api/createGoal"
@@ -23,6 +15,7 @@ import { toKoreanISOString } from "@/lib/korean-time"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardTitle } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
+import { GlobalNav } from "@/components/global-nav"
 
 interface SubGoal {
   sub_goal_id: number
@@ -62,16 +55,6 @@ export default function GoalPage() {
   const [retrospectiveGoal, setRetrospectiveGoal] = useState<Goal | null>(null)
   const [deletingGoalId, setDeletingGoalId] = useState<number | null>(null)
   const [actionMenuGoalId, setActionMenuGoalId] = useState<number | null>(null)
-
-  const handleLogout = async () => {
-    try {
-      await logout()
-      router.push("/login")
-    } catch (err) {
-      console.error("Logout failed:", err)
-      alert("로그아웃에 실패했습니다.")
-    }
-  }
 
   // 날짜 변경 시 localStorage에 저장
   const handleDateSelect = (date: Date) => {
@@ -554,9 +537,8 @@ export default function GoalPage() {
 
   return (
     <div className="min-h-screen bg-[#EEF5F7] text-[#0F1C21]">
-      
-
-      <main className="mx-auto max-w-7xl px-6 py-6">
+      <GlobalNav />
+      <main className="mx-auto max-w-7xl px-4 pt-6 pb-28 md:px-6 md:pb-6">
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
           <div className="lg:col-span-1">
             <Card className="sticky top-24 rounded-3xl border border-[#D3E6ED] bg-white p-4 shadow-md">
@@ -586,40 +568,16 @@ export default function GoalPage() {
                     {selectedDayLabel} • 전체 {totalGoals}개
                   </p>
                 </div>
-                <div className="flex items-center gap-3">
-                  <Button
-                    className="h-10 rounded-full bg-[#ff8b6b] px-4 text-sm font-semibold text-white shadow-sm hover:bg-[#ff7a56] transition-colors"
-                    onClick={() => {
-                      setEditingGoal(null)
-                      setIsFormOpen(true)
-                    }}
-                  >
-                    <Plus className="h-4 w-4" />
-                    <span className="ml-2">새 목표</span>
-                  </Button>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="outline" size="icon" className="h-10 w-10 rounded-full">
-                        <Menu className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => router.push('/templates')}>
-                        <LayoutTemplate className="mr-2 h-4 w-4" />
-                        <span>템플릿</span>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => router.push('/schedule')}>
-                        <Calendar className="mr-2 h-4 w-4" />
-                        <span>일정</span>
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem onClick={handleLogout}>
-                        <LogOut className="mr-2 h-4 w-4" />
-                        <span>로그아웃</span>
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
+                <Button
+                  className="h-10 rounded-full bg-[#ff8b6b] px-4 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-[#ff7a56]"
+                  onClick={() => {
+                    setEditingGoal(null)
+                    setIsFormOpen(true)
+                  }}
+                >
+                  <Plus className="h-4 w-4" />
+                  <span className="ml-2">새 목표</span>
+                </Button>
               </div>
             </section>
 

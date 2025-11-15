@@ -22,8 +22,9 @@ import {
   type PaginatedTemplatesResponse,
   type Template as ApiTemplate,
 } from '@/api/templates';
-import { Plus, Search, Target, ArrowLeft } from 'lucide-react';
+import { Plus, Search, Target } from 'lucide-react';
 import { toKoreanDateString, toKoreanISOString } from '@/lib/korean-time';
+import { GlobalNav } from '@/components/global-nav';
 
 type Template = ApiTemplate;
 
@@ -375,17 +376,8 @@ export default function TemplatesPage() {
 
   return (
     <div className="min-h-screen bg-[#EEF5F7] text-[#0F1C21]">
-      
-
-      <main className="mx-auto flex max-w-4xl flex-col gap-6 px-5 py-6">
-        <Button
-          variant="outline"
-          className="self-start rounded-full border-[#99C6D6] px-4 text-sm font-semibold text-[#0F1C21]"
-          onClick={() => router.push('/goal')}
-        >
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          목표 현황으로 돌아가기
-        </Button>
+      <GlobalNav />
+      <main className="mx-auto flex max-w-4xl flex-col gap-6 px-4 pt-6 pb-28 md:px-5 md:pb-6">
 
         <section className="rounded-3xl border border-[#D3E6ED] bg-white p-4 shadow-xs space-y-4">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
