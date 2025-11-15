@@ -538,7 +538,7 @@ export default function GoalPage() {
   return (
     <div className="min-h-screen bg-[#EEF5F7] text-[#0F1C21]">
       <GlobalNav />
-      <main className="mx-auto max-w-7xl px-6 py-6">
+      <main className="mx-auto max-w-7xl px-4 pt-6 pb-28 md:px-6 md:pb-6">
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
           <div className="lg:col-span-1">
             <Card className="sticky top-24 rounded-3xl border border-[#D3E6ED] bg-white p-4 shadow-md">

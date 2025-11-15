@@ -377,7 +377,7 @@ export default function TemplatesPage() {
   return (
     <div className="min-h-screen bg-[#EEF5F7] text-[#0F1C21]">
       <GlobalNav />
-      <main className="mx-auto flex max-w-4xl flex-col gap-6 px-5 py-6">
+      <main className="mx-auto flex max-w-4xl flex-col gap-6 px-4 pt-6 pb-28 md:px-5 md:pb-6">
 
         <section className="rounded-3xl border border-[#D3E6ED] bg-white p-4 shadow-xs space-y-4">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
