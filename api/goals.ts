@@ -7,6 +7,7 @@ export interface SubGoal {
   is_time_selected?: boolean;
   start_date_time?: string | null;
   end_date_time?: string | null;
+  color?: string;
 }
 
 export interface Goal {
@@ -60,6 +61,7 @@ export const getGoals = async (params: GetGoalsParams): Promise<Goal[]> => {
         is_time_selected: Boolean(sg.is_time_selected),
         start_date_time: sg.start_date_time ?? null,
         end_date_time: sg.end_date_time ?? null,
+        color: sg.color,
       })),
       completionPercentage: g.completionPercentage ?? 0,
       createdAt: g.createdAt,
@@ -121,6 +123,7 @@ export const getGoalById = async (goalId: number): Promise<Goal> => {
             is_time_selected: Boolean(sg.is_time_selected),
             start_date_time: sg.start_date_time ?? null,
             end_date_time: sg.end_date_time ?? null,
+            color: sg.color,
         })),
         completionPercentage: g.completionPercentage ?? 0,
         createdAt: g.createdAt,

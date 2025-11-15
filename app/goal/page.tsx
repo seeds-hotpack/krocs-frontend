@@ -24,6 +24,7 @@ interface SubGoal {
   is_time_selected?: boolean
   start_date_time?: string | null
   end_date_time?: string | null
+  color?: string
 }
 
 export default function GoalPage() {
@@ -174,6 +175,7 @@ export default function GoalPage() {
           sub_goal_id: sg.subGoalId,
           title: sg.title,
           completed: sg.isCompleted,
+          color: sg.color,
         })),
         completionPercentage: updatedGoalFromApi.completionPercentage ?? originalGoal.completionPercentage ?? 0,
         createdAt: updatedGoalFromApi.createdAt,
@@ -236,6 +238,7 @@ export default function GoalPage() {
               is_time_selected: sg.is_time_selected,
               start_date_time: sg.start_date_time,
               end_date_time: sg.end_date_time,
+              color: sg.color,
             }))
           }))
         } catch (err: any) {
@@ -374,6 +377,7 @@ export default function GoalPage() {
             is_time_selected: sg.is_time_selected,
             start_date_time: sg.start_date_time,
             end_date_time: sg.end_date_time,
+            color: sg.color,
           }))
         }))
       } catch (err) {
