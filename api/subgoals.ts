@@ -7,6 +7,7 @@ export interface SubGoal {
   is_time_selected: boolean;
   start_date_time: string;
   end_date_time: string;
+  color?: string;
 }
 
 export interface GetSubGoalsResponse {
@@ -55,6 +56,7 @@ export interface CreatedSubGoal {
   is_time_selected: boolean;
   start_date_time: string;
   end_date_time: string;
+  color?: string;
 }
 
 export interface CreateSubGoalResponse {
