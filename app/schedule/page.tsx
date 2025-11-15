@@ -205,6 +205,8 @@ export default function SchedulePage() {
           const goal = goals[index]
           const goalId = goal.goalId
           const goalColor = normalizeColorValue(goal.color)
+          const buildSubGoalColor = (sgColor?: string) =>
+            sgColor ? normalizeColorValue(sgColor) : goalColor
           
           console.log(`🔍 Processing goal ${goalId}: ${goal.title}`, res.result.subGoals)
           
@@ -217,6 +219,7 @@ export default function SchedulePage() {
               // 시간이 선택된 소목표는 해당 날짜에만 표시
               if (startDate === selectedDay) {
                 console.log(`  ✅ Adding timed subgoal: ${sg.title}`)
+                const subGoalColor = buildSubGoalColor(sg.color)
                 allSubGoals.push({
                   planId: sg.sub_goal_id,
                   goalId,
@@ -226,7 +229,7 @@ export default function SchedulePage() {
                   endDateTime: sg.end_date_time,
                   isCompleted: sg.is_completed,
                   allDay: false,
-                  color: goalColor,
+                  color: subGoalColor,
                   type: "subgoal",
                   subTasks: [],
                   createdAt: toKoreanISOString(),
@@ -253,7 +256,7 @@ export default function SchedulePage() {
                 endDateTime: `${goalStartDateString}T23:59:59`,
                 isCompleted: sg.is_completed,
                 allDay: true,
-                color: goalColor,
+                color: buildSubGoalColor(sg.color),
                 type: "subgoal",
                 subTasks: [],
                 createdAt: toKoreanISOString(),
