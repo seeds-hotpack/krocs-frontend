@@ -20,9 +20,9 @@ export const metadata: Metadata = {
   description: "계획과 현실을 연결해 루틴과 목표를 조율해 주는 Krocs 시간 루프 코치 서비스",
   keywords: ["Krocs", "시간 관리", "목표 관리", "루틴", "회고", "계획"],
   icons: {
-    icon: "/favicon.icon",
-    shortcut: "/favicon.icon",
-    apple: "/favicon.icon",
+    icon: "/favicon.ico",
+    shortcut: "/favicon.ico",
+    apple: "/favicon.ico",
   },
 };
 
