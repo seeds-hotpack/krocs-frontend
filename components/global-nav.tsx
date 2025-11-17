@@ -4,7 +4,7 @@ import { useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
-import { Calendar, LayoutTemplate, Target } from "lucide-react"
+import { Calendar, LayoutTemplate, Target, UserRound } from "lucide-react"
 
 import { logout } from "@/api/auth"
 import krocsLogo from "@/assets/krocslogo.png"
@@ -13,6 +13,7 @@ const navItems = [
   { href: "/goal", label: "목표", icon: Target },
   { href: "/schedule", label: "일정", icon: Calendar },
   { href: "/templates", label: "탬플릿", icon: LayoutTemplate },
+  { href: "/mypage", label: "마이페이지", icon: UserRound },
 ]
 
 export function GlobalNav() {
