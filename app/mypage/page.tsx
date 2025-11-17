@@ -230,6 +230,10 @@ export default function MyPage() {
     [data?.statistics.topFailureFactors]
   )
 
+  const isLastPage = data?.retrospectives.isLast ?? false
+  const isSinglePage = totalPages <= 1
+  const isFirstPage = page === 0
+
   const handleRefresh = () => {
     setIsRefreshing(true)
     fetchRetrospectives()
@@ -262,7 +266,7 @@ export default function MyPage() {
                     type="button"
                     onClick={() => handleChangeFilter(option.value)}
                     className={cn(
-                      "rounded-full px-4 py-2 text-sm font-semibold transition-all",
+                      "rounded-full px-3 py-1.5 text-xs font-semibold sm:px-4 sm:py-2 sm:text-sm transition-all",
                       isActive
                         ? "bg-[#ff8b6b] text-white shadow-sm hover:bg-[#ff7a56]"
                         : "bg-[#E3E8ED] text-[#5D6E72] hover:bg-[#D3E0EA]"
@@ -278,7 +282,7 @@ export default function MyPage() {
               onClick={handleRefresh}
               disabled={loading || isRefreshing}
               aria-label="새로고침"
-              className="h-10 w-10 rounded-full bg-[#E3E8ED] text-[#5D6E72] hover:bg-[#D3E0EA]"
+              className="h-8 w-8 rounded-full bg-[#E3E8ED] text-[#5D6E72] hover:bg-[#D3E0EA] sm:h-10 sm:w-10"
             >
               <RefreshCcw className={cn("h-4 w-4", isRefreshing && "animate-spin")} />
             </Button>
@@ -304,30 +308,30 @@ export default function MyPage() {
                   key={item.retrospectiveId}
                   className="rounded-2xl border border-[#D3E6ED] bg-white p-4 shadow-sm transition hover:border-[#bcd4df] sm:p-6"
                 >
-                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                    <div>
-                      <h3 className="text-xl font-semibold text-[#0F1C21]">{item.goalName}</h3>
-                      <p className="text-xs text-[#5D6E72]">작성일 {formatDate(item.createdAt)}</p>
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
+                    <div className="flex-1">
+                      <h3 className="text-lg font-semibold text-[#0F1C21] sm:text-xl">{item.goalName}</h3>
+                      <p className="text-xs text-[#5D6E72] sm:text-sm">작성일 {formatDate(item.createdAt)}</p>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <span
-                        className={cn(
-                          "rounded-full border px-3 py-1 text-xs font-semibold",
-                          OUTCOME_COLORS[item.outcome]
-                        )}
-                      >
-                        {OUTCOME_LABELS[item.outcome]}
-                      </span>
+                    <div className="flex items-center justify-end gap-2">
                       <Button
                         variant="ghost"
                         size="icon"
                         aria-label="회고 삭제"
                         onClick={() => openDeleteModal(item)}
                         disabled={deletingId === item.retrospectiveId}
-                        className="rounded-2xl text-red-500 hover:bg-red-50"
+                        className="order-2 rounded-2xl text-red-500 hover:bg-red-50"
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
+                      <span
+                        className={cn(
+                          "order-1 rounded-full border px-2.5 py-1 text-xs font-semibold sm:px-3 sm:text-sm",
+                          OUTCOME_COLORS[item.outcome]
+                        )}
+                      >
+                        {OUTCOME_LABELS[item.outcome]}
+                      </span>
                     </div>
                   </div>
 
@@ -344,7 +348,7 @@ export default function MyPage() {
                         factor === "ETC" && !item.content ? null : (
                           <span
                             key={factor}
-                            className="rounded-full border border-[#d9dee5] bg-[#EEF5F7] px-3 py-1 text-xs font-semibold text-[#0F1C21]"
+                            className="rounded-full border border-[#d9dee5] bg-[#EEF5F7] px-2.5 py-1 text-xs font-semibold text-[#0F1C21]"
                           >
                             {getFactorLabel(factor)}
                           </span>
@@ -364,8 +368,8 @@ export default function MyPage() {
           )}
         </div>
 
-        <div className="mt-6 flex flex-col items-center justify-between gap-3 border-t border-[#D3E6ED] pt-4 text-sm text-[#5D6E72] sm:flex-row">
-          <div>
+        <div className="mt-6 flex flex-col gap-3 border-t border-[#D3E6ED] pt-4 text-[#5D6E72] sm:flex-row sm:items-center sm:justify-between">
+          <div className="text-xs text-[#5D6E72] sm:text-sm">
             {totalElements > 0
               ? currentCount > 0
                 ? `총 ${totalElements}건 · ${page + 1}/${Math.max(totalPages, 1)}`
@@ -377,18 +381,20 @@ export default function MyPage() {
               variant="outline"
               size="sm"
               onClick={() => handleMovePage("prev")}
-              disabled={page === 0 || loading}
-              className="rounded-full border-[#D3E6ED] text-[#5D6E72] hover:bg-[#EEF5F7]"
+              disabled={isSinglePage || isFirstPage || loading}
+              className="rounded-full border-[#D3E6ED] text-xs text-[#5D6E72] hover:bg-[#EEF5F7] sm:text-sm"
             >
               이전
             </Button>
-            <span className="text-xs font-semibold text-[#0F1C21]">{page + 1}/{Math.max(totalPages, 1)}</span>
+            <span className="text-xs font-semibold text-[#0F1C21] sm:text-sm">
+              {page + 1}/{Math.max(totalPages, 1)}
+            </span>
             <Button
               variant="outline"
               size="sm"
               onClick={() => handleMovePage("next")}
-              disabled={loading || data?.retrospectives.isLast}
-              className="rounded-full border-[#D3E6ED] text-[#5D6E72] hover:bg-[#EEF5F7]"
+              disabled={isSinglePage || isLastPage || loading}
+              className="rounded-full border-[#D3E6ED] text-xs text-[#5D6E72] hover:bg-[#EEF5F7] sm:text-sm"
             >
               다음
             </Button>
@@ -406,7 +412,7 @@ export default function MyPage() {
   )
 
   return (
-    <div className="min-h-screen bg-[#EEF5F7] text-[#0F1C21]">
+    <div className="min-h-screen bg-[#EEF5F7] text-[#0F1C21] text-[13px] sm:text-base">
       <GlobalNav />
       <main className="mx-auto max-w-7xl px-4 pt-6 pb-28 md:px-6 md:pb-6">
         <div className="rounded-[32px] bg-white/90 p-6 shadow-2xl backdrop-blur sm:p-8">
