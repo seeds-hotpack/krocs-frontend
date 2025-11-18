@@ -3,7 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { GoogleAnalytics } from '@next/third-parties/google';
 
-const myGaId = process.env.NEXT_PUBLIC_GA_ID || '';
+const myGaId = process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS || '';
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
