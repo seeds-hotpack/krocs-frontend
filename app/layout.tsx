@@ -2,8 +2,11 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { GoogleAnalytics } from '@next/third-parties/google';
+import { AuthProvider } from "@/components/auth/auth-provider";
 
 const myGaId = process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS || '';
+const shouldLoadGA =
+  process.env.NEXT_PUBLIC_ENABLE_GOOGLE_ANALYTICS === "true" && Boolean(myGaId);
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -49,14 +52,15 @@ export default function RootLayout({
       <body>
         <ThemeProvider
           attribute="class"
-          defaultTheme="system"
-          enableSystem
+          defaultTheme="light"
+          enableSystem={false}
+          forcedTheme="light"
           storageKey="theme"
         >
-          {children}
+          <AuthProvider>{children}</AuthProvider>
         </ThemeProvider>
       </body>
-      {myGaId && <GoogleAnalytics gaId={myGaId} />}
+      {shouldLoadGA && <GoogleAnalytics gaId={myGaId} />}
     </html>
   );
 }

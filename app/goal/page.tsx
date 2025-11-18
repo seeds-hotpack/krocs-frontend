@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardTitle } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
 import { GlobalNav } from "@/components/global-nav"
+import { useAuth } from "@/components/auth/auth-provider"
 
 interface SubGoal {
   sub_goal_id: number
@@ -29,6 +30,7 @@ interface SubGoal {
 
 export default function GoalPage() {
   const router = useRouter()
+  const { status: authStatus, markUnauthenticated } = useAuth()
   const [goals, setGoals] = useState<Goal[]>([])
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [editingGoal, setEditingGoal] = useState<Goal | null>(null)
@@ -57,6 +59,12 @@ export default function GoalPage() {
   const [deletingGoalId, setDeletingGoalId] = useState<number | null>(null)
   const [actionMenuGoalId, setActionMenuGoalId] = useState<number | null>(null)
 
+  useEffect(() => {
+    if (authStatus === "unauthenticated") {
+      router.replace("/login")
+    }
+  }, [authStatus, router])
+
   // 날짜 변경 시 localStorage에 저장
   const handleDateSelect = (date: Date) => {
     setSelectedDate(date)
@@ -81,6 +89,7 @@ export default function GoalPage() {
         setGoals(data)
       } catch (err: any) {
         if (err.response?.status === 401 || err.response?.status === 403) {
+          markUnauthenticated()
           alert(err.response?.data?.message || "인증에 실패했습니다. 다시 로그인해주세요.")
           router.push("/login")
         } else if (err.response?.data?.code === "GOAL500") {
@@ -93,7 +102,7 @@ export default function GoalPage() {
         setLoading(false)
       }
     },
-    [router]
+    [router, markUnauthenticated]
   )
 
   const refreshGoals = useCallback(async () => {
@@ -244,6 +253,7 @@ export default function GoalPage() {
         } catch (err: any) {
           console.error("세부목표 불러오기 실패:", err)
           if (err.response?.status === 401 || err.response?.data?.code === "GLOBAL401") {
+            markUnauthenticated()
             alert(err.response?.data?.message || "인증에 실패했습니다. 다시 로그인해주세요.")
             router.push("/login")
           } else if (err.response?.data?.code === "SUBGOAL500") {
@@ -327,6 +337,7 @@ export default function GoalPage() {
       console.error("세부목표 삭제 실패:", e)
 
       if (e.response?.status === 401 || e.response?.data?.code === "GLOBAL401") {
+        markUnauthenticated()
         alert(e.response?.data?.message || "인증에 실패했습니다. 다시 로그인해주세요.")
         router.push("/login")
       } else if (e.response?.status === 400 && e.response?.data?.detail) {
@@ -442,8 +453,10 @@ export default function GoalPage() {
   }
 
   useEffect(() => {
-    fetchGoals(selectedDate)
-  }, [selectedDate, fetchGoals])
+    if (authStatus === "authenticated") {
+      fetchGoals(selectedDate)
+    }
+  }, [authStatus, selectedDate, fetchGoals])
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
@@ -539,6 +552,14 @@ export default function GoalPage() {
     day: "numeric",
     weekday: "short",
   })
+
+  if (authStatus === "loading") {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[#EEF5F7] text-[#5D6E72]">
+        <p className="text-sm font-semibold">인증 상태 확인 중...</p>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-[#EEF5F7] text-[#0F1C21]">

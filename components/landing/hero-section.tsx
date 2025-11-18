@@ -30,8 +30,8 @@ export function HeroSection() {
                 size="lg"
                 className="text-xs sm:text-sm px-6 sm:px-8 py-5 sm:py-6 rounded-full bg-[var(--landing-primary)] hover:bg-[var(--landing-primary-hover)] text-white"
                 onClick={() => {
-                window.location.href = "/"
-              }}
+                  window.location.href = "/login"
+                }}
               >
                 지금 내 루틴 기록하기
               </Button>
