@@ -6,7 +6,7 @@ import { AuthProvider } from "@/components/auth/auth-provider"
 import { PageviewTracker } from "@/components/analytics/pageview-tracker"
 
 const myGaId = process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS || ""
-const shouldLoadGA = process.env.NEXT_PUBLIC_ENABLE_GOOGLE_ANALYTICS === "true" && Boolean(myGaId)
+const shouldLoadGA = Boolean(myGaId)
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -48,11 +48,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     >
       <body>
         <AuthProvider>
-          {shouldLoadGA && <PageviewTracker />}
           {children}
+
+          {shouldLoadGA && (
+            <>
+              <GoogleAnalytics gaId={myGaId} />
+              <PageviewTracker />
+            </>
+          )}
         </AuthProvider>
       </body>
-      {shouldLoadGA && <GoogleAnalytics gaId={myGaId} />}
     </html>
   )
 }
