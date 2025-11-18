@@ -1,15 +1,18 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import Image from "next/image"
 import krocsLogo from "@/assets/krocslogo.png"
 import TermsModal from "@/components/terms-modal"
 import PrivacyModal from "@/components/privacy-modal"
+import { fetchAuthStatus } from "@/api/auth"
 
 export default function LoginPage() {
+  const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
   const [isTermsModalOpen, setIsTermsModalOpen] = useState(false)
   const [isPrivacyModalOpen, setIsPrivacyModalOpen] = useState(false)
@@ -39,6 +42,31 @@ export default function LoginPage() {
     "매 순간을 소중하게",
     "시간 관리의 시작, Krocs와 함께",
   ]
+
+  useEffect(() => {
+    let isMounted = true
+
+    const verifyAuth = async () => {
+      try {
+        const result = await fetchAuthStatus()
+        if (!isMounted) return
+        if (result?.isSuccess) {
+          router.replace("/goal")
+        }
+      } catch (error: any) {
+        if (error?.response?.status === 401 || error?.response?.status === 403) {
+          return
+        }
+        console.error("Failed to verify authentication state:", error)
+      }
+    }
+
+    verifyAuth()
+
+    return () => {
+      isMounted = false
+    }
+  }, [router])
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-[#ffc0a8] via-[#eef5f7] to-[#eef5f7] relative overflow-hidden">

@@ -4,6 +4,8 @@ import "./globals.css";
 import { GoogleAnalytics } from '@next/third-parties/google';
 
 const myGaId = process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS || '';
+const shouldLoadGA =
+  process.env.NEXT_PUBLIC_ENABLE_GOOGLE_ANALYTICS === "true" && Boolean(myGaId);
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -57,7 +59,7 @@ export default function RootLayout({
           {children}
         </ThemeProvider>
       </body>
-      {myGaId && <GoogleAnalytics gaId={myGaId} />}
+      {shouldLoadGA && <GoogleAnalytics gaId={myGaId} />}
     </html>
   );
 }
