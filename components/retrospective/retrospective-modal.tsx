@@ -192,9 +192,9 @@ export function RetrospectiveModal({
           <div>
             <div className="flex items-center justify-between">
               <div className="flex flex-col">
-                <p className="text-[13px] font-semibold text-[#0F1C21] sm:text-sm">직접 입력 (선택)</p>
+                <p className="text-[13px] font-semibold text-[#0F1C21] sm:text-sm">직접 작성 (선택)</p>
                 {!contextEnabled && (
-                  <span className="text-[11px] text-[#5D6E72]">ETC 선택 시 활성화</span>
+                  <span className="text-[11px] text-[#5D6E72]">직접 작성 선택 시 활성화</span>
                 )}
               </div>
               {contextEnabled && (
@@ -207,7 +207,7 @@ export function RetrospectiveModal({
               value={contextValue}
               onChange={(e) => onContextChange(e.target.value)}
               disabled={!contextEnabled}
-              placeholder={contextEnabled ? "선택한 이유를 기록해 주세요." : "ETC 요인을 선택하면 입력할 수 있어요."}
+              placeholder={contextEnabled ? "선택한 이유를 기록해 주세요." : "직접 작성을 선택하면 입력할 수 있어요."}
               maxLength={contextMaxLength}
               className={`mt-2 min-h-[120px] w-full rounded-2xl border p-3 text-[13px] leading-relaxed text-[#0F1C21] placeholder:text-[#5D6E72] focus:outline-none break-words ${
                 contextEnabled
