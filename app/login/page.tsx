@@ -9,11 +9,11 @@ import Image from "next/image"
 import krocsLogo from "@/assets/krocslogo.png"
 import TermsModal from "@/components/terms-modal"
 import PrivacyModal from "@/components/privacy-modal"
-import { fetchAuthStatus } from "@/api/auth"
+import { useAuth } from "@/components/auth/auth-provider"
 
 export default function LoginPage() {
   const router = useRouter()
-  const [isLoading, setIsLoading] = useState(false)
+  const { status: authStatus } = useAuth()
   const [isTermsModalOpen, setIsTermsModalOpen] = useState(false)
   const [isPrivacyModalOpen, setIsPrivacyModalOpen] = useState(false)
 
@@ -44,29 +44,10 @@ export default function LoginPage() {
   ]
 
   useEffect(() => {
-    let isMounted = true
-
-    const verifyAuth = async () => {
-      try {
-        const result = await fetchAuthStatus()
-        if (!isMounted) return
-        if (result?.isSuccess) {
-          router.replace("/goal")
-        }
-      } catch (error: any) {
-        if (error?.response?.status === 401 || error?.response?.status === 403) {
-          return
-        }
-        console.error("Failed to verify authentication state:", error)
-      }
+    if (authStatus === "authenticated") {
+      router.replace("/goal")
     }
-
-    verifyAuth()
-
-    return () => {
-      isMounted = false
-    }
-  }, [router])
+  }, [authStatus, router])
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-[#ffc0a8] via-[#eef5f7] to-[#eef5f7] relative overflow-hidden">

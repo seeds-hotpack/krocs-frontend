@@ -8,6 +8,7 @@ import { Calendar, LayoutTemplate, Target, UserRound } from "lucide-react"
 
 import { logout } from "@/api/auth"
 import krocsLogo from "@/assets/krocslogo.png"
+import { useAuth } from "@/components/auth/auth-provider"
 
 const navItems = [
   { href: "/goal", label: "목표", icon: Target },
@@ -20,6 +21,7 @@ export function GlobalNav() {
   const router = useRouter()
   const pathname = usePathname()
   const [isLoggingOut, setIsLoggingOut] = useState(false)
+  const { markUnauthenticated } = useAuth()
 
   const handleLogout = async () => {
     if (isLoggingOut) return
@@ -27,6 +29,7 @@ export function GlobalNav() {
     setIsLoggingOut(true)
     try {
       await logout()
+      markUnauthenticated()
       router.push("/login")
     } catch (error) {
       console.error("Logout failed:", error)
