@@ -74,7 +74,6 @@ export const createSubGoal = async (
   subGoalData: CreateSubGoalRequest
 ): Promise<CreateSubGoalResponse> => {
   try {
-    console.log("createSubGoal 호출:", goalId, subGoalData);
     const response = await axiosInstance.post<CreateSubGoalResponse>(
       `/goals/${goalId}/subgoals`,
       {

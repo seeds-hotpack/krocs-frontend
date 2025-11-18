@@ -195,8 +195,6 @@ export default function SchedulePageClient() {
         const goals = await getGoals({ searchDate: formatDateToYYYYMMDD(selectedDate) })
         setGoalList(goals)
 
-        console.log("🎯 Goals for selected date:", goals)
-
         const subGoalResponses = await Promise.all(goals.map((goal) => getSubGoals(goal.goalId)))
 
         const allSubGoals: Schedule[] = []
@@ -208,8 +206,6 @@ export default function SchedulePageClient() {
           const buildSubGoalColor = (sgColor?: string) =>
             sgColor ? normalizeColorValue(sgColor) : goalColor
           
-          console.log(`🔍 Processing goal ${goalId}: ${goal.title}`, res.result.subGoals)
-          
           res.result.subGoals.forEach((sg) => {
             // 시간이 선택된 소목표
             if (sg.is_time_selected && sg.start_date_time) {
@@ -218,7 +214,6 @@ export default function SchedulePageClient() {
               
               // 시간이 선택된 소목표는 해당 날짜에만 표시
               if (startDate === selectedDay) {
-                console.log(`  ✅ Adding timed subgoal: ${sg.title}`)
                 const subGoalColor = buildSubGoalColor(sg.color)
                 allSubGoals.push({
                   planId: sg.sub_goal_id,
@@ -241,8 +236,6 @@ export default function SchedulePageClient() {
             // 하루 종일 소목표 (시간이 선택되지 않은 경우)
             // 목표의 날짜에 따라 표시됨
             else if (!sg.is_time_selected) {
-              console.log(`  ✅ Adding all-day subgoal: ${sg.title} (from goal: ${goal.title})`)
-              
               // 하루 종일 소목표는 목표의 날짜를 사용
               const goalStartDate = new Date(goal.startDate)
               const goalStartDateString = formatDateToYYYYMMDD(goalStartDate)
@@ -267,7 +260,6 @@ export default function SchedulePageClient() {
           })
         })
 
-        console.log("📦 Final allSubGoals:", allSubGoals)
         setSubGoalSchedules(allSubGoals)
       } catch (err) {
         console.error("Failed to fetch goals or sub-goals:", err)

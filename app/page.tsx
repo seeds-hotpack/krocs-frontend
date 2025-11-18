@@ -2,7 +2,9 @@ import type { Metadata } from "next"
 import LandingPage from "./landing/page"
 
 export const metadata: Metadata = {
-  title: "홈",
+  title: {
+    absolute: "홈 | Krocs",
+  },
 }
 
 export default function HomePage() {

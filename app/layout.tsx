@@ -1,22 +1,22 @@
-import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
-import "./globals.css";
-import { GoogleAnalytics } from '@next/third-parties/google';
-import { AuthProvider } from "@/components/auth/auth-provider";
+import type { Metadata, Viewport } from "next"
+import { Geist, Geist_Mono } from "next/font/google"
+import "./globals.css"
+import { GoogleAnalytics } from "@next/third-parties/google"
+import { AuthProvider } from "@/components/auth/auth-provider"
+import { PageviewTracker } from "@/components/analytics/pageview-tracker"
 
-const myGaId = process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS || '';
-const shouldLoadGA =
-  process.env.NEXT_PUBLIC_ENABLE_GOOGLE_ANALYTICS === "true" && Boolean(myGaId);
+const myGaId = process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS || ""
+const shouldLoadGA = process.env.NEXT_PUBLIC_ENABLE_GOOGLE_ANALYTICS === "true" && Boolean(myGaId)
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
-});
+})
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
-});
+})
 
 export const metadata: Metadata = {
   title: {
@@ -30,37 +30,29 @@ export const metadata: Metadata = {
     shortcut: "/favicon.ico",
     apple: "/favicon.ico",
   },
-};
+}
 
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
-};
+}
 
-import { ThemeProvider } from "next-themes";
-import "./globals.css";
-
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="ko" suppressHydrationWarning>
+    <html
+      lang="ko"
+      suppressHydrationWarning
+      className={`${geistSans.variable} ${geistMono.variable}`}
+    >
       <body>
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="light"
-          enableSystem={false}
-          forcedTheme="light"
-          storageKey="theme"
-        >
-          <AuthProvider>{children}</AuthProvider>
-        </ThemeProvider>
+        <AuthProvider>
+          {shouldLoadGA && <PageviewTracker />}
+          {children}
+        </AuthProvider>
       </body>
       {shouldLoadGA && <GoogleAnalytics gaId={myGaId} />}
     </html>
-  );
+  )
 }
