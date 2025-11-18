@@ -104,7 +104,7 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(loginUrl)
   }
 
-  if (pathname === "/" && isAuthenticated) {
+  if ((pathname === "/" || pathname === "/landing") && isAuthenticated) {
     const redirectUrl = request.nextUrl.clone()
     redirectUrl.pathname = "/goal"
     redirectUrl.search = request.nextUrl.search
