@@ -1,3 +1,4 @@
+import { Suspense } from "react"
 import type { Metadata, Viewport } from "next"
 import { Geist, Geist_Mono } from "next/font/google"
 import "./globals.css"
@@ -49,12 +50,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         <AuthProvider>
           {children}
-
+          {shouldLoadGA && <GoogleAnalytics gaId={myGaId} />}
           {shouldLoadGA && (
-            <>
-              <GoogleAnalytics gaId={myGaId} />
+            <Suspense fallback={null}>
               <PageviewTracker />
-            </>
+            </Suspense>
           )}
         </AuthProvider>
       </body>
