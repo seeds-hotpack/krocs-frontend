@@ -1,6 +1,9 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { GoogleAnalytics } from '@next/third-parties/google';
+
+const myGaId = process.env.NEXT_PUBLIC_GA_ID || '';
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -53,6 +56,7 @@ export default function RootLayout({
           {children}
         </ThemeProvider>
       </body>
+      {myGaId && <GoogleAnalytics gaId={myGaId} />}
     </html>
   );
 }
