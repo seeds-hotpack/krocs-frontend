@@ -30,9 +30,10 @@ interface ScheduleCalendarProps {
   schedules: Schedule[]
   goals?: Goal[]
   onClose?: () => void
+  refreshTrigger?: number
 }
 
-export function ScheduleCalendar({ selectedDate, onDateSelect, schedules, goals = [], onClose }: ScheduleCalendarProps) {
+export function ScheduleCalendar({ selectedDate, onDateSelect, schedules, goals = [], onClose, refreshTrigger }: ScheduleCalendarProps) {
   const router = useRouter()
   const [currentMonth, setCurrentMonth] = useState(new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1))
   const [monthlyPlans, setMonthlyPlans] = useState<DailyPlan[]>([]);
@@ -71,7 +72,7 @@ export function ScheduleCalendar({ selectedDate, onDateSelect, schedules, goals 
       }
     };
     fetchMonthlyPlans();
-  }, [currentMonth, router]);
+  }, [currentMonth, router, refreshTrigger]);
 
   const daysInMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0).getDate()
   const firstDayOfMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1).getDay()
@@ -187,6 +188,29 @@ export function ScheduleCalendar({ selectedDate, onDateSelect, schedules, goals 
           onClick={() => onDateSelect(date)}
         >
           <span className={isToday && !isSelected ? "font-bold" : ""}>{day}</span>
+          {hasSchedules && (
+            <div className="absolute bottom-1.5 flex gap-0.5">
+              {daySchedules.length === 1 && (
+                <div className="h-1 w-1 rounded-full bg-[#ff8b6b]" />
+              )}
+              {daySchedules.length === 2 && (
+                <>
+                  <div className="h-1 w-1 rounded-full bg-[#ff8b6b]" />
+                  <div className="h-1 w-1 rounded-full bg-[#ff8b6b]" />
+                </>
+              )}
+              {daySchedules.length === 3 && (
+                <>
+                  <div className="h-1 w-1 rounded-full bg-[#ff8b6b]" />
+                  <div className="h-1 w-1 rounded-full bg-[#ff8b6b]" />
+                  <div className="h-1 w-1 rounded-full bg-[#ff8b6b]" />
+                </>
+              )}
+              {daySchedules.length >= 4 && (
+                <div className="h-1 w-4 rounded-full bg-[#ff8b6b]" />
+              )}
+            </div>
+          )}
         </button>,
       )
     }
