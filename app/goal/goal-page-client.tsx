@@ -17,6 +17,7 @@ import { Card, CardContent, CardTitle } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
 import { GlobalNav } from "@/components/global-nav"
 import { useAuth } from "@/components/auth/auth-provider"
+import { ConfirmationModal } from "@/components/ui/confirmation-modal"
 
 interface SubGoal {
   sub_goal_id: number
@@ -58,6 +59,12 @@ export default function GoalPageClient() {
   const [retrospectiveGoal, setRetrospectiveGoal] = useState<Goal | null>(null)
   const [deletingGoalId, setDeletingGoalId] = useState<number | null>(null)
   const [actionMenuGoalId, setActionMenuGoalId] = useState<number | null>(null)
+
+  const [showGoalDeleteModal, setShowGoalDeleteModal] = useState(false);
+  const [goalToDelete, setGoalToDelete] = useState<number | null>(null);
+
+  const [showSubGoalDeleteModal, setShowSubGoalDeleteModal] = useState(false);
+  const [subGoalToDelete, setSubGoalToDelete] = useState<{ goalId: number; subGoalId: number } | null>(null);
 
   useEffect(() => {
     if (authStatus === "unauthenticated") {
@@ -314,41 +321,44 @@ export default function GoalPageClient() {
     }
   }
 
-  const handleDeleteSubGoal = async (goalId: number, sub_goal_id: number) => {
-    const originalSubGoals = subGoalsMap[goalId] || []
-    
-    // 낙관적 업데이트
-    setSubGoalsMap((prev) => ({
-      ...prev,
-      [goalId]: prev[goalId].filter((sg) => sg.sub_goal_id !== sub_goal_id)
-    }))
-
+  const handleDeleteSubGoal = (goalId: number, subGoalId: number) => {
+    setSubGoalToDelete({ goalId, subGoalId });
+    setShowSubGoalDeleteModal(true);
+  };
+  
+  const confirmDeleteSubGoal = async () => {
+    if (!subGoalToDelete) return;
+  
+    const { goalId, subGoalId } = subGoalToDelete;
+  
     try {
-      await deleteSubGoal(goalId, sub_goal_id)
-      
-      // 목표의 진행률을 업데이트하기 위해 목표 목록 새로고침
-      await fetchGoals(selectedDate)
-    } catch (e: any) {
-      // 실패 시 원래 상태로 복원
+      await deleteSubGoal(goalId, subGoalId);
+
       setSubGoalsMap((prev) => ({
         ...prev,
-        [goalId]: originalSubGoals
-      }))
-      console.error("세부목표 삭제 실패:", e)
+        [goalId]: (prev[goalId] || []).filter((sg) => sg.sub_goal_id !== subGoalId),
+      }));
 
+      await fetchGoals(selectedDate); // Refresh goals to update progress
+    } catch (e: any) {
+      console.error("세부목표 삭제 실패:", e);
+  
       if (e.response?.status === 401 || e.response?.data?.code === "GLOBAL401") {
-        markUnauthenticated()
-        alert(e.response?.data?.message || "인증에 실패했습니다. 다시 로그인해주세요.")
-        router.push("/login")
+        markUnauthenticated();
+        alert(e.response?.data?.message || "인증에 실패했습니다. 다시 로그인해주세요.");
+        router.push("/login");
       } else if (e.response?.status === 400 && e.response?.data?.detail) {
-        alert(e.response.data.detail)
+        alert(e.response.data.detail);
       } else if (e.response?.data?.code === "VALIDATION400" || e.response?.data?.code === "SUBGOAL404" || e.response?.data?.code === "SUBGOAL500") {
-        alert(e.response.data.message || "세부목표 삭제에 실패했습니다.")
+        alert(e.response.data.message || "세부목표 삭제에 실패했습니다.");
       } else {
-        setError(e.message || "세부목표 삭제에 실패했습니다.")
+        setError(e.message || "세부목표 삭제에 실패했습니다.");
       }
+    } finally {
+      setShowSubGoalDeleteModal(false);
+      setSubGoalToDelete(null);
     }
-  }
+  };
 
   const openSubGoalModal = (goalId: number, subGoal?: SubGoal) => {
     setCurrentGoalId(goalId)
@@ -425,32 +435,40 @@ export default function GoalPageClient() {
     setIsFormOpen(true)
   }
 
-  const handleDeleteGoal = async (goalId: number) => {
-    if (!confirm("정말로 이 목표를 삭제하시겠습니까?")) return
-    setDeletingGoalId(goalId)
+  const handleDeleteGoal = (goalId: number) => {
+    setGoalToDelete(goalId);
+    setShowGoalDeleteModal(true);
+  };
+
+  const confirmDeleteGoal = async () => {
+    if (!goalToDelete) return;
+
+    setDeletingGoalId(goalToDelete);
     try {
-      await deleteBigGoal(goalId)
-      if (editingGoal?.goalId === goalId) {
-        setEditingGoal(null)
-        setIsFormOpen(false)
+      await deleteBigGoal(goalToDelete);
+      if (editingGoal?.goalId === goalToDelete) {
+        setEditingGoal(null);
+        setIsFormOpen(false);
       }
-      await refreshGoals()
+      await refreshGoals();
       setExpandedGoals((prev) => {
-        const next = new Set(prev)
-        next.delete(goalId)
-        return next
-      })
+        const next = new Set(prev);
+        next.delete(goalToDelete);
+        return next;
+      });
     } catch (error: any) {
-      console.error(error)
+      console.error(error);
       if (error.response?.data?.message) {
-        alert(error.response.data.message)
+        alert(error.response.data.message);
       } else {
-        alert("목표 삭제에 실패했습니다.")
+        alert("목표 삭제에 실패했습니다.");
       }
     } finally {
-      setDeletingGoalId(null)
+      setDeletingGoalId(null);
+      setShowGoalDeleteModal(false);
+      setGoalToDelete(null);
     }
-  }
+  };
 
   useEffect(() => {
     if (authStatus === "authenticated") {
@@ -564,7 +582,7 @@ export default function GoalPageClient() {
   return (
     <div className="min-h-screen bg-[#EEF5F7] text-[#0F1C21]">
       <GlobalNav />
-      <main className="mx-auto max-w-7xl px-4 pt-6 pb-28 md:px-6 md:pb-6">
+      <main className="mx-auto max-w-7xl px-4 pt-6 pb-28 md:px-6 md:pb-6 font-daeojamjil">
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
           <div className="lg:col-span-1">
             <Card className="sticky top-24 rounded-3xl border border-[#D3E6ED] bg-white p-4 shadow-md">
@@ -912,8 +930,8 @@ export default function GoalPageClient() {
       </main>
 
       {isFormOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4 backdrop-blur-sm">
-          <div className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-3xl border border-[#D3E6ED] bg-white p-4 shadow-2xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-3xl border border-[#D3E6ED] bg-white shadow-2xl">
             <GoalForm
               goal={editingGoal}
               onSubmit={editingGoal ? (data) => updateGoal(editingGoal.goalId, data) : createGoal}
@@ -942,6 +960,24 @@ export default function GoalPageClient() {
         isOpen={Boolean(retrospectiveGoal)}
         onClose={() => setRetrospectiveGoal(null)}
         onCompleted={refreshGoals}
+      />
+
+      <ConfirmationModal
+        isOpen={showGoalDeleteModal}
+        onClose={() => setShowGoalDeleteModal(false)}
+        onConfirm={confirmDeleteGoal}
+        title="목표 삭제 확인"
+        message="정말로 이 목표를 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다."
+        confirmText="삭제"
+      />
+
+      <ConfirmationModal
+        isOpen={showSubGoalDeleteModal}
+        onClose={() => setShowSubGoalDeleteModal(false)}
+        onConfirm={confirmDeleteSubGoal}
+        title="세부 목표 삭제 확인"
+        message="정말로 이 세부 목표를 삭제하시겠습니까?"
+        confirmText="삭제"
       />
     </div>
   )

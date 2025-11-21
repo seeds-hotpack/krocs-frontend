@@ -475,8 +475,8 @@ export function GoalDetail({ goal, onBack, onUpdate, onDelete }: GoalDetailProps
       </div>
 
       {isGoalFormOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm">
-          <div className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-3xl border border-[#D3E6ED] bg-white p-6 shadow-2xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-3xl border border-[#D3E6ED] bg-white shadow-2xl">
             <GoalForm
               goal={goal as any}
               onSubmit={handleGoalFormSubmit}
