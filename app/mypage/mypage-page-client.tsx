@@ -414,7 +414,7 @@ export default function MyPageClient() {
   return (
     <div className="min-h-screen bg-[#EEF5F7] text-[#0F1C21] text-[13px] sm:text-base">
       <GlobalNav />
-      <main className="mx-auto max-w-7xl px-4 pt-6 pb-28 md:px-6 md:pb-6">
+      <main className="mx-auto max-w-7xl px-4 pt-6 pb-28 md:px-6 md:pb-6 font-daeojamjil">
         <div className="rounded-[32px] bg-white/90 p-6 shadow-2xl backdrop-blur sm:p-8">
           <div className="flex flex-col gap-6 lg:flex-row">
             <aside className="w-full shrink-0 border-b border-[#f0f0f0] pb-4 lg:w-48 lg:border-b-0 lg:border-r lg:pr-4">

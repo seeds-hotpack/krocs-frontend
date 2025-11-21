@@ -86,7 +86,6 @@ const colorOptions = [
   { name: "그린", color: "#4caf50" },
   { name: "퍼플", color: "#9c27b0" },
   { name: "오렌지", color: "#ff9800" },
-  { name: "핑크", color: "#e91e63" },
   { name: "옐로우", color: "#ffeb3b" },
   { name: "네이비", color: "#607d8b" },
 ]
@@ -367,7 +366,7 @@ export function ScheduleForm({ schedule, onSubmit, onCancel, onDelete, defaultDa
       </div>
 
       {/* Form Content */}
-      <form onSubmit={handleSubmit} className="p-6 space-y-6">
+      <form onSubmit={handleSubmit} className="p-6 space-y-6 overflow-y-auto" style={{ maxHeight: 'calc(90vh - 80px)' }}>
         {/* Title Input - 동일하게 */}
         <div className="space-y-2">
           <Label htmlFor="title" className="text-sm font-semibold text-[#0F1C21] flex items-center gap-2">
@@ -413,7 +412,7 @@ export function ScheduleForm({ schedule, onSubmit, onCancel, onDelete, defaultDa
             <Palette className="h-4 w-4 text-[#5D6E72]" />
             <span>일정 컬러</span>
           </Label>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex gap-2 overflow-x-auto py-2 pl-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {colorOptions.map(({ name, color }) => {
               const isSelected = formData.color === color
               return (

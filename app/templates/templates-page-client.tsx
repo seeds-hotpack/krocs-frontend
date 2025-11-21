@@ -377,7 +377,7 @@ export default function TemplatesPageClient() {
   return (
     <div className="min-h-screen bg-[#EEF5F7] text-[#0F1C21]">
       <GlobalNav />
-      <main className="mx-auto flex max-w-4xl flex-col gap-6 px-4 pt-6 pb-28 md:px-5 md:pb-6">
+      <main className="mx-auto flex max-w-4xl flex-col gap-6 px-4 pt-6 pb-28 md:px-5 md:pb-6 font-daeojamjil">
 
         <section className="rounded-3xl border border-[#D3E6ED] bg-white p-4 shadow-xs space-y-4">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -490,7 +490,7 @@ export default function TemplatesPageClient() {
       </main>
 
       {showForm && (
-        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm">
           <div className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-3xl border border-[#D3E6ED] bg-white shadow-2xl">
             <TemplateForm
               template={editingTemplate}
@@ -505,8 +505,8 @@ export default function TemplatesPageClient() {
       )}
 
       {showGoalForm && goalPrefill && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
-          <div className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-3xl border border-[#D3E6ED] bg-white p-4 shadow-2xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-3xl border border-[#D3E6ED] bg-white shadow-2xl">
             <GoalForm goal={goalPrefill} onSubmit={handleGoalCreate} onCancel={closeGoalForm} />
           </div>
         </div>

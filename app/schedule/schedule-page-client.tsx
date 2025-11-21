@@ -492,7 +492,7 @@ export default function SchedulePageClient() {
   return (
     <div className="min-h-screen bg-[#EEF5F7] text-[#0F1C21]">
       <GlobalNav />
-      <main className="mx-auto max-w-7xl px-4 pt-6 pb-28 md:px-6 md:pb-6">
+      <main className="mx-auto max-w-7xl px-4 pt-6 pb-28 md:px-6 md:pb-6 font-daeojamjil">
 
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
           {/* Left Sidebar - Calendar */}
@@ -503,6 +503,7 @@ export default function SchedulePageClient() {
                   selectedDate={selectedDate}
                   onDateSelect={(date) => setSelectedDate(date)}
                   schedules={schedules}
+                  refreshTrigger={refreshTrigger}
                 />
               </CardContent>
             </Card>
@@ -562,8 +563,8 @@ export default function SchedulePageClient() {
       </main>
 
       {showForm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4 backdrop-blur-sm">
-          <div className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-3xl border border-[#D3E6ED] bg-white p-4 shadow-2xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-3xl border border-[#D3E6ED] bg-white shadow-2xl">
             <ScheduleForm
               schedule={editingSchedule}
               onSubmit={editingSchedule ? handleUpdateSchedule : createSchedule}
