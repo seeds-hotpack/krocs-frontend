@@ -136,7 +136,7 @@ export const ScheduleTimeline = forwardRef<{
     
     const colorMap: Record<string, string> = {
       blue: "#2196f3",
-      red: "#f44336",
+      red: "#F44336",
       green: "#4caf50",
       purple: "#9c27b0",
       orange: "#ff9800",
