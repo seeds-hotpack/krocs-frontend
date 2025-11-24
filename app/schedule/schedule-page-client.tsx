@@ -29,6 +29,7 @@ import {
 
 import { toKoreanISOString } from "@/lib/korean-time"
 import { GlobalNav } from "@/components/global-nav"
+import { trackEvent } from "@/lib/analytics/gtag"
 
 export interface SubTask {
   id: string
@@ -329,6 +330,12 @@ export default function SchedulePageClient() {
 
     try {
       const newPlanFromApi = await createPlan(apiPayload)
+      trackEvent("plan_created", {
+        plan_id: newPlanFromApi.plan_id,
+        plan_category: newPlanFromApi.plan_category,
+        all_day: newPlanFromApi.all_day,
+        has_sub_tasks: Boolean(scheduleData.subTasks && scheduleData.subTasks.length > 0),
+      })
 
       if (scheduleData.subTasks && scheduleData.subTasks.length > 0) {
         const subPlansToCreate = scheduleData.subTasks.map((st) => ({ title: st.title }))

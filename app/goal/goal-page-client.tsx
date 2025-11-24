@@ -18,6 +18,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { GlobalNav } from "@/components/global-nav"
 import { useAuth } from "@/components/auth/auth-provider"
 import { ConfirmationModal } from "@/components/ui/confirmation-modal"
+import { trackEvent } from "@/lib/analytics/gtag"
 
 interface SubGoal {
   sub_goal_id: number
@@ -128,7 +129,15 @@ export default function GoalPageClient() {
         endDate: goalData.endDate,
         color: goalData.color,
       }
-      await createGoalApi(1, apiData)
+      const response = await createGoalApi(1, apiData)
+      const createdGoal = response?.result
+      if (createdGoal) {
+        trackEvent("goal_created", {
+          goal_id: createdGoal.goalId,
+          goal_priority: createdGoal.priority,
+          goal_duration_days: goalData.duration,
+        })
+      }
       await refreshGoals()
       setIsFormOpen(false)
     } catch (err: any) {

@@ -2,6 +2,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react"
 import { fetchAuthStatus } from "@/api/auth"
+import { trackEvent } from "@/lib/analytics/gtag"
 
 type AuthStatus = "loading" | "authenticated" | "unauthenticated"
 
@@ -13,6 +14,27 @@ interface AuthContextValue {
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null)
+
+const SIGN_UP_TRACK_KEY = "ga_signup_tracked_user"
+const USER_ID_KEYS = ["userId", "id", "uid"]
+const AUTH_METHOD_KEYS = ["provider", "authProvider", "loginType", "socialType", "platform"]
+
+const readStringProperty = (source: unknown, keys: string[]): string | undefined => {
+  if (!source || typeof source !== "object") {
+    return undefined
+  }
+
+  for (const key of keys) {
+    const value = (source as Record<string, unknown>)[key]
+    if (typeof value === "string" && value.trim().length > 0) {
+      return value
+    }
+    if (typeof value === "number") {
+      return String(value)
+    }
+  }
+  return undefined
+}
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [status, setStatus] = useState<AuthStatus>("loading")
@@ -45,6 +67,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     refresh()
   }, [refresh])
+
+  useEffect(() => {
+    if (status !== "authenticated" || typeof window === "undefined") {
+      return
+    }
+
+    const userId = readStringProperty(user, USER_ID_KEYS) ?? "anonymous"
+    const alreadyTracked = window.localStorage.getItem(SIGN_UP_TRACK_KEY)
+    if (alreadyTracked === userId) {
+      return
+    }
+
+    const authMethod = readStringProperty(user, AUTH_METHOD_KEYS) ?? "oauth"
+
+    trackEvent("sign_up_complete", {
+      user_id: userId !== "anonymous" ? userId : undefined,
+      auth_method: authMethod,
+    })
+
+    window.localStorage.setItem(SIGN_UP_TRACK_KEY, userId)
+  }, [status, user])
 
   const value = useMemo<AuthContextValue>(
     () => ({

@@ -9,6 +9,7 @@ import {
   getRetrospectiveFactors,
 } from "@/api/retrospectives"
 import { update_Goal, type UpdateGoalRequest } from "@/api/updateGoal"
+import { trackEvent } from "@/lib/analytics/gtag"
 import { RetrospectiveModal } from "./retrospective-modal"
 import { GoalRetryExtensionModal } from "./goal-retry-extension-modal"
 import { RetrospectiveExitModal } from "./retrospective-exit-modal"
@@ -216,7 +217,14 @@ export function RetrospectiveFlow({ goal, isOpen, onClose, onCompleted, userId =
     setIsSubmitting(true)
     setSubmitError(null)
     try {
-      await createGoalRetrospective(goal.goalId, buildPayload())
+      const retrospectivePayload = buildPayload()
+      await createGoalRetrospective(goal.goalId, retrospectivePayload)
+      trackEvent("retrospective_submitted", {
+        goal_id: goal.goalId,
+        retrospective_outcome: retrospectivePayload.outcome,
+        factor_count: retrospectivePayload.factors.length,
+        has_context: Boolean(retrospectivePayload.context),
+      })
       await update_Goal(goal.goalId, userId, createGoalUpdatePayload({ isCompleted: true }))
       if (onCompleted) {
         await onCompleted()
@@ -257,14 +265,21 @@ export function RetrospectiveFlow({ goal, isOpen, onClose, onCompleted, userId =
     if (!goal) return
     setRetryError(null)
     setIsRetrySubmitting(true)
-    const payload = createGoalUpdatePayload({
+    const goalUpdatePayload = createGoalUpdatePayload({
       endDate: newEndDate,
       isCompleted: false,
     })
+    const retrospectivePayload = buildPayload()
 
     try {
-      await update_Goal(goal.goalId, userId, payload)
-      await createGoalRetrospective(goal.goalId, buildPayload())
+      await update_Goal(goal.goalId, userId, goalUpdatePayload)
+      await createGoalRetrospective(goal.goalId, retrospectivePayload)
+      trackEvent("retrospective_submitted", {
+        goal_id: goal.goalId,
+        retrospective_outcome: retrospectivePayload.outcome,
+        factor_count: retrospectivePayload.factors.length,
+        has_context: Boolean(retrospectivePayload.context),
+      })
       if (onCompleted) {
         await onCompleted()
       }

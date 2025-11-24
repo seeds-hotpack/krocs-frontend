@@ -5,8 +5,9 @@ import "./globals.css"
 import { GoogleAnalytics } from "@next/third-parties/google"
 import { AuthProvider } from "@/components/auth/auth-provider"
 import { PageviewTracker } from "@/components/analytics/pageview-tracker"
+import { getGaId } from "@/lib/analytics/gtag"
 
-const myGaId = process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS || ""
+const myGaId = getGaId()
 const shouldLoadGA = Boolean(myGaId)
 
 const geistSans = Geist({
