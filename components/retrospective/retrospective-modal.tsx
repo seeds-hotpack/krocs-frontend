@@ -3,7 +3,7 @@
 import { Goal } from "@/api/goals"
 import { RetrospectiveFactor, RetrospectiveOutcome } from "@/api/retrospectives"
 import { Button } from "@/components/ui/button"
-import { X } from "lucide-react"
+import { Sparkles, X } from "lucide-react"
 import { useMemo } from "react"
 
 const OUTCOME_LABELS: Record<RetrospectiveOutcome, string> = {
@@ -95,45 +95,60 @@ export function RetrospectiveModal({
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-3 sm:p-4 backdrop-blur-sm">
-      <div className="w-full max-w-md rounded-3xl border border-[#D3E6ED] bg-white p-5 sm:p-6 shadow-2xl max-h-[92vh] overflow-y-auto scrollbar-thin scrollbar-thumb-[#D3E6ED] scrollbar-track-transparent touch-pan-y">
-        <div className="mb-4 flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-[#5D6E72]">대목표 완료</p>
-            <h2 className="mt-1 text-lg font-semibold text-[#0F1C21] leading-snug sm:text-xl break-keep text-balance">이번 목표를 어떻게 마무리할까요?</h2>
-            <p className="mt-1 text-[11px] text-[#5D6E72] break-words" title={goal.title}>
-              {truncatedGoalTitle} · {goalPeriodLabel}
-            </p>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/35 px-3 py-4 backdrop-blur-sm sm:px-6">
+      <div className="flex max-h-[90vh] w-full max-w-md flex-col overflow-hidden rounded-3xl border border-white/40 bg-white/95 text-[#0F1C21] shadow-[0_18px_60px_rgba(22,33,38,0.2)]">
+        <div className="relative bg-gradient-to-br from-[#ff8b6b] via-[#ff774f] to-[#ff6b47] px-5 py-5 text-white sm:px-8 sm:py-6">
+          <div className="pointer-events-none absolute inset-0">
+            <div className="absolute -left-10 top-0 h-32 w-32 rounded-full bg-white/15 blur-3xl" />
+            <div className="absolute bottom-0 right-0 h-36 w-36 rounded-full bg-black/15 blur-3xl" />
           </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={onRequestClose}
-            className="h-9 w-9 rounded-full border border-[#99C6D6] bg-white text-[#0F1C21] shadow-sm hover:bg-white/80"
-            aria-label="회고 닫기"
-          >
-            <X className="h-4 w-4" />
-          </Button>
+          <div className="relative flex items-start justify-between gap-4">
+            <div className="min-w-0">
+              <p className="flex items-center gap-1 text-[11px] font-semibold uppercase tracking-[0.25em] text-white/80">
+                <Sparkles className="h-3.5 w-3.5" />
+                대목표 완료
+              </p>
+              <h2 className="mt-2 text-xl font-bold leading-snug text-white sm:text-2xl break-keep">
+                이번 목표를 어떻게 마무리할까요?
+              </h2>
+              <p className="mt-2 text-xs text-white/80 break-words" title={goal.title}>
+                {truncatedGoalTitle} · {goalPeriodLabel}
+              </p>
+            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onRequestClose}
+              className="h-10 w-10 rounded-2xl border border-white/40 bg-white/10 text-white backdrop-blur hover:bg-white/20"
+              aria-label="회고 닫기"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
 
-        <div className="space-y-5">
+        <div className="flex-1 overflow-y-auto bg-[#F9FCFE] px-5 py-5 space-y-4 sm:px-8 sm:py-8 sm:space-y-6">
           {showOutcomeSelector ? (
-            <div>
-              <p className="text-[13px] font-semibold text-[#0F1C21] sm:text-sm">완료 상태 선택</p>
-              <div className="mt-3 grid grid-cols-2 gap-2">
+            <div className="rounded-2xl border border-[#E2EEF3] bg-white/90 p-3 shadow-sm sm:p-4">
+              <p className="text-sm font-semibold text-[#0F1C21]">완료 상태 선택</p>
+              <div className="mt-3 grid gap-2 grid-cols-2 sm:mt-4">
                 {allowedOutcomes.map((value) => (
                   <button
                     key={value}
                     type="button"
                     onClick={() => onOutcomeChange(value)}
-                    className={`rounded-2xl border-2 px-3 py-2 text-left transition-all text-[13px] sm:px-4 sm:py-3 ${
+                    className={`rounded-2xl border-2 px-3 py-3 text-left text-sm transition-all sm:px-4 sm:py-4 ${
                       outcome === value
-                        ? "border-[#5D6E72] bg-[#5D6E72] text-white shadow-md"
-                        : "border-[#D3E6ED] bg-[#EEF5F7] text-[#0F1C21] hover:border-[#5D6E72]/50"
+                        ? "border-transparent bg-gradient-to-r from-[#5D6E72] to-[#3f4c52] text-white shadow-lg"
+                        : "border-[#D3E6ED] bg-[#F6FBFD] text-[#0F1C21] hover:border-[#5D6E72]/50"
                     }`}
                   >
-                    <p className="text-sm font-semibold">{OUTCOME_LABELS[value]}</p>
-                    <p className="mt-1 text-[11px] leading-snug opacity-80 break-keep">
+                    <p className="text-base font-semibold sm:text-lg break-keep text-balance">{OUTCOME_LABELS[value]}</p>
+                    <p
+                      className={`mt-1 text-[11px] sm:text-xs break-keep text-balance ${
+                        outcome === value ? "text-white/90" : "text-[#5D6E72]"
+                      }`}
+                    >
                       {OUTCOME_DESCRIPTIONS[value]}
                     </p>
                   </button>
@@ -142,20 +157,20 @@ export function RetrospectiveModal({
             </div>
           ) : (
             infoMessage && (
-              <div className="rounded-2xl border border-[#BBDCE5] bg-[#EEF5F7] px-4 py-3 text-[13px] text-[#0F1C21] leading-relaxed break-words">
+              <div className="rounded-3xl border border-[#D3E6ED] bg-white/90 px-4 py-3 text-sm leading-relaxed text-[#0F1C21] shadow-sm">
                 {infoMessage}
               </div>
             )
           )}
 
-          <div>
+          <div className="rounded-2xl border border-[#E2EEF3] bg-white/90 p-3 shadow-sm sm:p-4">
             <div className="flex items-center justify-between">
-              <p className="text-[13px] font-semibold text-[#0F1C21] sm:text-sm">{subtitle}</p>
-              <span className="text-[11px] text-[#5D6E72]">
+              <p className="text-sm font-semibold text-[#0F1C21]">{subtitle}</p>
+              <span className="text-xs text-[#5D6E72]">
                 {selectedFactors.length}/{maxSelection}
               </span>
             </div>
-            <div className="mt-3 flex flex-wrap gap-2">
+            <div className="mt-3 flex flex-wrap gap-1.5 sm:gap-2">
               {isLoadingFactors ? (
                 <p className="text-sm text-[#5D6E72]">요인을 불러오는 중...</p>
               ) : factorError ? (
@@ -172,11 +187,11 @@ export function RetrospectiveModal({
                       type="button"
                       onClick={() => onToggleFactor(factor.key)}
                       disabled={disabled}
-                      className={`rounded-full border px-3 py-2 text-[12px] transition-all sm:px-4 sm:text-sm ${
+                      className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition-all sm:px-4 sm:text-sm ${
                         isSelected
-                          ? "border-[#5D6E72] bg-[#5D6E72] text-white shadow-sm"
-                          : "border-[#D3E6ED] bg-[#EEF5F7] text-[#0F1C21] hover:border-[#5D6E72]/50"
-                      } ${disabled ? "opacity-60" : ""}`}
+                          ? "border-transparent bg-gradient-to-r from-[#5D6E72] to-[#3f4c52] text-white shadow"
+                          : "border-[#D3E6ED] bg-[#F6FBFD] text-[#0F1C21] hover:border-[#5D6E72]/40"
+                      } ${disabled ? "opacity-50" : ""}`}
                     >
                       {factor.description}
                     </button>
@@ -189,16 +204,16 @@ export function RetrospectiveModal({
             )}
           </div>
 
-          <div>
+          <div className="rounded-2xl border border-dashed border-[#DDE7ED] bg-white/70 p-3 shadow-sm sm:p-4">
             <div className="flex items-center justify-between">
-              <div className="flex flex-col">
-                <p className="text-[13px] font-semibold text-[#0F1C21] sm:text-sm">직접 작성 (선택)</p>
+              <div>
+                <p className="text-sm font-semibold text-[#0F1C21]">직접 작성 (선택)</p>
                 {!contextEnabled && (
-                  <span className="text-[11px] text-[#5D6E72]">직접 작성 선택 시 활성화</span>
+                  <span className="text-xs text-[#5D6E72]">직접 작성 선택 시 활성화</span>
                 )}
               </div>
               {contextEnabled && (
-                <span className="text-[11px] text-[#5D6E72]">
+                <span className="text-xs text-[#5D6E72]">
                   {contextLength}/{contextMaxLength}
                 </span>
               )}
@@ -209,10 +224,10 @@ export function RetrospectiveModal({
               disabled={!contextEnabled}
               placeholder={contextEnabled ? "선택한 이유를 기록해 주세요." : "직접 작성을 선택하면 입력할 수 있어요."}
               maxLength={contextMaxLength}
-              className={`mt-2 min-h-[120px] w-full rounded-2xl border p-3 text-[13px] leading-relaxed text-[#0F1C21] placeholder:text-[#5D6E72] focus:outline-none break-words ${
+              className={`mt-3 min-h-[110px] w-full rounded-2xl border bg-white/90 p-3 text-sm leading-relaxed text-[#0F1C21] placeholder:text-[#8A999E] focus:outline-none sm:p-4 sm:min-h-[130px] ${
                 contextEnabled
-                  ? "border-[#D3E6ED] bg-[#EEF5F7] focus:border-[#5D6E72]"
-                  : "border-dashed border-[#D3E6ED] bg-[#F5F7F8] text-[#5D6E72]/70"
+                  ? "border-[#D3E6ED] focus:border-[#5D6E72] focus:ring-1 focus:ring-[#5D6E72]/30"
+                  : "border-dashed border-[#E2E8ED] text-[#94A3AB]"
               }`}
             />
             {contextError && (
@@ -221,24 +236,24 @@ export function RetrospectiveModal({
           </div>
 
           {generalError && (
-            <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-600">
+            <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-600 shadow-sm">
               {generalError}
             </div>
           )}
         </div>
 
-        <div className="mt-6 flex flex-col gap-2 sm:flex-row sm:justify-end">
+        <div className="flex flex-col-reverse gap-3 border-t border-[#E7EDF1] bg-white/95 px-5 py-5 sm:flex-row sm:items-center sm:justify-end sm:px-8 sm:py-6">
           <Button
             variant="ghost"
             onClick={onCancel}
-            className="rounded-full border border-[#99C6D6] bg-white px-4 py-2 text-sm font-semibold text-[#0F1C21] shadow-sm hover:bg-white/80"
+            className="flex-1 h-12 rounded-2xl border-2 border-[#D3E6ED] bg-white text-sm font-semibold text-[#5D6E72] hover:bg-[#F5FAFD] transition-all"
           >
             취소
           </Button>
           <Button
             onClick={onSubmit}
             disabled={disablePrimary}
-            className="rounded-full bg-[#5D6E72] px-5 py-2 text-sm font-semibold text-white shadow-sm hover:bg-[#48575b] disabled:opacity-50"
+            className="flex-1 h-12 rounded-2xl bg-gradient-to-r from-[#5D6E72] to-[#3f4c52] text-sm font-semibold text-white shadow-lg transition hover:scale-[1.01] hover:shadow-xl disabled:cursor-not-allowed disabled:opacity-60"
           >
             {isSubmitting ? "처리 중..." : primaryLabel}
           </Button>

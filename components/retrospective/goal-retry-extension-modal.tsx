@@ -2,7 +2,7 @@
 
 import { Goal } from "@/api/goals"
 import { Button } from "@/components/ui/button"
-import { X } from "lucide-react"
+import { Sparkles, X } from "lucide-react"
 import { useEffect, useMemo, useState } from "react"
 
 interface GoalRetryExtensionModalProps {
@@ -98,30 +98,41 @@ export function GoalRetryExtensionModal({
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/30 p-3 sm:p-4 backdrop-blur-sm">
-      <div className="w-full max-w-md rounded-3xl border border-[#D3E6ED] bg-white p-5 sm:p-6 shadow-2xl max-h-[92vh] overflow-y-auto scrollbar-thin scrollbar-thumb-[#D3E6ED] scrollbar-track-transparent touch-pan-y">
-        <div className="mb-4 flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-[#5D6E72]">재시도 준비</p>
-            <h2 className="mt-1 text-lg font-semibold text-[#0F1C21] leading-snug sm:text-xl">기간을 얼마나 연장할까요?</h2>
-            <p className="mt-1 text-[11px] text-[#5D6E72] leading-relaxed break-words">
-              기존 마감일을 기준으로 연장 일수를 선택하세요.
-            </p>
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/35 px-3 py-4 backdrop-blur-sm sm:px-6">
+      <div className="flex max-h-[90vh] w-full max-w-md flex-col overflow-hidden rounded-3xl border border-white/40 bg-white/95 text-[#0F1C21] shadow-[0_18px_60px_rgba(22,33,38,0.2)]">
+        <div className="relative bg-gradient-to-br from-[#ff8b6b] via-[#ff774f] to-[#ff6b47] px-5 py-5 text-white sm:px-8 sm:py-6">
+          <div className="pointer-events-none absolute inset-0">
+            <div className="absolute -left-10 top-0 h-32 w-32 rounded-full bg-white/15 blur-3xl" />
+            <div className="absolute bottom-0 right-0 h-36 w-36 rounded-full bg-black/15 blur-3xl" />
           </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={onClose}
-            className="h-9 w-9 rounded-full border border-[#99C6D6] bg-white text-[#0F1C21] shadow-sm hover:bg-white/80"
-            aria-label="연장 모달 닫기"
-          >
-            <X className="h-4 w-4" />
-          </Button>
+          <div className="relative flex items-start justify-between gap-4">
+            <div className="min-w-0">
+              <p className="flex items-center gap-1 text-[11px] font-semibold uppercase tracking-[0.25em] text-white/75">
+                <Sparkles className="h-3.5 w-3.5" />
+                재시도 준비
+              </p>
+              <h2 className="mt-2 text-xl font-bold leading-snug text-white break-keep text-balance sm:text-2xl">
+                기간을 얼마나 연장할까요?
+              </h2>
+              <p className="mt-2 text-xs text-white/80 break-words">
+                기존 마감일을 기준으로 연장 일수를 선택하세요.
+              </p>
+            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onClose}
+              className="h-10 w-10 rounded-2xl border border-white/40 bg-white/10 text-white backdrop-blur hover:bg-white/20"
+              aria-label="연장 모달 닫기"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
 
-        <div className="space-y-5">
-          <div>
-            <p className="text-[13px] font-semibold text-[#0F1C21] sm:text-sm">연장 일수 선택</p>
+        <div className="flex-1 overflow-y-auto bg-[#F9FCFE] px-5 py-5 space-y-4 sm:px-8 sm:py-8 sm:space-y-6">
+          <div className="rounded-2xl border border-[#E2EEF3] bg-white/95 p-3 shadow-sm sm:p-4">
+            <p className="text-sm font-semibold text-[#0F1C21]">연장 일수 선택</p>
             <div className="mt-3 grid grid-cols-2 gap-2">
               {QUICK_OPTIONS.map((option) => {
                 const isSelected = !isCustom && selectedDays === option.days
@@ -130,10 +141,10 @@ export function GoalRetryExtensionModal({
                     key={option.days}
                     type="button"
                     onClick={() => handleQuickSelect(option.days)}
-                    className={`rounded-2xl border-2 px-3 py-2 text-sm font-semibold transition-all sm:px-4 sm:py-3 ${
+                    className={`rounded-2xl border-2 px-3 py-3 text-sm font-semibold transition-all sm:px-4 sm:py-3 ${
                       isSelected
-                        ? "border-[#5D6E72] bg-[#5D6E72] text-white shadow-sm"
-                        : "border-[#D3E6ED] bg-[#EEF5F7] text-[#0F1C21] hover:border-[#5D6E72]/50"
+                        ? "border-transparent bg-gradient-to-r from-[#5D6E72] to-[#3f4c52] text-white shadow"
+                        : "border-[#D3E6ED] bg-[#F6FBFD] text-[#0F1C21] hover:border-[#5D6E72]/50"
                     }`}
                   >
                     {option.label}
@@ -143,10 +154,10 @@ export function GoalRetryExtensionModal({
               <button
                 type="button"
                 onClick={handleCustomFocus}
-                className={`rounded-2xl border-2 px-3 py-2 text-sm font-semibold transition-all sm:px-4 sm:py-3 ${
+                className={`rounded-2xl border-2 px-3 py-3 text-sm font-semibold transition-all sm:px-4 sm:py-3 ${
                   isCustom
-                    ? "border-[#5D6E72] bg-[#5D6E72] text-white shadow-sm"
-                    : "border-[#D3E6ED] bg-[#EEF5F7] text-[#0F1C21] hover:border-[#5D6E72]/50"
+                    ? "border-transparent bg-gradient-to-r from-[#5D6E72] to-[#3f4c52] text-white shadow"
+                    : "border-[#D3E6ED] bg-[#F6FBFD] text-[#0F1C21] hover:border-[#5D6E72]/50"
                 }`}
               >
                 + 직접 입력
@@ -159,7 +170,7 @@ export function GoalRetryExtensionModal({
                 value={customDays}
                 onChange={(e) => handleCustomChange(e.target.value)}
                 placeholder="연장 일수를 숫자로 입력해 주세요"
-                className="mt-3 w-full rounded-2xl border border-[#D3E6ED] bg-[#EEF5F7] p-3 text-sm text-[#0F1C21] focus:border-[#5D6E72] focus:outline-none"
+                className="mt-3 w-full rounded-2xl border border-[#D3E6ED] bg-[#F6FBFD] p-3 text-sm text-[#0F1C21] placeholder:text-[#94A3AB] focus:border-[#5D6E72] focus:outline-none"
               />
             )}
             {selectionError && (
@@ -167,38 +178,38 @@ export function GoalRetryExtensionModal({
             )}
           </div>
 
-          <div className="rounded-2xl border border-[#D3E6ED] bg-[#EEF5F7] px-4 py-3 text-[13px] text-[#0F1C21] sm:text-sm">
-            <div className="flex items-center justify-between">
+          <div className="rounded-2xl border border-[#E2EEF3] bg-white/95 p-4 shadow-sm">
+            <div className="flex items-center justify-between text-sm">
               <span className="text-[#5D6E72]">기존 마감일</span>
-              <span className="font-semibold">{formatDate(goal.endDate)}</span>
+              <span className="font-semibold text-[#0F1C21]">{formatDate(goal.endDate)}</span>
             </div>
-            <div className="mt-2 flex items-center justify-between">
+            <div className="mt-3 flex items-center justify-between text-sm">
               <span className="text-[#5D6E72]">연장 후 마감일</span>
-              <span className="font-semibold">
+              <span className="font-semibold text-[#0F1C21]">
                 {newEndDate ? formatDate(newEndDate) : "연장 일수를 선택해 주세요"}
               </span>
             </div>
           </div>
 
           {errorMessage && (
-            <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-600">
+            <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-600 shadow-sm">
               {errorMessage}
             </div>
           )}
         </div>
 
-        <div className="mt-6 flex flex-col gap-2 sm:flex-row sm:justify-end">
+        <div className="flex flex-col-reverse gap-3 border-t border-[#E7EDF1] bg-white/95 px-5 py-5 sm:flex-row sm:items-center sm:justify-end sm:px-8 sm:py-6">
           <Button
             variant="ghost"
             onClick={onBack}
-            className="rounded-full border border-[#99C6D6] bg-white px-4 py-2 text-sm font-semibold text-[#0F1C21] shadow-sm hover:bg-white/80"
+            className="flex-1 h-12 rounded-2xl border-2 border-[#D3E6ED] bg-white text-sm font-semibold text-[#5D6E72] hover:bg-[#F5FAFD] transition-all"
           >
             뒤로
           </Button>
           <Button
             onClick={handleSubmit}
             disabled={!selectedDays || selectedDays <= 0 || isSubmitting}
-            className="rounded-full bg-[#5D6E72] px-5 py-2 text-sm font-semibold text-white shadow-sm hover:bg-[#48575b] disabled:opacity-50"
+            className="flex-1 h-12 rounded-2xl bg-gradient-to-r from-[#5D6E72] to-[#3f4c52] text-sm font-semibold text-white shadow-lg transition hover:scale-[1.01] hover:shadow-xl disabled:cursor-not-allowed disabled:opacity-60"
           >
             {isSubmitting ? "처리 중..." : "완료"}
           </Button>
