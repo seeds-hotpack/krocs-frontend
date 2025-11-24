@@ -162,7 +162,7 @@ export function SubGoalModal({
 
   return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4 backdrop-blur-sm">
-        <div className="relative w-full max-w-md bg-white rounded-3xl overflow-hidden shadow-2xl">
+        <div className="relative w-full max-w-md overflow-hidden rounded-3xl border border-white/40 bg-white/95 shadow-[0_18px_60px_rgba(22,33,38,0.2)]">
           {/* Header with Gradient */}
           <div className="relative px-6 py-5 bg-gradient-to-br from-[#ff8b6b] to-[#ff6b47] overflow-hidden">
             <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-3xl"></div>

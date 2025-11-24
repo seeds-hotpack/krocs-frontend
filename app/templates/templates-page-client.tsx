@@ -505,8 +505,8 @@ export default function TemplatesPageClient() {
       )}
 
       {showGoalForm && goalPrefill && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-3xl border border-[#D3E6ED] bg-white shadow-2xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/35 p-4 backdrop-blur-sm">
+          <div className="max-h-[90vh] w-full max-w-md overflow-y-auto">
             <GoalForm goal={goalPrefill} onSubmit={handleGoalCreate} onCancel={closeGoalForm} />
           </div>
         </div>

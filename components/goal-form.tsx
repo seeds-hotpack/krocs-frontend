@@ -164,7 +164,7 @@ export function GoalForm({ goal, onSubmit, onCancel }: GoalFormProps) {
   }
 
   return (
-    <div className="relative w-full bg-white rounded-3xl overflow-hidden shadow-2xl">
+    <div className="relative w-full overflow-hidden rounded-3xl border border-white/40 bg-white/95 shadow-[0_18px_60px_rgba(22,33,38,0.2)]">
       {/* Header with Gradient */}
       <div 
         className="relative px-6 py-5 bg-gradient-to-br from-[#ff8b6b] to-[#ff6b47] overflow-hidden"
