@@ -743,15 +743,17 @@ export default function GoalPageClient() {
                                             {getPriorityText(goal.priority)}
                                           </span>
                                           <div className="flex items-center gap-1 text-xs font-medium text-[#5D6E72]">
-                                            <button
+                                            <Button
+                                              type="button"
+                                              variant="ghost"
                                               onClick={() => toggleGoalExpansion(goal.goalId)}
-                                              className="flex items-center gap-1 rounded-full border border-[#D3E6ED] bg-[#F7FBFC] px-2 py-1 transition-colors hover:text-[#0F1C21]"
+                                              className="inline-flex h-7 items-center justify-center gap-1.5 rounded-full border border-[#D3E6ED] bg-[#F7FBFC] pl-2 pr-2 text-[11px] font-semibold text-[#5D6E72] shadow-none transition-all hover:bg-white hover:text-[#0F1C21]"
                                             >
-                                              <span>세부목표</span>
+                                              <span className="relative top-px pr-0.5">세부목표</span>
                                               <ChevronRight
                                                 className={`h-4 w-4 transition-transform ${isExpanded ? "rotate-90" : ""}`}
                                               />
-                                            </button>
+                                            </Button>
                                             <div className="relative">
                                               <button
                                                 onClick={(e) => {
