@@ -69,7 +69,7 @@ export function GoalForm({ goal, onSubmit, onCancel }: GoalFormProps) {
     { name: "퍼플", color: "#e1bee7" },
     { name: "오렌지", color: "#ffe0b2" },
     { name: "옐로우", color: "#fff9c4" },
-    { name: "그레이", color: "#BDBDBD" },
+    { name: "그레이", color: "#bdbdbd" },
   ]
 
   const validateForm = () => {
