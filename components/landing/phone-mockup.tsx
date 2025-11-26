@@ -2,29 +2,31 @@ import Image from "next/image"
 
 export function PhoneMockup({ imageSrc }: { imageSrc: string }) {
   return (
-    <div className="relative w-[280px] h-[570px] mx-auto">
-      {/* Phone frame */}
-      <div className="absolute inset-0 bg-gray-900 rounded-[3rem] shadow-2xl p-3">
+    <div className="relative mx-auto w-[600px] h-[340px] sm:w-[780px] sm:h-[400px] lg:w-[1000px] lg:h-[500px] xl:w-[1100px] xl:h-[560px]">
+      {/* Tablet frame */}
+      <div className="absolute inset-0 rounded-[1.1rem] bg-neutral-950 shadow-[0_30px_80px_rgba(10,10,10,0.45)] p-1 sm:p-1.5 lg:p-2 border border-white/15">
         {/* Screen */}
-        <div className="relative w-full h-full bg-white rounded-[2.5rem] overflow-hidden">
-          {/* Notch */}
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-6 bg-gray-900 rounded-b-2xl z-10" />
+        <div className="relative h-full w-full rounded-[0.75rem] bg-[#f4f7fb] overflow-hidden">
+          {/* Camera */}
+          <div className="absolute top-1.5 left-1/2 -translate-x-1/2 flex items-center gap-2 z-10">
+            <span className="h-1.5 w-1.5 rounded-full bg-neutral-800/70" />
+            <span className="h-px w-12 rounded-full bg-neutral-700/60" />
+            <span className="h-1.5 w-1.5 rounded-full bg-neutral-800/70" />
+          </div>
 
           {/* App screenshot */}
           <Image
             src={imageSrc || "/landing/placeholder.svg"}
             alt="App screenshot"
             fill
-            sizes="280px"
-            className="object-cover object-top"
+            sizes="1100px"
+            className="object-cover object-left"
           />
         </div>
       </div>
 
-      {/* Side buttons */}
-      <div className="absolute right-0 top-24 w-1 h-12 bg-gray-800 rounded-l" />
-      <div className="absolute right-0 top-40 w-1 h-16 bg-gray-800 rounded-l" />
-      <div className="absolute left-0 top-32 w-1 h-8 bg-gray-800 rounded-r" />
+      {/* Shadow */}
+      <div className="absolute -bottom-4 left-1/2 h-6 w-2/3 -translate-x-1/2 rounded-full bg-black/15 blur-lg" />
     </div>
   )
 }

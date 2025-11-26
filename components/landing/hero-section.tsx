@@ -38,33 +38,35 @@ export function HeroSection() {
             </div>
           </div>
 
-          <div className="relative hidden lg:flex lg:col-span-7 xl:col-span-6 justify-end">
-            <div className="relative w-full max-w-[480px]">
-              <div className="absolute right-0 top-6 w-64 h-64 bg-white/40 blur-3xl rounded-full" />
-              <div className="absolute left-2 bottom-0 w-72 h-72 bg-[var(--landing-accent-light)]/70 blur-3xl rounded-full" />
+          <div className="relative hidden lg:flex lg:col-span-7 xl:col-span-6 justify-end overflow-visible pr-0">
+            <div className="relative flex w-full justify-end overflow-visible">
+              <div className="relative w-[65vw] min-w-[720px] translate-x-[18%] xl:translate-x-[22%]">
+                <div className="absolute right-0 top-0 w-80 h-80 bg-white/40 blur-3xl rounded-full" />
+                <div className="absolute left-2 bottom-0 w-96 h-96 bg-[var(--landing-accent-light)]/70 blur-3xl rounded-full" />
 
-              <div className="relative ml-auto flex justify-end pr-2">
-                <PhoneMockup imageSrc="/landing/images/app-calendar.png" />
+                <div className="relative ml-auto flex justify-end">
+                  <PhoneMockup imageSrc="/landing/images/goal.png" />
 
-                <div className="absolute left-2 top-10 flex flex-col gap-3">
-                  <div className="relative rounded-3xl bg-white/85 backdrop-blur border border-white/50 px-4 py-3 shadow-lg text-left after:content-[''] after:absolute after:-bottom-2 after:left-8 after:size-3 after:bg-white/85 after:border after:border-white/30 after:rotate-45">
-                    <p className="text-xs font-semibold text-foreground">회고 기록 +1</p>
-                    <p className="text-[11px] text-muted-foreground">이유 태그 저장</p>
+                  <div className="absolute -left-20 top-4 flex flex-col gap-5">
+                    <div className="relative rounded-3xl bg-white/90 backdrop-blur border border-white/60 px-4 py-3 shadow-lg text-left after:content-[''] after:absolute after:-bottom-2 after:left-8 after:size-3 after:bg-white/90 after:border after:border-white/30 after:rotate-45">
+                      <p className="text-xs font-semibold text-foreground">회고 기록 +1</p>
+                      <p className="text-[11px] text-muted-foreground">이유 태그 저장</p>
+                    </div>
+                    <div className="relative rounded-3xl bg-white/90 backdrop-blur border border-white/60 px-4 py-3 shadow-lg text-left after:content-[''] after:absolute after:-bottom-2 after:left-6 after:size-3 after:bg-white/90 after:border after:border-white/30 after:rotate-45">
+                      <p className="text-xs font-semibold text-foreground">재도전 제안</p>
+                      <p className="text-[11px] text-muted-foreground">블록 재배치</p>
+                    </div>
                   </div>
-                  <div className="relative rounded-3xl bg-white/85 backdrop-blur border border-white/50 px-4 py-3 shadow-lg text-left after:content-[''] after:absolute after:-bottom-2 after:left-6 after:size-3 after:bg-white/85 after:border after:border-white/30 after:rotate-45">
-                    <p className="text-xs font-semibold text-foreground">재도전 제안</p>
-                    <p className="text-[11px] text-muted-foreground">블록 재배치</p>
+
+                  <div className="absolute right-4 -top-2 rounded-3xl bg-white/90 backdrop-blur border border-white/60 px-4 py-3 shadow-lg text-left after:content-[''] after:absolute after:-bottom-2 after:right-10 after:size-3 after:bg-white/90 after:border after:border-white/30 after:rotate-45">
+                    <p className="text-xs font-semibold text-foreground">일정 타임라인</p>
+                    <p className="text-[11px] text-muted-foreground">20분 뒤 일정 대기</p>
                   </div>
-                </div>
 
-                <div className="absolute right-0 top-8 rounded-3xl bg-white/85 backdrop-blur border border-white/50 px-4 py-3 shadow-lg text-left after:content-[''] after:absolute after:-bottom-2 after:right-10 after:size-3 after:bg-white/85 after:border after:border-white/30 after:rotate-45">
-                  <p className="text-xs font-semibold text-foreground">일정 타임라인</p>
-                  <p className="text-[11px] text-muted-foreground">20분 뒤 일정 대기</p>
-                </div>
-
-                <div className="absolute right-0 bottom-12 rounded-3xl bg-white/85 backdrop-blur border border-white/50 px-4 py-3 shadow-lg text-left after:content-[''] after:absolute after:-top-2 after:right-8 after:size-3 after:bg-white/85 after:border after:border-white/30 after:rotate-45">
-                  <p className="text-xs font-semibold text-foreground">오늘 일정 86%</p>
-                  <p className="text-[11px] text-muted-foreground">3개의 목표 진행 중</p>
+                  <div className="absolute right-4 bottom-0 translate-y-full rounded-3xl bg-white/90 backdrop-blur border border-white/60 px-4 py-3 shadow-lg text-left after:content-[''] after:absolute after:-top-2 after:right-10 after:size-3 after:bg-white/90 after:border after:border-white/30 after:rotate-45">
+                    <p className="text-xs font-semibold text-foreground">오늘 일정 86%</p>
+                    <p className="text-[11px] text-muted-foreground">3개의 목표 진행 중</p>
+                  </div>
                 </div>
               </div>
             </div>
