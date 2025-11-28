@@ -32,6 +32,9 @@ export const metadata: Metadata = {
     shortcut: "/favicon.ico",
     apple: "/favicon.ico",
   },
+  verification: {
+    google: "c5vkNQEukp-6p06JdbzFV02iGxyIlKDKX8K9TqvYwPY",
+  },
 }
 
 export const viewport: Viewport = {
