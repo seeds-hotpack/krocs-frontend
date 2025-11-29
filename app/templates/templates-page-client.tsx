@@ -12,6 +12,7 @@ import { GoalForm } from '@/components/goal-form';
 
 import { createGoal as createGoalApi } from '@/api/createGoal';
 import type { Goal } from '@/api/goals';
+import { createSubGoal, type CreateSubGoalRequest } from '@/api/subgoals';
 import {
   createTemplate,
   updateTemplate,
@@ -349,15 +350,45 @@ export default function TemplatesPageClient() {
     if (!isValidGoalPayload(goalPayload)) {
       return;
     }
+    if (!templateForGoal) {
+      alert('템플릿 정보를 불러올 수 없습니다. 다시 시도해 주세요.');
+      return;
+    }
 
     setIsCreatingGoal(true);
+    let createdGoalId: number | null = null;
+    const subGoalPayloads: CreateSubGoalRequest[] =
+      templateForGoal.subTemplates && templateForGoal.subTemplates.length > 0
+        ? templateForGoal.subTemplates.map((subTemplate) => ({
+            title: subTemplate.title,
+            is_time_selected: false,
+          }))
+        : [];
+
     try {
-      await createGoalApi(1, goalPayload);
+      const goalResponse = await createGoalApi(1, goalPayload);
+      createdGoalId = goalResponse.result.goalId;
+
+      if (!createdGoalId) {
+        throw new Error('생성된 목표 ID를 확인할 수 없습니다.');
+      }
+
+      if (subGoalPayloads.length > 0) {
+        for (const subGoalPayload of subGoalPayloads) {
+          await createSubGoal(createdGoalId, subGoalPayload);
+        }
+      }
+
       alert('템플릿을 기반으로 목표를 생성했습니다.');
       closeGoalForm();
     } catch (err) {
       console.error('Failed to create goal from template:', err);
-      alert('목표 생성에 실패했습니다. 다시 시도해 주세요.');
+      if (createdGoalId) {
+        alert('목표는 생성했지만 템플릿의 소목표 생성에 실패했습니다. 목표 상세에서 직접 추가해 주세요.');
+        closeGoalForm();
+      } else {
+        alert('목표 생성에 실패했습니다. 다시 시도해 주세요.');
+      }
     } finally {
       setIsCreatingGoal(false);
     }
