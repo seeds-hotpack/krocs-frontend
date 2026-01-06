@@ -176,7 +176,7 @@ export function GoalForm({ goal, onSubmit, onCancel }: GoalFormProps) {
           <div className="flex items-center gap-2.5">
             <Sparkles className="h-4 w-4 text-white flex-shrink-0" />
             <h2 className="text-lg font-bold text-white">
-              {goal ? "목표 수정" : "목표 생성"}
+              {goal && goal.goalId > 0 ? "목표 수정" : "목표 생성"}
             </h2>
           </div>
           <Button
@@ -348,7 +348,7 @@ export function GoalForm({ goal, onSubmit, onCancel }: GoalFormProps) {
               type="submit"
               className="flex-1 h-12 rounded-2xl bg-gradient-to-r from-[#ff8b6b] to-[#ff6b47] text-white font-bold shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all"
             >
-              {goal ? "수정 완료" : "목표 만들기"}
+              {goal && goal.goalId > 0 ? "수정 완료" : "목표 만들기"}
             </Button>
           </div>
         </form>
