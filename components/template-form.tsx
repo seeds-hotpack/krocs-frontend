@@ -22,7 +22,7 @@ interface TemplateFormProps {
 export function TemplateForm({ template, onSubmit, onCancel }: TemplateFormProps) {
   const [title, setTitle] = useState('');
   const [priority, setPriority] = useState<'HIGH' | 'MEDIUM' | 'LOW'>('MEDIUM');
-  const [duration, setDuration] = useState(1);
+  const [duration, setDuration] = useState<number | ''>('');
   const [subTemplates, setSubTemplates] = useState<EditableSubTemplate[]>([]);
 
   const [newSubTemplateTitle, setNewSubTemplateTitle] = useState('');
@@ -48,7 +48,7 @@ export function TemplateForm({ template, onSubmit, onCancel }: TemplateFormProps
     } else {
       setTitle('');
       setPriority('MEDIUM');
-      setDuration(1);
+      setDuration('');
       setSubTemplates([]);
     }
   }, [template]);
@@ -59,18 +59,19 @@ export function TemplateForm({ template, onSubmit, onCancel }: TemplateFormProps
       alert('템플릿 제목을 입력해주세요.');
       return;
     }
-    if (duration < 1) {
+    const durationNum = typeof duration === 'number' ? duration : parseInt(String(duration), 10);
+    if (!duration || durationNum < 1) {
       alert('소요시간을 1일 이상 입력해주세요.');
       return;
     }
-    if (duration > 36500) {
+    if (durationNum > 36500) {
       setDurationError("적절한 소요시간을 입력해 주세요.");
       return;
     }
     if (durationError) {
         return;
     }
-    onSubmit({ title, priority, duration, subTemplates });
+    onSubmit({ title, priority, duration: durationNum, subTemplates });
   };
 
   const handleAddSubTemplate = () => {
@@ -215,12 +216,18 @@ export function TemplateForm({ template, onSubmit, onCancel }: TemplateFormProps
             type="number"
             value={duration}
             onChange={(e) => {
-              const val = parseInt(e.target.value, 10) || 0;
-              setDuration(val);
-              if (val > 36500) {
-                setDurationError("적절한 소요시간을 입력해 주세요.");
-              } else {
+              const inputValue = e.target.value;
+              if (inputValue === '') {
+                setDuration('');
                 setDurationError(null);
+              } else {
+                const val = parseInt(inputValue, 10);
+                setDuration(val);
+                if (val > 36500) {
+                  setDurationError("적절한 소요시간을 입력해 주세요.");
+                } else {
+                  setDurationError(null);
+                }
               }
             }}
             placeholder="예: 7"
