@@ -30,9 +30,9 @@ import { GlobalNav } from '@/components/global-nav';
 type Template = ApiTemplate;
 
 const priorityColorMap: Record<Template['priority'], string> = {
-  HIGH: '#5D6E72',
-  MEDIUM: '#BBDCE5',
-  LOW: '#DDEDF2',
+  HIGH: '#bdbdbd',    // 그레이
+  MEDIUM: '#bbdefb',  // 블루
+  LOW: '#c8e6c9',     // 그린
 };
 
 const priorityLabelMap: Record<Template['priority'], string> = {
