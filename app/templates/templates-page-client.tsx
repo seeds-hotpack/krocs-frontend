@@ -141,7 +141,7 @@ export default function TemplatesPageClient() {
     end.setDate(end.getDate() + durationDays - 1);
 
     return {
-      goalId: templateForGoal.templateId,
+      goalId: 0,
       title: templateForGoal.title,
       priority: templateForGoal.priority,
       color: priorityColorMap[templateForGoal.priority],
