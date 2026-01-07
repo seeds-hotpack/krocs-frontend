@@ -29,6 +29,9 @@ export function GlobalNav() {
     setIsLoggingOut(true)
     try {
       await logout()
+      if (typeof window !== "undefined") {
+        window.localStorage.removeItem("goalPageSelectedDate")
+      }
       markUnauthenticated()
       router.push("/login")
     } catch (error) {
