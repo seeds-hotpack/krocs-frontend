@@ -81,12 +81,14 @@ export default function LoginPageClient() {
                   </svg>
                   Google로 로그인
                 </button>
+                {/*
                 <button className="login-btn naver-btn" onClick={handleNaverLogin}>
                   <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="white">
                     <path d="M4 4h4.8l4.4 7V4H20v16h-4.8l-4.4-7v7H4z" />
                   </svg>
                   네이버 로그인
                 </button>
+                */}
                 <button className="login-btn kakao-btn" onClick={handleKakaoLogin}>
                   <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="#3A1D1D">
                     <path d="M12 2C6.48 2 2 5.58 2 10c0 2.54 1.61 4.78 4.03 6.17-.21.79-.76 2.85-.87 3.3 0 0-.02.14.07.19.09.05.2.01.2.01.26-.04 3.01-1.97 3.49-2.3.66.1 1.34.15 2.08.15 5.52 0 10-3.58 10-8s-4.48-8-10-8z" />
