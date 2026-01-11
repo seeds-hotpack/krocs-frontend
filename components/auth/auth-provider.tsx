@@ -43,6 +43,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const markUnauthenticated = useCallback(() => {
     setStatus("unauthenticated")
     setUser(null)
+    if (typeof window !== "undefined") {
+      window.localStorage.removeItem("goalPageSelectedDate")
+    }
   }, [])
 
   const refresh = useCallback(async () => {
