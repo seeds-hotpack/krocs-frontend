@@ -28,11 +28,12 @@ interface GoalFormProps {
   goal?: Goal | null
   onSubmit: (data: any) => void
   onCancel: () => void
+  defaultDate?: Date
 }
 
-export function GoalForm({ goal, onSubmit, onCancel }: GoalFormProps) {
-  const initialStartDate = goal?.startDate || toKoreanDateString()
-  const initialEndDate = goal?.endDate || toKoreanDateString()
+export function GoalForm({ goal, onSubmit, onCancel, defaultDate }: GoalFormProps) {
+  const initialStartDate = goal?.startDate || (defaultDate ? toKoreanDateString(defaultDate) : toKoreanDateString())
+  const initialEndDate = goal?.endDate || (defaultDate ? toKoreanDateString(defaultDate) : toKoreanDateString())
   
   const calculateInitialDuration = () => {
     if (goal?.duration) return goal.duration
@@ -128,17 +129,18 @@ export function GoalForm({ goal, onSubmit, onCancel }: GoalFormProps) {
         color: goal.color || "#bbdefb",
       })
     } else {
+      const baseDate = defaultDate ? toKoreanDateString(defaultDate) : toKoreanDateString()
       setFormData({
         title: "",
         priority: "MEDIUM",
-        startDate: toKoreanDateString(),
-        endDate: toKoreanDateString(),
+        startDate: baseDate,
+        endDate: baseDate,
         duration: 1,
         color: "#bbdefb",
       })
     }
     setErrors({ title: "", dates: "", color: "" })
-  }, [goal])
+  }, [goal, defaultDate])
 
   const handleDateChange = (field: "startDate" | "endDate", value: string) => {
     const newFormData = { ...formData, [field]: value }
