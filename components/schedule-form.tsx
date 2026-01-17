@@ -12,7 +12,6 @@ import {
   X,
   Clock,
   Calendar,
-  Bell,
   User,
   Coffee,
   Briefcase,
@@ -49,7 +48,6 @@ interface Schedule {
   allDay: boolean
   goalId?: number
   subGoalId?: number
-  reminderMinutes?: number
   icon?: string
   color?: string
   subTasks?: SubTask[]
@@ -123,7 +121,6 @@ export function ScheduleForm({ schedule, onSubmit, onCancel, onDelete, defaultDa
       startDateTime: formatLocalDatetime(initialStartDateTime),
       endDateTime: formatLocalDatetime(initialEndDateTime),
       allDay: schedule?.allDay || false,
-      reminderMinutes: schedule?.reminderMinutes,
       icon: schedule?.icon || "User",
       color: schedule?.color || "#2196f3",
     };
@@ -149,7 +146,6 @@ export function ScheduleForm({ schedule, onSubmit, onCancel, onDelete, defaultDa
         startDateTime: formatLocalDatetime(updatedStartDateTime),
         endDateTime: formatLocalDatetime(updatedEndDateTime),
         allDay: schedule?.allDay || false,
-        reminderMinutes: schedule?.reminderMinutes,
         icon: schedule?.icon || "User",
         color: schedule?.color || "#2196f3",
       };
@@ -317,7 +313,6 @@ export function ScheduleForm({ schedule, onSubmit, onCancel, onDelete, defaultDa
         ? `${formData.endDate}T23:59`
         : formatDateTime(formData.endDateTime),
       allDay: formData.allDay,
-      reminderMinutes: formData.reminderMinutes,
       icon: formData.icon,
       color: formData.color,
       subTasks: subTasks.length > 0 ? subTasks : undefined,
@@ -534,31 +529,7 @@ export function ScheduleForm({ schedule, onSubmit, onCancel, onDelete, defaultDa
           </div>
         )}
 
-        {/* Reminder */}
-        <div className="space-y-2">
-          <Label htmlFor="reminderMinutes" className="text-sm font-semibold text-[#0F1C21] flex items-center gap-2">
-            <Bell className="h-4 w-4 text-[#5D6E72]" />
-            알림 (선택)
-          </Label>
-          <Select
-            value={formData.reminderMinutes?.toString() || "none"}
-            onValueChange={(value) =>
-              setFormData({ ...formData, reminderMinutes: value === "none" ? undefined : Number.parseInt(value) })
-            }
-          >
-            <SelectTrigger className="h-12 rounded-2xl border-2 border-[#D3E6ED] bg-white focus:border-[#ff8b6b] focus:ring-2 focus:ring-[#ff8b6b]/20">
-              <SelectValue placeholder="알림 시간 선택" />
-            </SelectTrigger>
-            <SelectContent className="rounded-2xl">
-              <SelectItem value="none" className="rounded-xl">알림 없음</SelectItem>
-              <SelectItem value="5" className="rounded-xl">5분 전</SelectItem>
-              <SelectItem value="10" className="rounded-xl">10분 전</SelectItem>
-              <SelectItem value="15" className="rounded-xl">15분 전</SelectItem>
-              <SelectItem value="30" className="rounded-xl">30분 전</SelectItem>
-              <SelectItem value="60" className="rounded-xl">1시간 전</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+
 
         {/* Sub Tasks */}
         {subTasks.length > 0 && (
