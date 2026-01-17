@@ -950,6 +950,7 @@ export default function GoalPageClient() {
                 setIsFormOpen(false)
                 setEditingGoal(null)
               }}
+              defaultDate={selectedDate}
             />
           </div>
         </div>
