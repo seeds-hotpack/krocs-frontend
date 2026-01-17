@@ -446,42 +446,26 @@ export function ScheduleForm({ schedule, onSubmit, onCancel, onDelete, defaultDa
           </Label>
         </div>
 
-        {/* Date Selection - 날짜와 시간 분리 */}
+        {/* Date Selection - 하나의 날짜만 선택 */}
         <div className="space-y-3">
           <Label className="text-sm font-semibold text-[#0F1C21] flex items-center gap-2">
             <Calendar className="h-4 w-4 text-[#5D6E72]" />
-            <span>기간 설정</span>
+            <span>날짜</span>
           </Label>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-2">
-              <Label htmlFor="startDate" className="text-xs text-[#5D6E72]">
-                시작 날짜
-              </Label>
-              <Input
-                id="startDate"
-                type="date"
-                value={formData.startDate}
-                onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
-                className="h-12 rounded-2xl border-2 border-[#D3E6ED] bg-white text-sm text-[#0F1C21] focus:border-[#ff8b6b] focus:ring-2 focus:ring-[#ff8b6b]/20"
-                required
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="endDate" className="text-xs text-[#5D6E72]">
-                종료 날짜
-              </Label>
-              <Input
-                id="endDate"
-                type="date"
-                value={formData.endDate}
-                onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
-                min={formData.startDate}
-                className="h-12 rounded-2xl border-2 border-[#D3E6ED] bg-white text-sm text-[#0F1C21] focus:border-[#ff8b6b] focus:ring-2 focus:ring-[#ff8b6b]/20"
-                required
-              />
-            </div>
-          </div>
+          <Input
+            id="scheduleDate"
+            type="date"
+            value={formData.startDate}
+            onChange={(e) => setFormData({ 
+              ...formData, 
+              startDate: e.target.value,
+              endDate: e.target.value,
+              startDateTime: `${e.target.value}T${formData.startDateTime.split("T")[1]}`,
+              endDateTime: `${e.target.value}T${formData.endDateTime.split("T")[1]}`
+            })}
+            className="h-12 rounded-2xl border-2 border-[#D3E6ED] bg-white text-sm text-[#0F1C21] focus:border-[#ff8b6b] focus:ring-2 focus:ring-[#ff8b6b]/20"
+            required
+          />
         </div>
 
         {/* Time Selection - 하루 종일이 아닐 때만 표시 */}
