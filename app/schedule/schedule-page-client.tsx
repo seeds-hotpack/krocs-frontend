@@ -270,23 +270,48 @@ export default function SchedulePageClient() {
     fetchGoalsAndSubGoals()
   }, [selectedDate, refreshTrigger])
 
-  const onUpdateSubGoal = (goalId: number, subGoalId: number, updates: { isCompleted: boolean; title: string }) => {
+  const onUpdateSubGoal = (
+    goalId: number,
+    subGoalId: number,
+    updates: {
+      title?: string
+      isCompleted?: boolean
+      isTimeSelected?: boolean
+      startDateTime?: string
+      endDateTime?: string
+    }
+  ) => {
     const currentSubGoal = subGoalSchedules.find((sg) => sg.planId === subGoalId)
+    if (!currentSubGoal) return
+
+    const nextSubGoal = {
+      ...currentSubGoal,
+      title: updates.title ?? currentSubGoal.title,
+      isCompleted: updates.isCompleted ?? currentSubGoal.isCompleted,
+      isTimeSelected: updates.isTimeSelected ?? currentSubGoal.isTimeSelected,
+      startDateTime: updates.startDateTime ?? currentSubGoal.startDateTime,
+      endDateTime: updates.endDateTime ?? currentSubGoal.endDateTime,
+    }
+    const nextAllDay = !nextSubGoal.isTimeSelected
+    const nextState = {
+      ...nextSubGoal,
+      allDay: nextAllDay,
+    }
 
     setSubGoalSchedules((prev) =>
-      prev.map((sg) => (sg.planId === subGoalId ? { ...sg, isCompleted: updates.isCompleted } : sg))
+      prev.map((sg) => (sg.planId === subGoalId ? nextState : sg))
     )
 
     updateSubGoal(goalId, subGoalId, {
-      title: updates.title,
-      is_completed: updates.isCompleted,
-      is_time_selected: Boolean(currentSubGoal?.isTimeSelected),
-      start_date_time: currentSubGoal?.isTimeSelected ? currentSubGoal?.startDateTime : undefined,
-      end_date_time: currentSubGoal?.isTimeSelected ? currentSubGoal?.endDateTime : undefined,
+      title: nextState.title,
+      is_completed: nextState.isCompleted,
+      is_time_selected: Boolean(nextState.isTimeSelected),
+      start_date_time: nextState.isTimeSelected ? nextState.startDateTime : undefined,
+      end_date_time: nextState.isTimeSelected ? nextState.endDateTime : undefined,
     }).catch((err) => {
       console.error("Failed to update sub-goal, reverting:", err)
       setSubGoalSchedules((prev) =>
-        prev.map((sg) => (sg.planId === subGoalId ? { ...sg, isCompleted: !updates.isCompleted } : sg))
+        prev.map((sg) => (sg.planId === subGoalId ? currentSubGoal : sg))
       )
     })
   }
@@ -399,12 +424,22 @@ export default function SchedulePageClient() {
     }
 
     try {
+      setSchedules((prev) =>
+        prev.map((schedule) =>
+          schedule.planId === planId ? updatedSchedule : schedule
+        )
+      )
       await updatePlan(planId, apiPayload)
       setRefreshTrigger((prev) => prev + 1)
       setShowForm(false)
       setEditingSchedule(null)
     } catch (err: any) {
       console.error("Failed to update schedule:", err)
+      setSchedules((prev) =>
+        prev.map((schedule) =>
+          schedule.planId === planId ? originalSchedule : schedule
+        )
+      )
       if (err.response?.status === 401 || err.response?.data?.code === "GLOBAL401") {
         alert(err.response?.data?.message || "인증에 실패했습니다. 다시 로그인해주세요.")
         router.push("/login")
