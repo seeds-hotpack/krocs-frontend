@@ -81,7 +81,7 @@ export function Navigation() {
 
       {mobileMenuOpen && (
         <div className="fixed inset-0 z-40 md:hidden">
-          <div className="absolute inset-0 bg-background/95 backdrop-blur-lg pt-20 px-4">
+          <div className="absolute inset-x-0 bottom-0 top-16 bg-background/95 backdrop-blur-lg px-4 pt-6">
             <div className="flex flex-col gap-2">
               {navItems.map((item) => (
                 <button
