@@ -26,7 +26,7 @@ import {
 import { updateSubPlan } from "@/api/subplan";
 import { updateSubGoal } from "@/api/subgoals";
 import { Checkbox } from "@/components/ui/checkbox"
-import { toKoreanISOString } from "@/lib/korean-time";
+import { toKoreanDateTimeLocalString, toKoreanISOString } from "@/lib/korean-time";
 
 interface SubTask {
   id: string
@@ -57,7 +57,17 @@ interface ScheduleTimelineProps {
   schedules: Schedule[]
   selectedDate: Date
   onUpdateSchedule: (planId: number, updates: Partial<Schedule>) => void
-  onUpdateSubGoal: (goalId: number, subGoalId: number, updates: { isCompleted: boolean, title: string }) => void;
+  onUpdateSubGoal: (
+    goalId: number,
+    subGoalId: number,
+    updates: {
+      title?: string
+      isCompleted?: boolean
+      isTimeSelected?: boolean
+      startDateTime?: string
+      endDateTime?: string
+    }
+  ) => void;
   onDeleteSchedule: (planId: number) => void;
   onEditSchedule?: (schedule: Schedule) => void
   loading: boolean
@@ -87,6 +97,37 @@ export const ScheduleTimeline = forwardRef<{
 }, ref) => {
   const [expandedSchedules, setExpandedSchedules] = useState<Set<number>>(new Set())
   const timelineRef = useRef<HTMLDivElement>(null)
+  const [dragPreview, setDragPreview] = useState<{
+    planId: number
+    startDateTime: string
+    endDateTime: string
+  } | null>(null)
+  const [expandedMobileSchedules, setExpandedMobileSchedules] = useState<Set<number>>(new Set())
+  const dragPreviewRef = useRef<{
+    planId: number
+    startDateTime: string
+    endDateTime: string
+  } | null>(null)
+  const dragMetaRef = useRef<{
+    planId: number
+    type: "schedule" | "subgoal"
+    goalId?: number
+    title: string
+    isCompleted: boolean
+    mode: "move" | "resize"
+    startY: number
+    startStartTime: Date
+    startEndTime: Date
+    hasMoved: boolean
+  } | null>(null)
+  const suppressClickRef = useRef(false)
+
+  const DRAG_STEP_MINUTES = 5
+  const PIXELS_PER_MINUTE = 1
+  const PIXELS_PER_STEP = DRAG_STEP_MINUTES * PIXELS_PER_MINUTE
+  const TIME_LABEL_INTERVAL_MINUTES = 60
+  const TIME_COLUMN_WIDTH_REM = 3.75
+  const TIMELINE_GAP_REM = 1.25
 
   useImperativeHandle(ref, () => ({
     scrollToCurrentTime: () => {},
@@ -147,6 +188,19 @@ export const ScheduleTimeline = forwardRef<{
     return colorMap[color as keyof typeof colorMap] || colorMap.blue
   }
 
+  const getDisplayTimes = (schedule: Schedule) => {
+    if (dragPreview?.planId === schedule.planId) {
+      return {
+        start: dragPreview.startDateTime,
+        end: dragPreview.endDateTime,
+      }
+    }
+    return {
+      start: schedule.startDateTime,
+      end: schedule.endDateTime,
+    }
+  }
+
   const toggleComplete = (schedule: Schedule) => {
     if (schedule.type === 'subgoal' && schedule.goalId) {
       onUpdateSubGoal(schedule.goalId, schedule.planId, { 
@@ -193,6 +247,16 @@ export const ScheduleTimeline = forwardRef<{
     setExpandedSchedules(newExpanded)
   }
 
+  const toggleMobileExpanded = (planId: number) => {
+    const nextExpanded = new Set(expandedMobileSchedules)
+    if (nextExpanded.has(planId)) {
+      nextExpanded.delete(planId)
+    } else {
+      nextExpanded.add(planId)
+    }
+    setExpandedMobileSchedules(nextExpanded)
+  }
+
   const handleScheduleClick = (schedule: Schedule) => {
     if (onEditSchedule) {
       onEditSchedule(schedule)
@@ -229,12 +293,159 @@ export const ScheduleTimeline = forwardRef<{
     const endTime = new Date(end)
     const diffMs = endTime.getTime() - startTime.getTime()
     const diffMins = Math.round(diffMs / (1000 * 60))
-    
-    // 최소 56px (기본), 15분당 +14px
-    // 30분 = 56px, 1시간 = 84px, 2시간 = 140px
-    const baseHeight = 56
-    const additionalHeight = Math.floor(diffMins / 15) * 7
-    return Math.min(baseHeight + additionalHeight, 200) // 최대 200px
+
+    return Math.max(0, diffMins * PIXELS_PER_MINUTE)
+  }
+
+  const formatTimeLabel = (totalMinutes: number) => {
+    const hour = Math.floor(totalMinutes / 60)
+    const minute = totalMinutes % 60
+    const displayHour = hour > 12 ? hour - 12 : hour === 0 ? 12 : hour
+    const ampm = hour >= 12 ? "PM" : "AM"
+    return `${displayHour}:${minute.toString().padStart(2, "0")} ${ampm}`
+  }
+
+  const clampDateRange = (start: Date, end: Date) => {
+    const dayStart = new Date(selectedDate)
+    dayStart.setHours(0, 0, 0, 0)
+    const dayEnd = new Date(dayStart)
+    dayEnd.setDate(dayEnd.getDate() + 1)
+
+    const durationMs = end.getTime() - start.getTime()
+    let newStart = new Date(start)
+    let newEnd = new Date(end)
+
+    if (newStart < dayStart) {
+      newStart = new Date(dayStart)
+      newEnd = new Date(dayStart.getTime() + durationMs)
+    }
+    if (newEnd > dayEnd) {
+      newEnd = new Date(dayEnd)
+      newStart = new Date(dayEnd.getTime() - durationMs)
+    }
+
+    return { newStart, newEnd, dayStart, dayEnd }
+  }
+
+  const startDrag = (
+    event: React.PointerEvent,
+    schedule: Schedule,
+    mode: "move" | "resize"
+  ) => {
+    if (schedule.allDay) return
+    if (schedule.type === "subgoal" && !schedule.goalId) return
+    event.preventDefault()
+    event.stopPropagation()
+
+    const startStartTime = new Date(schedule.startDateTime)
+    const startEndTime = new Date(schedule.endDateTime)
+    dragMetaRef.current = {
+      planId: schedule.planId,
+      type: schedule.type,
+      goalId: schedule.goalId,
+      title: schedule.title,
+      isCompleted: schedule.isCompleted,
+      mode,
+      startY: event.clientY,
+      startStartTime,
+      startEndTime,
+      hasMoved: false,
+    }
+    setDragPreview({
+      planId: schedule.planId,
+      startDateTime: schedule.startDateTime,
+      endDateTime: schedule.endDateTime,
+    })
+    dragPreviewRef.current = {
+      planId: schedule.planId,
+      startDateTime: schedule.startDateTime,
+      endDateTime: schedule.endDateTime,
+    }
+
+    const handlePointerMove = (moveEvent: PointerEvent) => {
+      if (!dragMetaRef.current) return
+      const deltaY = moveEvent.clientY - dragMetaRef.current.startY
+      if (Math.abs(deltaY) > 3) {
+        dragMetaRef.current.hasMoved = true
+      }
+      const stepDelta =
+        Math.round(deltaY / PIXELS_PER_STEP) * DRAG_STEP_MINUTES
+      if (stepDelta === 0) return
+
+      const baseStart = dragMetaRef.current.startStartTime
+      const baseEnd = dragMetaRef.current.startEndTime
+      let newStart = new Date(baseStart)
+      let newEnd = new Date(baseEnd)
+
+      if (dragMetaRef.current.mode === "move") {
+        newStart = new Date(baseStart.getTime() + stepDelta * 60000)
+        newEnd = new Date(baseEnd.getTime() + stepDelta * 60000)
+        const clamped = clampDateRange(newStart, newEnd)
+        newStart = clamped.newStart
+        newEnd = clamped.newEnd
+      } else {
+        newEnd = new Date(baseEnd.getTime() + stepDelta * 60000)
+        const dayStart = new Date(selectedDate)
+        dayStart.setHours(0, 0, 0, 0)
+        const dayEnd = new Date(dayStart)
+        dayEnd.setDate(dayEnd.getDate() + 1)
+        const minEnd = new Date(baseStart.getTime() + DRAG_STEP_MINUTES * 60000)
+        if (newEnd < minEnd) newEnd = minEnd
+        if (newEnd > dayEnd) newEnd = dayEnd
+        newStart = new Date(baseStart)
+      }
+
+      setDragPreview({
+        planId: dragMetaRef.current.planId,
+        startDateTime: toKoreanDateTimeLocalString(newStart),
+        endDateTime: toKoreanDateTimeLocalString(newEnd),
+      })
+      dragPreviewRef.current = {
+        planId: dragMetaRef.current.planId,
+        startDateTime: toKoreanDateTimeLocalString(newStart),
+        endDateTime: toKoreanDateTimeLocalString(newEnd),
+      }
+    }
+
+    const handlePointerUp = () => {
+      if (!dragMetaRef.current) return
+      suppressClickRef.current = dragMetaRef.current.hasMoved
+
+      if (dragMetaRef.current.hasMoved && dragPreviewRef.current) {
+        if (dragMetaRef.current.type === "subgoal" && dragMetaRef.current.goalId) {
+          onUpdateSubGoal(dragMetaRef.current.goalId, dragMetaRef.current.planId, {
+            title: dragMetaRef.current.title,
+            isCompleted: dragMetaRef.current.isCompleted,
+            isTimeSelected: true,
+            startDateTime: dragPreviewRef.current.startDateTime,
+            endDateTime: dragPreviewRef.current.endDateTime,
+          })
+        } else {
+          onUpdateSchedule(dragMetaRef.current.planId, {
+            startDateTime: dragPreviewRef.current.startDateTime,
+            endDateTime: dragPreviewRef.current.endDateTime,
+            allDay: false,
+          })
+        }
+      }
+
+      dragMetaRef.current = null
+      setDragPreview(null)
+      dragPreviewRef.current = null
+      window.removeEventListener("pointermove", handlePointerMove)
+      window.removeEventListener("pointerup", handlePointerUp)
+    }
+
+    window.addEventListener("pointermove", handlePointerMove)
+    window.addEventListener("pointerup", handlePointerUp)
+  }
+
+  const handleScheduleSelect = (schedule: Schedule) => {
+    if (suppressClickRef.current) {
+      suppressClickRef.current = false
+      return
+    }
+    handleScheduleClick(schedule)
   }
 
   // 일정 겹침 감지 함수
@@ -263,6 +474,38 @@ export const ScheduleTimeline = forwardRef<{
   const timedSchedules = schedules
     .filter(s => !s.allDay)
     .sort((a, b) => new Date(a.startDateTime).getTime() - new Date(b.startDateTime).getTime())
+  const timelineEntries = timedSchedules
+    .map((schedule) => {
+      const displayTimes = getDisplayTimes(schedule)
+      return {
+        schedule,
+        displayStart: displayTimes.start,
+        displayEnd: displayTimes.end,
+      }
+    })
+    .sort((a, b) => new Date(a.displayStart).getTime() - new Date(b.displayStart).getTime())
+  const timelineStartMinutes = timelineEntries.length
+    ? Math.min(
+        ...timelineEntries.map(({ displayStart }) => {
+          const start = new Date(displayStart)
+          return start.getHours() * 60 + start.getMinutes()
+        })
+      )
+    : 0
+  const timelineEndMinutes = timelineEntries.length
+    ? Math.max(
+        ...timelineEntries.map(({ displayEnd }) => {
+          const end = new Date(displayEnd)
+          return end.getHours() * 60 + end.getMinutes()
+        })
+      )
+    : 0
+  const firstTickMinutes =
+    Math.ceil(timelineStartMinutes / TIME_LABEL_INTERVAL_MINUTES) * TIME_LABEL_INTERVAL_MINUTES
+  const tickCount =
+    timelineEntries.length && timelineEndMinutes >= firstTickMinutes
+      ? Math.floor((timelineEndMinutes - firstTickMinutes) / TIME_LABEL_INTERVAL_MINUTES) + 1
+      : 0
 
   if (loading) {
     return (
@@ -398,180 +641,286 @@ export const ScheduleTimeline = forwardRef<{
           {/* 시간 지정 일정 타임라인 */}
           {timedSchedules.length > 0 && (
             <div className="relative">
-              {timedSchedules.map((schedule, index) => {
-            const isExpanded = expandedSchedules.has(schedule.planId)
-            const isLast = index === timedSchedules.length - 1
-            const scheduleColor = getScheduleColor(schedule.color)
-            const IconComponent = getScheduleIcon(schedule)
-            const overlappingSchedules = getOverlappingSchedules(schedule, timedSchedules)
-            const hasOverlap = overlappingSchedules.length > 0
-
-            return (
-              <div
-                key={`${schedule.type}-${schedule.planId}`}
-                className="flex gap-5 relative"
-                data-schedule-id={schedule.planId}
-              >
-                {/* 시간 표시 영역 */}
-                <div className="w-15 flex-shrink-0 relative flex items-start" style={{ height: `${getIconHeight(schedule.startDateTime, schedule.endDateTime)}px` }}>
-                  <div className="flex flex-col justify-between h-full w-full">
-                    {/* 시작 시간 */}
-                    <div className="text-xs font-semibold text-gray-900 whitespace-nowrap">
-                      {formatTime(schedule.startDateTime)}
-                    </div>
-                    {/* 종료 시간 */}
-                    <div className="text-xs text-gray-500 whitespace-nowrap">
-                      {formatTime(schedule.endDateTime)}
-                    </div>
-                  </div>
+              {tickCount > 0 && (
+                <div className="absolute inset-0 pointer-events-none">
+                  {Array.from({ length: tickCount }).map((_, idx) => {
+                    const tickMinutes = firstTickMinutes + idx * TIME_LABEL_INTERVAL_MINUTES
+                    const topOffset = (tickMinutes - timelineStartMinutes) * PIXELS_PER_MINUTE
+                    return (
+                      <div
+                        key={`tick-${tickMinutes}`}
+                        className="absolute left-0 right-0"
+                        style={{ top: `${topOffset}px` }}
+                      >
+                        <div
+                          className="absolute left-0 pr-2 text-[10px] text-gray-400 text-right"
+                          style={{ width: `${TIME_COLUMN_WIDTH_REM}rem` }}
+                        >
+                          {formatTimeLabel(tickMinutes)}
+                        </div>
+                        <div
+                          className="h-px bg-gray-200/70"
+                          style={{ marginLeft: `${TIME_COLUMN_WIDTH_REM + TIMELINE_GAP_REM}rem` }}
+                        />
+                      </div>
+                    )
+                  })}
                 </div>
+              )}
+              {(() => {
+                let previousEnd: Date | null = null
 
-                {/* 타임라인 */}
-                <div className="relative flex flex-col items-center">
-                  {/* 아이콘 - 일정 길이에 비례하는 높이 */}
-                  <div className="relative">
-                    <div
-                      className="w-14 rounded-full flex items-center justify-center text-white shadow-md cursor-pointer hover:scale-105 transition-transform"
-                      style={{ 
-                        backgroundColor: scheduleColor,
-                        height: `${getIconHeight(schedule.startDateTime, schedule.endDateTime)}px`,
-                        borderRadius: '28px'
-                      }}
-                      onClick={() => handleScheduleClick(schedule)}
+                return timelineEntries.map((entry, index) => {
+                  const { schedule, displayStart, displayEnd } = entry
+                  const isExpanded = expandedSchedules.has(schedule.planId)
+                  const isLast = index === timelineEntries.length - 1
+                  const scheduleColor = getScheduleColor(schedule.color)
+                  const IconComponent = getScheduleIcon(schedule)
+                  const overlappingSchedules = getOverlappingSchedules(schedule, timedSchedules)
+                  const hasOverlap = overlappingSchedules.length > 0
+
+                  const startDate = new Date(displayStart)
+                  const endDate = new Date(displayEnd)
+                  const gapMinutes = previousEnd
+                    ? Math.max(0, Math.round((startDate.getTime() - previousEnd.getTime()) / (1000 * 60)))
+                    : 0
+                  const gapHeight = gapMinutes * PIXELS_PER_MINUTE
+                  previousEnd = new Date(Math.max(previousEnd?.getTime() ?? 0, endDate.getTime()))
+
+                  return (
+                    <React.Fragment key={`${schedule.type}-${schedule.planId}`}>
+                      {gapHeight > 0 && (
+                        <div className="flex gap-5 relative" aria-hidden="true">
+                          <div className="w-15 flex-shrink-0" style={{ height: `${gapHeight}px` }} />
+                          <div className="relative flex flex-col items-center" />
+                          <div className="flex-1" style={{ height: `${gapHeight}px` }} />
+                        </div>
+                      )}
+                      <div
+                        className="flex gap-5 relative"
+                        data-schedule-id={schedule.planId}
+                      >
+                        {/* 시간 표시 영역 (눈금 라벨 사용) */}
+                        <div
+                          className="w-15 flex-shrink-0"
+                          style={{ height: `${getIconHeight(displayStart, displayEnd)}px` }}
+                          aria-hidden="true"
+                        />
+
+                        {/* 타임라인 */}
+                        <div className="relative flex flex-col items-center">
+                          {/* 아이콘 - 일정 길이에 비례하는 높이 */}
+                          <div className="relative">
+                            <div
+                              className={`w-14 rounded-full flex items-center justify-center text-white shadow-md cursor-pointer transition-transform touch-none ${
+                                schedule.allDay || schedule.type !== "schedule" ? "hover:scale-105" : "hover:scale-[1.03]"
+                              }`}
+                              style={{ 
+                                backgroundColor: scheduleColor,
+                                height: `${getIconHeight(displayStart, displayEnd)}px`,
+                                borderRadius: '28px'
+                              }}
+                      onPointerDown={(event) => startDrag(event, schedule, "move")}
+                      onClick={() => handleScheduleSelect(schedule)}
+                      title={schedule.allDay ? "일정 보기" : "드래그로 시간 이동"}
                     >
                       <IconComponent className="w-6 h-6" />
-                    </div>
-                    
-                    {/* 완료 체크 버튼 */}
-                    <button
-                      className="absolute -top-1 -right-1 w-6 h-6 bg-white rounded-full flex items-center justify-center shadow-sm hover:scale-110 transition-transform border-2 z-10"
-                      style={{ borderColor: schedule.isCompleted ? '#22c55e' : '#e5e7eb' }}
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        toggleComplete(schedule)
-                      }}
-                    >
-                      {schedule.isCompleted ? (
-                        <CheckCircle2 className="w-4 h-4 text-green-500" />
-                      ) : (
-                        <Circle className="w-4 h-4 text-gray-400" />
-                      )}
-                    </button>
+                      {!schedule.allDay && (
+                        <div
+                          className="absolute -bottom-3 left-1/2 h-4 w-10 -translate-x-1/2 rounded-full bg-white shadow-md ring-1 ring-black/10"
+                          onPointerDown={(event) => startDrag(event, schedule, "resize")}
+                          title="드래그로 길이 조절"
+                        />
+                              )}
+                            </div>
+                            
+                            {/* 완료 체크 버튼 */}
+                            <button
+                              className="absolute -top-1 -right-1 w-6 h-6 bg-white rounded-full flex items-center justify-center shadow-sm hover:scale-110 transition-transform border-2 z-10"
+                              style={{ borderColor: schedule.isCompleted ? '#22c55e' : '#e5e7eb' }}
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                toggleComplete(schedule)
+                              }}
+                            >
+                              {schedule.isCompleted ? (
+                                <CheckCircle2 className="w-4 h-4 text-green-500" />
+                              ) : (
+                                <Circle className="w-4 h-4 text-gray-400" />
+                              )}
+                            </button>
 
-                    {/* 겹침 경고 아이콘 */}
-                    {hasOverlap && (
-                      <div 
-                        className="absolute -bottom-1 -left-1 w-6 h-6 bg-amber-500 rounded-full flex items-center justify-center shadow-md z-10"
-                        title={`${overlappingSchedules.length}개의 일정과 겹침`}
-                      >
-                        <AlertTriangle className="w-4 h-4 text-white" />
-                      </div>
-                    )}
-                  </div>
-
-                  {/* 연결선 */}
-                  {!isLast && (
-                    <div
-                      className="w-0.5 flex-1 mt-2 mb-2"
-                      style={{ backgroundColor: scheduleColor, minHeight: '40px' }}
-                    />
-                  )}
-                </div>
-
-                {/* 일정 내용 */}
-                <div className="flex-1 pb-8">
-                  <div
-                    className={`bg-white rounded-2xl p-4 shadow-sm border transition-shadow ${
-                      hasOverlap ? 'border-amber-300 bg-amber-50/30' : 'border-gray-200'
-                    } cursor-pointer hover:shadow-md`}
-                    onClick={() => handleScheduleClick(schedule)}
-                  >
-                    {/* 겹침 경고 메시지 */}
-                    {hasOverlap && (
-                      <div className="mb-3 flex items-center gap-2 text-xs text-amber-700 bg-amber-100 rounded-lg px-3 py-2">
-                        <AlertTriangle className="h-3.5 w-3.5 flex-shrink-0" />
-                        <span className="font-medium">
-                          {overlappingSchedules.length}개의 일정과 시간이 겹칩니다
-                          {overlappingSchedules.length <= 2 && `: ${overlappingSchedules.map(s => s.title).join(', ')}`}
-                        </span>
-                      </div>
-                    )}
-
-                    <div className="flex items-start justify-between mb-2">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 text-xs text-gray-500 mb-1">
-                          <span>
-                            {formatTime(schedule.startDateTime)} - {formatTime(schedule.endDateTime)}
-                          </span>
-                          <span className="text-gray-400">•</span>
-                          <span>{getDuration(schedule.startDateTime, schedule.endDateTime)}</span>
-                          {schedule.reminderMinutes && (
-                            <>
-                              <span className="text-gray-400">•</span>
-                              <div className="flex items-center gap-1">
-                                <Bell className="h-3 w-3" />
-                                <span>{schedule.reminderMinutes}분 전</span>
+                            {/* 겹침 경고 아이콘 */}
+                            {hasOverlap && (
+                              <div 
+                                className="absolute -bottom-1 -left-1 w-6 h-6 bg-amber-500 rounded-full flex items-center justify-center shadow-md z-10"
+                                title={`${overlappingSchedules.length}개의 일정과 겹침`}
+                              >
+                                <AlertTriangle className="w-4 h-4 text-white" />
                               </div>
-                            </>
-                          )}
+                            )}
+                          </div>
                         </div>
-                        <h3
-                          className={`font-semibold text-gray-900 ${schedule.isCompleted ? "line-through opacity-60" : ""}`}
-                        >
-                          {schedule.title}
-                        </h3>
-                      </div>
 
-                      {schedule.subTasks && schedule.subTasks.length > 0 && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-8 w-8 p-0 hover:bg-gray-100 rounded-full ml-2"
+                        {/* 일정 내용 */}
+                  <div className="flex-1 pb-8">
+                    <div
+                      className={`bg-white rounded-2xl p-4 shadow-sm border transition-shadow ${
+                        hasOverlap ? 'border-amber-300 bg-amber-50/30' : 'border-gray-200'
+                      } cursor-pointer hover:shadow-md`}
+                      onClick={() => handleScheduleClick(schedule)}
+                    >
+                      <div className="md:hidden">
+                        <button
+                          type="button"
+                          className="flex w-full items-start justify-between gap-3 text-left"
                           onClick={(e) => {
                             e.stopPropagation()
-                            toggleExpanded(schedule.planId)
+                            toggleMobileExpanded(schedule.planId)
                           }}
                         >
-                          {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                        </Button>
-                      )}
-                    </div>
+                          <div className="flex-1">
+                            <div className={`font-semibold text-gray-900 ${schedule.isCompleted ? "line-through opacity-60" : ""}`}>
+                              {schedule.title}
+                            </div>
+                            <div className="mt-1 text-[11px] text-gray-500">
+                              {getDuration(displayStart, displayEnd)}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {schedule.subTasks && schedule.subTasks.length > 0 && (
+                              <span className="text-[10px] text-gray-500">
+                                {schedule.subTasks.filter((t) => t.completed).length}/{schedule.subTasks.length}
+                              </span>
+                            )}
+                            {expandedMobileSchedules.has(schedule.planId) ? (
+                              <ChevronUp className="h-4 w-4 text-gray-400" />
+                            ) : (
+                              <ChevronDown className="h-4 w-4 text-gray-400" />
+                            )}
+                          </div>
+                        </button>
 
-                    {/* 서브태스크 */}
-                    {schedule.subTasks && schedule.subTasks.length > 0 && (
-                      <>
-                        {isExpanded ? (
-                          <div className="mt-3 space-y-2 border-t border-gray-100 pt-3">
-                            {schedule.subTasks.map((subTask) => (
-                              <div
-                                key={subTask.id}
-                                className="flex items-center gap-2 text-sm"
-                                onClick={(e) => e.stopPropagation()}
-                              >
-                                <Checkbox
-                                  checked={subTask.completed}
-                                  onCheckedChange={() => toggleSubTask(schedule.planId, subTask.id)}
-                                  className="h-4 w-4"
-                                />
-                                <span className={`flex-1 ${subTask.completed ? "line-through opacity-60" : ""}`}>
-                                  {subTask.title}
+                        {expandedMobileSchedules.has(schedule.planId) && (
+                          <div className="mt-3 space-y-3">
+                            {hasOverlap && (
+                              <div className="flex items-center gap-2 text-xs text-amber-700 bg-amber-100 rounded-lg px-3 py-2">
+                                <AlertTriangle className="h-3.5 w-3.5 flex-shrink-0" />
+                                <span className="font-medium">
+                                  {overlappingSchedules.length}개의 일정과 시간이 겹칩니다
                                 </span>
                               </div>
-                            ))}
-                          </div>
-                        ) : (
-                          <div className="text-xs text-gray-500 mt-2 flex items-center gap-1">
-                            <CheckCircle2 className="h-3 w-3" />
-                            {schedule.subTasks.filter((t) => t.completed).length}/{schedule.subTasks.length} 완료
+                            )}
+                            <div className="text-xs text-gray-500">
+                              {getDuration(displayStart, displayEnd)}
+                              {schedule.reminderMinutes && (
+                                <span className="ml-2 inline-flex items-center gap-1">
+                                  <Bell className="h-3 w-3" />
+                                  {schedule.reminderMinutes}분 전
+                                </span>
+                              )}
+                            </div>
+                            {schedule.type === "subgoal" && (
+                              <div className="text-[11px] text-gray-500">
+                                드래그하면 시간 지정 소목표로 전환됩니다
+                              </div>
+                            )}
+                            {schedule.subTasks && schedule.subTasks.length > 0 && (
+                              <div className="space-y-2 border-t border-gray-100 pt-3">
+                                {schedule.subTasks.map((subTask) => (
+                                  <div
+                                    key={subTask.id}
+                                    className="flex items-center gap-2 text-sm"
+                                    onClick={(e) => e.stopPropagation()}
+                                  >
+                                    <Checkbox
+                                      checked={subTask.completed}
+                                      onCheckedChange={() => toggleSubTask(schedule.planId, subTask.id)}
+                                      className="h-4 w-4"
+                                    />
+                                    <span className={`flex-1 ${subTask.completed ? "line-through opacity-60" : ""}`}>
+                                      {subTask.title}
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
                           </div>
                         )}
-                      </>
-                    )}
+                      </div>
+
+                      <div className="hidden md:block">
+                        <div className="flex items-start justify-between mb-2">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 text-xs text-gray-500 mb-1">
+                              <span>{getDuration(displayStart, displayEnd)}</span>
+                              {schedule.reminderMinutes && (
+                                <div className="flex items-center gap-1">
+                                  <Bell className="h-3 w-3" />
+                                  <span>{schedule.reminderMinutes}분 전</span>
+                                </div>
+                              )}
+                            </div>
+                            <h3
+                              className={`font-semibold text-gray-900 ${schedule.isCompleted ? "line-through opacity-60" : ""}`}
+                            >
+                              {schedule.title}
+                            </h3>
+                          </div>
+
+                          {schedule.subTasks && schedule.subTasks.length > 0 && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 w-8 p-0 hover:bg-gray-100 rounded-full ml-2"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                toggleExpanded(schedule.planId)
+                              }}
+                            >
+                              {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                            </Button>
+                          )}
+                        </div>
+
+                        {/* 서브태스크 */}
+                        {schedule.subTasks && schedule.subTasks.length > 0 && (
+                          <>
+                            {isExpanded ? (
+                              <div className="mt-3 space-y-2 border-t border-gray-100 pt-3">
+                                {schedule.subTasks.map((subTask) => (
+                                  <div
+                                    key={subTask.id}
+                                    className="flex items-center gap-2 text-sm"
+                                    onClick={(e) => e.stopPropagation()}
+                                  >
+                                    <Checkbox
+                                      checked={subTask.completed}
+                                      onCheckedChange={() => toggleSubTask(schedule.planId, subTask.id)}
+                                      className="h-4 w-4"
+                                    />
+                                    <span className={`flex-1 ${subTask.completed ? "line-through opacity-60" : ""}`}>
+                                      {subTask.title}
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
+                            ) : (
+                              <div className="text-xs text-gray-500 mt-2 flex items-center gap-1">
+                                <CheckCircle2 className="h-3 w-3" />
+                                {schedule.subTasks.filter((t) => t.completed).length}/{schedule.subTasks.length} 완료
+                              </div>
+                            )}
+                          </>
+                        )}
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </div>
-            )
-          })}
+                      </div>
+                    </React.Fragment>
+                  )
+                })
+              })()}
         </div>
       )}
         </>
