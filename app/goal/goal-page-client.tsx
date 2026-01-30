@@ -683,6 +683,7 @@ export default function GoalPageClient() {
                         const displaySubGoals = subGoalsMap[goal.goalId] || goal.subGoals
                         const completedSubGoalsCount = displaySubGoals.filter((sg) => sg.completed).length
                         const totalSubGoalsCount = displaySubGoals.length
+                        const hasSubGoals = totalSubGoalsCount > 0
 
                         // 진행률 계산 - displaySubGoals 사용
                         const rawProgress = getProgressPercentage(goal, displaySubGoals)
@@ -816,24 +817,30 @@ export default function GoalPageClient() {
                                           </span>
                                         </div>
                                       </div>
-                                      <div className="space-y-1.5 max-w-[700px]">
-                                        <div className="flex items-center justify-between text-[10px]">
-                                          <span className="text-[#5D6E72] font-medium">
-                                            {totalSubGoalsCount > 0 ? `세부목표 ${completedSubGoalsCount}/${totalSubGoalsCount}` : '목표 진행률'}
-                                          </span>
-                                          <span className="font-bold" style={{ color: goal.color || '#5D6E72' }}>
-                                            {progress}%
-                                          </span>
-                                        </div>
-                                        <div className="h-2 w-full rounded-full bg-[#EEF5F7] overflow-hidden">
-                                          <div
-                                            className="h-full transition-all duration-500 ease-out rounded-full"
-                                            style={{
-                                              width: `${progress}%`,
-                                              backgroundColor: goal.color || '#BBDCE5',
-                                            }}
-                                          />
-                                        </div>
+                                        <div className="space-y-1.5 max-w-[700px]">
+                                          <div className="flex items-center justify-between text-[10px]">
+                                            <span className="text-[#5D6E72] font-medium">
+                                            {hasSubGoals ? `세부목표 ${completedSubGoalsCount}/${totalSubGoalsCount}` : '목표 진행률'}
+                                            </span>
+                                            {hasSubGoals ? (
+                                              <span className="font-bold" style={{ color: goal.color || '#5D6E72' }}>
+                                                {progress}%
+                                              </span>
+                                            ) : (
+                                              <span className="font-semibold text-[#5D6E72]">세부목표 없음</span>
+                                            )}
+                                          </div>
+                                        {hasSubGoals && (
+                                          <div className="h-2 w-full rounded-full bg-[#EEF5F7] overflow-hidden">
+                                            <div
+                                              className="h-full transition-all duration-500 ease-out rounded-full"
+                                              style={{
+                                                width: `${progress}%`,
+                                                backgroundColor: goal.color || '#BBDCE5',
+                                              }}
+                                            />
+                                          </div>
+                                        )}
                                       </div>
                                     </div>
                                   </div>
