@@ -31,6 +31,24 @@ export interface GetGoalsParams {
   status?: 'IN_PROGRESS' | 'COMPLETED' | 'EXPIRED';
 }
 
+export interface DailyGoalCount {
+  date: string;
+  goal_count: number;
+}
+
+export interface MonthlyGoalCountResult {
+  year: number;
+  month: number;
+  daily_goals: DailyGoalCount[];
+}
+
+export interface GetMonthlyGoalCountResponse {
+  isSuccess: boolean;
+  code: string;
+  message: string;
+  result: MonthlyGoalCountResult;
+}
+
 export const getGoals = async (params: GetGoalsParams): Promise<Goal[]> => {
   const response = await axiosInstance.get('/goals', { params });
   const apiGoals = response.data.result;
@@ -68,6 +86,13 @@ export const getGoals = async (params: GetGoalsParams): Promise<Goal[]> => {
       updatedAt: g.updatedAt,
     };
   });
+};
+
+export const getMonthlyGoalCounts = async (year: number, month: number): Promise<MonthlyGoalCountResult> => {
+  const response = await axiosInstance.get<GetMonthlyGoalCountResponse>('/goals/monthly/count', {
+    params: { year, month },
+  });
+  return response.data.result;
 };
 
 //----------------------------------대목표 삭제 api---------------------------------
