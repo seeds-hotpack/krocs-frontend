@@ -11,7 +11,6 @@ import { ScheduleCalendar } from "@/components/schedule-calendar"
 import { GoalForm } from "@/components/goal-form"
 import { SubGoalModal, type SubGoalModalData } from "@/components/subgoal-modal"
 import { RetrospectiveFlow } from "@/components/retrospective/retrospective-flow"
-import { toKoreanISOString } from "@/lib/korean-time"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardTitle } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -30,6 +29,8 @@ interface SubGoal {
   color?: string
 }
 
+let lastGoalPageSelectedDate: Date | null = null
+
 export default function GoalPageClient() {
   const router = useRouter()
   const { status: authStatus, markUnauthenticated } = useAuth()
@@ -39,17 +40,7 @@ export default function GoalPageClient() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [selectedDate, setSelectedDate] = useState(() => {
-    // 페이지 로드 시 localStorage에서 날짜 복원
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('goalPageSelectedDate')
-      if (saved) {
-        const date = new Date(saved)
-        if (!isNaN(date.getTime())) {
-          return date
-        }
-      }
-    }
-    return new Date()
+    return lastGoalPageSelectedDate ? new Date(lastGoalPageSelectedDate) : new Date()
   })
   const [expandedGoals, setExpandedGoals] = useState<Set<number>>(new Set())
   const [subGoalsMap, setSubGoalsMap] = useState<Record<number, SubGoal[]>>({})
@@ -69,17 +60,19 @@ export default function GoalPageClient() {
 
   useEffect(() => {
     if (authStatus === "unauthenticated") {
+      lastGoalPageSelectedDate = null
       router.replace("/login")
     }
   }, [authStatus, router])
 
-  // 날짜 변경 시 localStorage에 저장
+  // 날짜 변경 시 세션 내 선택값 유지
   const handleDateSelect = (date: Date) => {
     setSelectedDate(date)
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('goalPageSelectedDate', toKoreanISOString(date))
-    }
   }
+
+  useEffect(() => {
+    lastGoalPageSelectedDate = new Date(selectedDate)
+  }, [selectedDate])
 
   const fetchGoals = useCallback(
     async (date: Date) => {
