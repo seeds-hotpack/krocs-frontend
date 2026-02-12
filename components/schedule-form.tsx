@@ -592,6 +592,16 @@ export function ScheduleForm({ schedule, onSubmit, onCancel, onDelete, defaultDa
           >
             취소
           </Button>
+          {schedule && onDelete && (
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => setShowDeleteModal(true)}
+              className="flex-1 h-12 rounded-2xl border-2 border-[#FFD7D1] bg-white text-[#d85b48] font-semibold hover:bg-[#FFECEA] transition-all"
+            >
+              삭제
+            </Button>
+          )}
           <Button
             type="submit"
             className="flex-1 h-12 rounded-2xl bg-gradient-to-r from-[#ff8b6b] to-[#ff6b47] text-white font-bold shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all"
@@ -599,18 +609,6 @@ export function ScheduleForm({ schedule, onSubmit, onCancel, onDelete, defaultDa
             {schedule ? "수정 완료" : "일정 만들기"}
           </Button>
         </div>
-
-        {schedule && onDelete && (
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => setShowDeleteModal(true)}
-            className="w-full h-12 rounded-2xl border-2 border-red-200 text-red-600 font-semibold hover:bg-red-50"
-          >
-            <Trash2 className="h-4 w-4 mr-2" />
-            일정 삭제
-          </Button>
-        )}
       </form>
 
       <ConfirmationModal
