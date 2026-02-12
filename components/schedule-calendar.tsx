@@ -29,11 +29,20 @@ interface ScheduleCalendarProps {
   onDateSelect: (date: Date) => void
   schedules: Schedule[]
   goals?: Goal[]
+  showSchedules?: boolean
   onClose?: () => void
   refreshTrigger?: number
 }
 
-export function ScheduleCalendar({ selectedDate, onDateSelect, schedules, goals = [], onClose, refreshTrigger }: ScheduleCalendarProps) {
+export function ScheduleCalendar({
+  selectedDate,
+  onDateSelect,
+  schedules,
+  goals = [],
+  showSchedules = true,
+  onClose,
+  refreshTrigger,
+}: ScheduleCalendarProps) {
   const router = useRouter()
   const [currentMonth, setCurrentMonth] = useState(new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1))
   const [monthlyPlans, setMonthlyPlans] = useState<DailyPlan[]>([]);
@@ -50,6 +59,10 @@ export function ScheduleCalendar({ selectedDate, onDateSelect, schedules, goals 
 
   useEffect(() => {
     const fetchMonthlyPlans = async () => {
+      if (!showSchedules) {
+        setMonthlyPlans([]);
+        return;
+      }
       setLoadingMonthlyPlans(true);
       try {
         const year = currentMonth.getFullYear();
@@ -72,7 +85,7 @@ export function ScheduleCalendar({ selectedDate, onDateSelect, schedules, goals 
       }
     };
     fetchMonthlyPlans();
-  }, [currentMonth, router, refreshTrigger]);
+  }, [currentMonth, router, refreshTrigger, showSchedules]);
 
   const daysInMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0).getDate()
   const firstDayOfMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1).getDay()
@@ -169,9 +182,10 @@ export function ScheduleCalendar({ selectedDate, onDateSelect, schedules, goals 
       date.setHours(0, 0, 0, 0)
       const isToday = today ? date.getTime() === today.getTime() : false
       const isSelected = date.getTime() === selectedDate.getTime()
-      const daySchedules = getMonthlySchedulesForDate(date)
+      const daySchedules = showSchedules ? getMonthlySchedulesForDate(date) : []
       const dayGoals = getGoalsForDate(date)
-      const hasSchedules = daySchedules.length > 0 || dayGoals.length > 0
+      const totalItemsCount = showSchedules ? daySchedules.length : dayGoals.length
+      const hasSchedules = totalItemsCount > 0
 
       days.push(
         <button
@@ -190,25 +204,12 @@ export function ScheduleCalendar({ selectedDate, onDateSelect, schedules, goals 
           <span className={isToday && !isSelected ? "font-bold" : ""}>{day}</span>
           {hasSchedules && (
             <div className="absolute bottom-1.5 flex gap-0.5">
-              {daySchedules.length === 1 && (
-                <div className="h-1 w-1 rounded-full bg-[#ff8b6b]" />
-              )}
-              {daySchedules.length === 2 && (
-                <>
-                  <div className="h-1 w-1 rounded-full bg-[#ff8b6b]" />
-                  <div className="h-1 w-1 rounded-full bg-[#ff8b6b]" />
-                </>
-              )}
-              {daySchedules.length === 3 && (
-                <>
-                  <div className="h-1 w-1 rounded-full bg-[#ff8b6b]" />
-                  <div className="h-1 w-1 rounded-full bg-[#ff8b6b]" />
-                  <div className="h-1 w-1 rounded-full bg-[#ff8b6b]" />
-                </>
-              )}
-              {daySchedules.length >= 4 && (
-                <div className="h-1 w-4 rounded-full bg-[#ff8b6b]" />
-              )}
+              {totalItemsCount >= 4 && <div className="h-1 w-4 rounded-full bg-[#ff8b6b]" />}
+              {totalItemsCount > 0 &&
+                totalItemsCount < 4 &&
+                Array.from({ length: totalItemsCount }).map((_, index) => (
+                  <div key={index} className="h-1 w-1 rounded-full bg-[#ff8b6b]" />
+                ))}
             </div>
           )}
         </button>,
