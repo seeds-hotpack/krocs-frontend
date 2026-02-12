@@ -29,7 +29,7 @@ interface SubGoal {
   color?: string
 }
 
-let lastGoalPageSelectedDate: Date | null = null
+const GOAL_SELECTED_DATE_KEY = "goalPage:selectedDate"
 
 export default function GoalPageClient() {
   const router = useRouter()
@@ -39,9 +39,8 @@ export default function GoalPageClient() {
   const [editingGoal, setEditingGoal] = useState<Goal | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [selectedDate, setSelectedDate] = useState(() => {
-    return lastGoalPageSelectedDate ? new Date(lastGoalPageSelectedDate) : new Date()
-  })
+  const [selectedDate, setSelectedDate] = useState(() => new Date())
+  const [isDateReady, setIsDateReady] = useState(false)
   const [expandedGoals, setExpandedGoals] = useState<Set<number>>(new Set())
   const [subGoalsMap, setSubGoalsMap] = useState<Record<number, SubGoal[]>>({})
   const [loadingSubGoals, setLoadingSubGoals] = useState<Set<number>>(new Set())
@@ -60,7 +59,9 @@ export default function GoalPageClient() {
 
   useEffect(() => {
     if (authStatus === "unauthenticated") {
-      lastGoalPageSelectedDate = null
+      if (typeof window !== "undefined") {
+        sessionStorage.removeItem(GOAL_SELECTED_DATE_KEY)
+      }
       router.replace("/login")
     }
   }, [authStatus, router])
@@ -71,8 +72,26 @@ export default function GoalPageClient() {
   }
 
   useEffect(() => {
-    lastGoalPageSelectedDate = new Date(selectedDate)
-  }, [selectedDate])
+    if (typeof window === "undefined") return
+    const stored = sessionStorage.getItem(GOAL_SELECTED_DATE_KEY)
+    if (stored) {
+      const parsed = new Date(stored)
+      if (!Number.isNaN(parsed.getTime())) {
+        setSelectedDate(parsed)
+        setIsDateReady(true)
+        return
+      }
+    }
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    setSelectedDate(today)
+    setIsDateReady(true)
+  }, [])
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !isDateReady) return
+    sessionStorage.setItem(GOAL_SELECTED_DATE_KEY, selectedDate.toISOString())
+  }, [selectedDate, isDateReady])
 
   const fetchGoals = useCallback(
     async (date: Date) => {
@@ -481,10 +500,10 @@ export default function GoalPageClient() {
   };
 
   useEffect(() => {
-    if (authStatus === "authenticated") {
+    if (authStatus === "authenticated" && isDateReady) {
       fetchGoals(selectedDate)
     }
-  }, [authStatus, selectedDate, fetchGoals])
+  }, [authStatus, isDateReady, selectedDate, fetchGoals])
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
