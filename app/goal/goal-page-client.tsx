@@ -594,6 +594,7 @@ export default function GoalPageClient() {
                   onDateSelect={handleDateSelect}
                   schedules={[]}
                   goals={goals}
+                  showSchedules={false}
                 />
               </CardContent>
             </Card>
