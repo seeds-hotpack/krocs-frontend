@@ -707,11 +707,17 @@ export default function GoalPageClient() {
                                 borderRightColor: '#D3E6ED',
                                 borderBottomColor: '#D3E6ED',
                               }}
+                              onClick={(e) => {
+                                const target = e.target as HTMLElement
+                                if (target.closest("[data-goal-action]")) return
+                                handleEditGoalClick(goal)
+                              }}
                             >
                               <CardContent className="p-5">
                                 <div className="flex items-start justify-between gap-4">
                                   <div className="flex items-start gap-4 flex-1 min-w-0">
                                     <button
+                                      data-goal-action
                                       onClick={(e) => {
                                         e.preventDefault()
                                         e.stopPropagation()
@@ -741,7 +747,11 @@ export default function GoalPageClient() {
                                             <Button
                                               type="button"
                                               variant="ghost"
-                                              onClick={() => toggleGoalExpansion(goal.goalId)}
+                                              data-goal-action
+                                              onClick={(e) => {
+                                                e.stopPropagation()
+                                                toggleGoalExpansion(goal.goalId)
+                                              }}
                                               className="inline-flex h-7 items-center justify-center gap-1.5 rounded-full border border-[#D3E6ED] bg-[#F7FBFC] pl-2 pr-2 text-[11px] font-semibold text-[#5D6E72] shadow-none transition-all hover:bg-white hover:text-[#0F1C21]"
                                             >
                                               <span className="relative top-px pr-0.5">세부목표</span>
@@ -755,6 +765,7 @@ export default function GoalPageClient() {
                                                   e.stopPropagation()
                                                   setActionMenuGoalId((prev) => (prev === goal.goalId ? null : goal.goalId))
                                                 }}
+                                                data-goal-action
                                                 className="ml-1 flex h-7 w-7 items-center justify-center rounded-full border border-[#D3E6ED] bg-white text-[#5D6E72] transition-colors hover:bg-[#EEF5F7]"
                                                 aria-label="목표 작업 열기"
                                               >
@@ -764,6 +775,7 @@ export default function GoalPageClient() {
                                                 <div
                                                   className="absolute right-0 top-8 z-10 w-32 rounded-2xl border border-[#D3E6ED] bg-white p-2 text-sm shadow-lg"
                                                   onClick={(e) => e.stopPropagation()}
+                                                  data-goal-action
                                                 >
                                                   <button
                                                     className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-[#0F1C21] transition-colors hover:bg-[#EEF5F7]"
@@ -840,7 +852,7 @@ export default function GoalPageClient() {
                                   </div>
                                 </div>
                                 {isExpanded && (
-                                  <div className="mt-4 pt-4 border-t border-[#D3E6ED]">
+                                  <div className="mt-4 pt-4 border-t border-[#D3E6ED]" data-goal-action>
                                     {isLoadingSubGoals ? (
                                       <div className="text-center py-4 text-sm text-[#5D6E72]">
                                         세부목표를 불러오는 중...
