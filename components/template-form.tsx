@@ -17,9 +17,10 @@ interface TemplateFormProps {
   template?: Template | null;
   onSubmit: (data: Omit<Template, 'templateId'>) => void;
   onCancel: () => void;
+  onDelete?: () => void | Promise<void>;
 }
 
-export function TemplateForm({ template, onSubmit, onCancel }: TemplateFormProps) {
+export function TemplateForm({ template, onSubmit, onCancel, onDelete }: TemplateFormProps) {
   const [title, setTitle] = useState('');
   const [priority, setPriority] = useState<'HIGH' | 'MEDIUM' | 'LOW'>('MEDIUM');
   const [duration, setDuration] = useState<number | ''>('');
@@ -32,6 +33,7 @@ export function TemplateForm({ template, onSubmit, onCancel }: TemplateFormProps
 
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [subTemplateToDelete, setSubTemplateToDelete] = useState<number | null>(null);
+  const [showTemplateDeleteModal, setShowTemplateDeleteModal] = useState(false);
 
   useEffect(() => {
     if (template) {
@@ -120,6 +122,12 @@ export function TemplateForm({ template, onSubmit, onCancel }: TemplateFormProps
       )
     );
     handleCancelEditSubTemplate();
+  };
+
+  const handleDeleteTemplate = async () => {
+    if (!template || !template.templateId || !onDelete) return;
+    await onDelete();
+    setShowTemplateDeleteModal(false);
   };
 
   const getPriorityLabel = (p: 'HIGH' | 'MEDIUM' | 'LOW') => {
@@ -293,6 +301,16 @@ export function TemplateForm({ template, onSubmit, onCancel }: TemplateFormProps
           >
             취소
           </Button>
+          {template && template.templateId > 0 && onDelete && (
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => setShowTemplateDeleteModal(true)}
+              className="flex-1 h-12 rounded-2xl border-2 border-[#FFD7D1] bg-white text-[#d85b48] font-semibold hover:bg-[#FFECEA] transition-all"
+            >
+              삭제
+            </Button>
+          )}
           <Button
             type="submit"
             className="flex-1 h-12 rounded-2xl bg-gradient-to-r from-[#ff8b6b] to-[#ff6b47] text-white font-bold shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all"
@@ -308,6 +326,15 @@ export function TemplateForm({ template, onSubmit, onCancel }: TemplateFormProps
         onConfirm={confirmRemoveSubTemplate}
         title="하위 템플릿 삭제"
         message="정말로 이 하위 템플릿을 삭제하시겠습니까?"
+        confirmText="삭제"
+      />
+
+      <ConfirmationModal
+        isOpen={showTemplateDeleteModal}
+        onClose={() => setShowTemplateDeleteModal(false)}
+        onConfirm={handleDeleteTemplate}
+        title="템플릿 삭제 확인"
+        message="정말로 이 템플릿을 삭제하시겠습니까?"
         confirmText="삭제"
       />
     </div>

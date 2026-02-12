@@ -237,17 +237,25 @@ export default function TemplatesPageClient() {
     if (templateToDelete === null) return;
 
     try {
-      await deleteTemplate(templateToDelete);
-      const response = await fetchTemplatesData();
-      applyTemplateResponse(response);
-      if (response.content.length === 0 && currentPage > 1) {
-        setCurrentPage((prev) => Math.max(1, prev - 1));
-      }
+      await deleteTemplateById(templateToDelete);
     } catch (err) {
       handleTemplateApiError(err, '템플릿 삭제');
     } finally {
       setShowDeleteModal(false);
       setTemplateToDelete(null);
+    }
+  };
+
+  const deleteTemplateById = async (templateId: number) => {
+    await deleteTemplate(templateId);
+    const response = await fetchTemplatesData();
+    applyTemplateResponse(response);
+    if (response.content.length === 0 && currentPage > 1) {
+      setCurrentPage((prev) => Math.max(1, prev - 1));
+    }
+    if (editingTemplate?.templateId === templateId) {
+      setEditingTemplate(null);
+      setShowForm(false);
     }
   };
 
@@ -530,6 +538,11 @@ export default function TemplatesPageClient() {
                 setShowForm(false);
                 setEditingTemplate(null);
               }}
+              onDelete={
+                editingTemplate
+                  ? () => deleteTemplateById(editingTemplate.templateId)
+                  : undefined
+              }
             />
           </div>
         </div>

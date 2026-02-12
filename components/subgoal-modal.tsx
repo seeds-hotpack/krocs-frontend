@@ -310,6 +310,16 @@ export function SubGoalModal({
               >
                 취소
               </Button>
+              {isEditMode && onDelete && editingSubGoal && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() => setShowDeleteModal(true)}
+                  className="flex-1 h-12 rounded-2xl border-2 border-[#FFD7D1] bg-white text-[#d85b48] font-semibold hover:bg-[#FFECEA] transition-all"
+                >
+                  삭제
+                </Button>
+              )}
               <Button
                   onClick={handleSubmit}
                   disabled={!title.trim() || loading}
@@ -318,19 +328,6 @@ export function SubGoalModal({
                 {loading ? `${isEditMode ? '수정' : '추가'} 중...` : isEditMode ? "수정 완료" : "소목표 추가"}
               </Button>
             </div>
-
-            {/* Delete Button - 편집 모드일 때만 표시 */}
-            {isEditMode && onDelete && editingSubGoal && (
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setShowDeleteModal(true)}
-                className="w-full h-12 rounded-2xl border-2 border-red-200 text-red-600 font-semibold hover:bg-red-50"
-              >
-                <Trash2 className="h-4 w-4 mr-2" />
-                세부목표 삭제
-              </Button>
-            )}
           </div>
         </div>
 

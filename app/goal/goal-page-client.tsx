@@ -442,22 +442,21 @@ export default function GoalPageClient() {
     setShowGoalDeleteModal(true);
   };
 
-  const confirmDeleteGoal = async () => {
-    if (!goalToDelete) return;
-
-    setDeletingGoalId(goalToDelete);
+  const deleteGoalById = async (goalId: number) => {
+    setDeletingGoalId(goalId);
     try {
-      await deleteBigGoal(goalToDelete);
-      if (editingGoal?.goalId === goalToDelete) {
+      await deleteBigGoal(goalId);
+      if (editingGoal?.goalId === goalId) {
         setEditingGoal(null);
         setIsFormOpen(false);
       }
       await refreshGoals();
       setExpandedGoals((prev) => {
         const next = new Set(prev);
-        next.delete(goalToDelete);
+        next.delete(goalId);
         return next;
       });
+      setActionMenuGoalId((prev) => (prev === goalId ? null : prev));
     } catch (error: any) {
       console.error(error);
       if (error.response?.data?.message) {
@@ -467,6 +466,15 @@ export default function GoalPageClient() {
       }
     } finally {
       setDeletingGoalId(null);
+    }
+  };
+
+  const confirmDeleteGoal = async () => {
+    if (!goalToDelete) return;
+
+    try {
+      await deleteGoalById(goalToDelete);
+    } finally {
       setShowGoalDeleteModal(false);
       setGoalToDelete(null);
     }
@@ -959,6 +967,7 @@ export default function GoalPageClient() {
             <GoalForm
               goal={editingGoal}
               onSubmit={editingGoal ? (data) => updateGoal(editingGoal.goalId, data) : createGoal}
+              onDelete={editingGoal ? () => deleteGoalById(editingGoal.goalId) : undefined}
               onCancel={() => {
                 setIsFormOpen(false)
                 setEditingGoal(null)
