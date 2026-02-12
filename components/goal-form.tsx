@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { X, Calendar, Flag, Palette, Sparkles } from "lucide-react"
 import { toKoreanDateString } from "@/lib/korean-time"
+import { ConfirmationModal } from "@/components/ui/confirmation-modal"
 
 interface Goal {
   goalId: number
@@ -28,10 +29,12 @@ interface GoalFormProps {
   goal?: Goal | null
   onSubmit: (data: any) => void
   onCancel: () => void
+  onDelete?: () => void | Promise<void>
   defaultDate?: Date
 }
 
-export function GoalForm({ goal, onSubmit, onCancel, defaultDate }: GoalFormProps) {
+export function GoalForm({ goal, onSubmit, onCancel, onDelete, defaultDate }: GoalFormProps) {
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const initialStartDate = goal?.startDate || (defaultDate ? toKoreanDateString(defaultDate) : toKoreanDateString())
   const initialEndDate = goal?.endDate || (defaultDate ? toKoreanDateString(defaultDate) : toKoreanDateString())
   
@@ -163,6 +166,12 @@ export function GoalForm({ goal, onSubmit, onCancel, defaultDate }: GoalFormProp
       case "LOW": return "낮음"
       default: return priority
     }
+  }
+
+  const handleDelete = async () => {
+    if (!goal || !goal.goalId || !onDelete) return
+    await onDelete()
+    setShowDeleteConfirm(false)
   }
 
   return (
@@ -346,6 +355,16 @@ export function GoalForm({ goal, onSubmit, onCancel, defaultDate }: GoalFormProp
             >
               취소
             </Button>
+            {goal && goal.goalId > 0 && onDelete && (
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => setShowDeleteConfirm(true)}
+                className="flex-1 h-12 rounded-2xl border-2 border-[#FFD7D1] bg-white text-[#d85b48] font-semibold hover:bg-[#FFECEA] transition-all"
+              >
+                삭제
+              </Button>
+            )}
             <Button
               type="submit"
               className="flex-1 h-12 rounded-2xl bg-gradient-to-r from-[#ff8b6b] to-[#ff6b47] text-white font-bold shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all"
@@ -354,6 +373,15 @@ export function GoalForm({ goal, onSubmit, onCancel, defaultDate }: GoalFormProp
             </Button>
           </div>
         </form>
+
+        <ConfirmationModal
+          isOpen={showDeleteConfirm}
+          onClose={() => setShowDeleteConfirm(false)}
+          onConfirm={handleDelete}
+          title="목표 삭제 확인"
+          message="정말로 이 목표를 삭제하시겠습니까?"
+          confirmText="삭제"
+        />
     </div>
   )
 }
