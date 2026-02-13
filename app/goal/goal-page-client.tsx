@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation"
 import { useState, useEffect, useCallback } from "react"
 import { Plus, Calendar, Target, CheckCircle2, ChevronDown, ChevronRight, Pencil, Trash2, MoreHorizontal } from "lucide-react"
-import { getGoals, Goal, deleteBigGoal } from "@/api/goals"
+import { getGoals, getMonthlyGoalCounts, deleteBigGoal, Goal } from "@/api/goals"
 import { update_Goal as updateGoalApi, type UpdateGoalRequest } from "@/api/updateGoal"
 import { createGoal as createGoalApi } from "@/api/createGoal"
 import { getSubGoals, deleteSubGoal, updateSubGoal } from "@/api/subgoals"
@@ -50,6 +50,7 @@ export default function GoalPageClient() {
   const [retrospectiveGoal, setRetrospectiveGoal] = useState<Goal | null>(null)
   const [deletingGoalId, setDeletingGoalId] = useState<number | null>(null)
   const [actionMenuGoalId, setActionMenuGoalId] = useState<number | null>(null)
+  const [monthlyGoalCounts, setMonthlyGoalCounts] = useState<Record<string, number>>({})
 
   const [showGoalDeleteModal, setShowGoalDeleteModal] = useState(false);
   const [goalToDelete, setGoalToDelete] = useState<number | null>(null);
@@ -120,6 +121,30 @@ export default function GoalPageClient() {
         }
       } finally {
         setLoading(false)
+      }
+    },
+    [router, markUnauthenticated]
+  )
+
+  const fetchMonthlyGoalCounts = useCallback(
+    async (date: Date) => {
+      try {
+        const year = date.getFullYear()
+        const month = date.getMonth() + 1
+        const result = await getMonthlyGoalCounts(year, month)
+        const counts = result.daily_goals.reduce<Record<string, number>>((acc, item) => {
+          acc[item.date] = item.goal_count
+          return acc
+        }, {})
+        setMonthlyGoalCounts(counts)
+      } catch (err: any) {
+        if (err.response?.status === 401 || err.response?.status === 403) {
+          markUnauthenticated()
+          alert(err.response?.data?.message || "인증에 실패했습니다. 다시 로그인해주세요.")
+          router.push("/login")
+        } else {
+          console.error(err)
+        }
       }
     },
     [router, markUnauthenticated]
@@ -622,6 +647,8 @@ export default function GoalPageClient() {
                   schedules={[]}
                   goals={goals}
                   showSchedules={false}
+                  dailyGoalCounts={monthlyGoalCounts}
+                  onMonthChange={fetchMonthlyGoalCounts}
                 />
               </CardContent>
             </Card>

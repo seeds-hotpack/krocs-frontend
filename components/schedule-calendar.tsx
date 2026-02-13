@@ -29,9 +29,11 @@ interface ScheduleCalendarProps {
   onDateSelect: (date: Date) => void
   schedules: Schedule[]
   goals?: Goal[]
+  dailyGoalCounts?: Record<string, number>
   showSchedules?: boolean
   onClose?: () => void
   refreshTrigger?: number
+  onMonthChange?: (date: Date) => void
 }
 
 export function ScheduleCalendar({
@@ -39,9 +41,11 @@ export function ScheduleCalendar({
   onDateSelect,
   schedules,
   goals = [],
+  dailyGoalCounts = {},
   showSchedules = true,
   onClose,
   refreshTrigger,
+  onMonthChange,
 }: ScheduleCalendarProps) {
   const router = useRouter()
   const [currentMonth, setCurrentMonth] = useState(new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1))
@@ -87,6 +91,10 @@ export function ScheduleCalendar({
     fetchMonthlyPlans();
   }, [currentMonth, router, refreshTrigger, showSchedules]);
 
+  useEffect(() => {
+    onMonthChange?.(currentMonth);
+  }, [currentMonth, onMonthChange]);
+
   const daysInMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0).getDate()
   const firstDayOfMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1).getDay()
 
@@ -114,6 +122,13 @@ export function ScheduleCalendar({
       checkDate.setHours(0, 0, 0, 0);
       return checkDate >= startDate && checkDate <= endDate;
     });
+  };
+
+  const getGoalCountForDate = (date: Date) => {
+    const formattedDate = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+    const monthlyCount = dailyGoalCounts[formattedDate];
+    if (typeof monthlyCount === "number") return monthlyCount;
+    return getGoalsForDate(date).length;
   };
 
   const renderCalendarDays = () => {
@@ -183,8 +198,7 @@ export function ScheduleCalendar({
       const isToday = today ? date.getTime() === today.getTime() : false
       const isSelected = date.getTime() === selectedDate.getTime()
       const daySchedules = showSchedules ? getMonthlySchedulesForDate(date) : []
-      const dayGoals = getGoalsForDate(date)
-      const totalItemsCount = showSchedules ? daySchedules.length : dayGoals.length
+      const totalItemsCount = showSchedules ? daySchedules.length : getGoalCountForDate(date)
       const hasSchedules = totalItemsCount > 0
 
       days.push(
